@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { Tag } from '../ui/Badge.jsx';
+import { VerificationBadge } from '../verification/VerificationBadge.jsx';
 import { Dialog } from '../ui/Dialog.jsx';
 import { MediaFrame, isPlaceholderUrl } from '../ui/MediaFrame.jsx';
 
@@ -42,7 +43,7 @@ function PortfolioViewer({ item, onClose }) {
   );
 }
 
-export function PortfolioGrid({ items }) {
+export function PortfolioGrid({ items, statusById = {} }) {
   const [active, setActive] = useState(null);
   return (
     <>
@@ -57,6 +58,9 @@ export function PortfolioGrid({ items }) {
               {item.category && <span className="shrink-0 font-mono text-[11px] uppercase tracking-wider text-muted">{item.category}</span>}
             </figcaption>
             {item.tools?.length > 0 && <p className="mt-0.5 text-[13px] text-muted">{item.tools.join(' · ')}</p>}
+            {statusById[item._id] && statusById[item._id] !== 'SELF_REPORTED' && (
+              <VerificationBadge status={statusById[item._id]} className="mt-1" />
+            )}
           </figure>
         ))}
       </div>

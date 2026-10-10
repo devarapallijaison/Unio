@@ -5,7 +5,9 @@ import {
   DELIVERABLE_STATUS,
   MEDIA_TYPES,
   PROJECT_STATUS,
-  ROLES,
+  SELF_SERVE_ROLES,
+  VERIFICATION_STATUS,
+  VERIFICATION_TYPES,
 } from '../models/enums.js';
 import { httpUrl, money, objectId, optionalUrl, pageQuery, qNumber, qText, tagList, text } from './common.js';
 
@@ -20,7 +22,7 @@ export const registerBody = z.object({
     .max(128)
     .regex(/[A-Za-z]/, 'Password must contain a letter')
     .regex(/\d/, 'Password must contain a number'),
-  role: z.enum(ROLES, 'Choose creator or brand'),
+  role: z.enum(SELF_SERVE_ROLES, 'Choose creator or brand'),
 });
 
 export const loginBody = z.object({
@@ -151,3 +153,58 @@ export const deliverableBody = z
     status: z.enum(DELIVERABLE_STATUS).optional(),
   })
   .refine((b) => b.mediaUrl !== undefined || b.status !== undefined, { message: 'Nothing to update' });
+
+/* ---------- Verification ---------- */
+const evidenceList = z.array(httpUrl).max(5, 'Add at most 5 evidence links');
+
+// Note: there is deliberately no `status` field. Creators can only save (SELF_REPORTED)
+// or submit for review (PENDING); VERIFIED/REJECTED come exclusively from reviewers.
+export const verificationCreateBody = z
+  .object({
+    type: z.enum(VERIFICATION_TYPES),
+    subject: text(120, 2).optional(),
+    portfolioItemId: objectId.optional(),
+    description: text(2000).optional(),
+    evidenceUrls: evidenceList.default([]),
+    submit: z.boolean().default(false),
+  })
+  .strict()
+  .superRefine((v, ctx) => {
+    if (v.type !== 'portfolio' && !v.subject) ctx.addIssue({ code: 'custom', path: ['subject'], message: 'Name the tool or workflow' });
+    if (v.type === 'portfolio' && !v.portfolioItemId) ctx.addIssue({ code: 'custom', path: ['portfolioItemId'], message: 'Choose a portfolio piece' });
+    if (v.type === 'workflow' && (v.description ?? '').length < 30) {
+      ctx.addIssue({ code: 'custom', path: ['description'], message: 'Describe the workflow in at least 30 characters' });
+    }
+  });
+
+export const verificationUpdateBody = z
+  .object({
+    subject: text(120, 2).optional(),
+    description: text(2000).optional(),
+    evidenceUrls: evidenceList.optional(),
+    submit: z.boolean().default(false),
+  })
+  .strict();
+
+export const reviewListQuery = z.object({
+  status: z.enum(VERIFICATION_STATUS).default('PENDING'),
+  type: z.enum(VERIFICATION_TYPES).optional(),
+  ...pageQuery,
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+export const reviewDecisionBody = z
+  .object({
+    decision: z.enum(['VERIFIED', 'REJECTED']),
+    note: text(1000).optional(),
+  })
+  .refine((b) => b.decision !== 'REJECTED' || (b.note ?? '').length >= 10, {
+    path: ['note'],
+    message: 'Explain the rejection (at least 10 characters) so the creator can fix it',
+  });
+
+/* ---------- Project feedback ---------- */
+export const feedbackBody = z.object({
+  rating: z.coerce.number().int().min(1).max(5),
+  comment: text(1000).optional(),
+});

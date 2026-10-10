@@ -6,3 +6,4 @@ export { Campaign } from './Campaign.js';
 export { Application } from './Application.js';
 export { Invitation } from './Invitation.js';
 export { Project } from './Project.js';
+export { VerificationSubmission } from './VerificationSubmission.js';

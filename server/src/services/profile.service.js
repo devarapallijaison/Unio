@@ -1,5 +1,7 @@
 import { BrandProfile, CreatorProfile, PortfolioItem } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
+import { VerificationSubmission } from '../models/index.js';
+import { invalidatePortfolioEvidence } from './verification.service.js';
 
 /** Resolve the authenticated creator's profile (never from client input). */
 export async function requireCreatorProfile(user) {
@@ -51,11 +53,14 @@ export async function addPortfolioItem(user, data) {
 
 export async function updatePortfolioItem(user, id, data) {
   const profile = await requireCreatorProfile(user);
+  const before = await PortfolioItem.findOne({ _id: id, creatorId: profile._id }, 'mediaUrl').lean();
+  if (!before) throw ApiError.notFound('Portfolio item not found');
   const item = await PortfolioItem.findOneAndUpdate({ _id: id, creatorId: profile._id }, { $set: data }, {
     returnDocument: 'after',
     runValidators: true,
   }).lean();
   if (!item) throw ApiError.notFound('Portfolio item not found');
+  if (data.mediaUrl && data.mediaUrl !== before.mediaUrl) await invalidatePortfolioEvidence(profile._id, item._id);
   return item;
 }
 
@@ -63,5 +68,6 @@ export async function deletePortfolioItem(user, id) {
   const profile = await requireCreatorProfile(user);
   const res = await PortfolioItem.deleteOne({ _id: id, creatorId: profile._id });
   if (!res.deletedCount) throw ApiError.notFound('Portfolio item not found');
+  await VerificationSubmission.deleteOne({ creatorId: profile._id, key: `portfolio:${id}` });
   return { deleted: true };
 }

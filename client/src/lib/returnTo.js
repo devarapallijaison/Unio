@@ -1,5 +1,5 @@
 /** Only internal app paths may be used as post-login destinations (prevents open redirects). */
-const ALLOWED = /^\/(creators|campaigns|creator|brand|projects)(\/[A-Za-z0-9/_-]*)?(\?[A-Za-z0-9=&_%-]*)?$/;
+const ALLOWED = /^\/(creators|campaigns|creator|brand|projects|review)(\/[A-Za-z0-9/_-]*)?(\?[A-Za-z0-9=&_%-]*)?$/;
 
 export function safeReturnTo(value) {
   if (!value || typeof value !== 'string') return null;
@@ -14,6 +14,7 @@ export function safeReturnTo(value) {
 }
 
 export function dashboardFor(role) {
+  if (role === 'reviewer') return '/review';
   return role === 'brand' ? '/brand/dashboard' : '/creator/dashboard';
 }
 

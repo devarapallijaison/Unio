@@ -88,6 +88,10 @@ export const endpoints = {
     invitations: (params) => api.get('/creator/invitations', params),
     respond: (id, status) => api.patch(`/creator/invitations/${id}/respond`, { status }),
     projects: (params) => api.get('/creator/projects', params),
+    verifications: () => api.get('/creator/verifications'),
+    createVerification: (body) => api.post('/creator/verifications', body),
+    updateVerification: (id, body) => api.put(`/creator/verifications/${id}`, body),
+    deleteVerification: (id) => api.delete(`/creator/verifications/${id}`),
   },
   brand: {
     profile: () => api.get('/brand/profile'),
@@ -106,9 +110,14 @@ export const endpoints = {
     cancelInvitation: (id) => api.patch(`/brand/invitations/${id}/cancel`),
     projects: (params) => api.get('/brand/projects', params),
   },
+  review: {
+    list: (params) => api.get('/review/verifications', params),
+    decide: (id, body) => api.patch(`/review/verifications/${id}`, body),
+  },
   projects: {
     get: (id) => api.get(`/projects/${id}`),
     setStatus: (id, status) => api.patch(`/projects/${id}/status`, { status }),
     updateDeliverable: (id, deliverableId, body) => api.patch(`/projects/${id}/deliverables/${deliverableId}`, body),
+    feedback: (id, body) => api.post(`/projects/${id}/feedback`, body),
   },
 };

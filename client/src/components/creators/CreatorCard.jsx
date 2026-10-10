@@ -1,4 +1,4 @@
-import { ArrowUpRight, MapPin } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, MapPin } from 'lucide-react';
 import { Link } from 'react-router';
 import { formatINR } from '../../lib/format.js';
 import { statusLabel } from '../../lib/status.js';
@@ -63,6 +63,21 @@ export function CreatorCard({ creator }) {
           </div>
         )}
       </div>
+
+      {(creator.verifiedCount > 0 || creator.completedProjects > 0) && (
+        <p className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
+          {creator.verifiedCount > 0 && (
+            <span className="inline-flex items-center gap-1 font-medium text-forest" title="Claims confirmed by a UNIO reviewer">
+              <BadgeCheck className="size-3.5" strokeWidth={2} /> {creator.verifiedCount} verified
+            </span>
+          )}
+          {creator.completedProjects > 0 && (
+            <span className="text-muted">
+              {creator.completedProjects} completed on UNIO
+            </span>
+          )}
+        </p>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         {(creator.skills ?? []).slice(0, 3).map((s) => (

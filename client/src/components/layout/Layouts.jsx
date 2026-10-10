@@ -8,6 +8,7 @@ import {
   Megaphone,
   PlusCircle,
   Send,
+  ShieldCheck,
   UserRound,
 } from 'lucide-react';
 import { NavLink, Outlet, ScrollRestoration } from 'react-router';
@@ -45,6 +46,7 @@ const NAVS = {
     { to: '/creator/applications', label: 'Applications', icon: Send },
     { to: '/creator/invitations', label: 'Invitations', icon: Mail },
     { to: '/creator/projects', label: 'Projects', icon: FolderKanban },
+    { to: '/creator/verification', label: 'Verification', icon: ShieldCheck },
   ],
   brand: [
     { to: '/brand/dashboard', label: 'Overview', icon: LayoutGrid },
@@ -55,6 +57,7 @@ const NAVS = {
     { to: '/brand/projects', label: 'Projects', icon: Briefcase },
     { to: '/brand/profile', label: 'Brand profile', icon: UserRound },
   ],
+  reviewer: [{ to: '/review', label: 'Review queue', icon: ShieldCheck, end: true }],
 };
 
 export function DashboardLayout({ role }) {
@@ -66,7 +69,7 @@ export function DashboardLayout({ role }) {
       <div className="container-page grid grid-cols-[minmax(0,1fr)] gap-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 lg:py-10">
         <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
           <div className="hidden pb-5 lg:block">
-            <p className="eyebrow">{role === 'brand' ? 'Brand workspace' : 'Creator studio'}</p>
+            <p className="eyebrow">{{ brand: 'Brand workspace', creator: 'Creator studio', reviewer: 'Verification desk' }[role]}</p>
             <p className="mt-1 truncate font-display text-lg">{user?.name}</p>
           </div>
           <nav aria-label="Dashboard" className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">

@@ -18,14 +18,18 @@ const LABELS = {
   available: 'Available',
   busy: 'Limited availability',
   unavailable: 'Not taking work',
+  SELF_REPORTED: 'Self-reported',
+  PENDING: 'Pending review',
+  VERIFIED: 'Verified',
+  REJECTED: 'Not verified',
 };
 
 const TONES = {
-  positive: ['open', 'accepted', 'approved', 'completed', 'available'],
+  positive: ['open', 'accepted', 'approved', 'completed', 'available', 'VERIFIED'],
   active: ['in_progress', 'submitted'],
-  waiting: ['pending', 'not_started', 'busy'],
-  attention: ['revision_requested'],
-  neutral: ['draft', 'closed', 'rejected', 'withdrawn', 'declined', 'cancelled', 'unavailable'],
+  waiting: ['pending', 'not_started', 'busy', 'PENDING'],
+  attention: ['revision_requested', 'REJECTED'],
+  neutral: ['draft', 'closed', 'rejected', 'withdrawn', 'declined', 'cancelled', 'unavailable', 'SELF_REPORTED'],
 };
 
 export function statusLabel(status) {

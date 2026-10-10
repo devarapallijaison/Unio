@@ -54,3 +54,16 @@ export const campaignPayload = (overrides = {}) => ({
   status: 'open',
   ...overrides,
 });
+
+/** Reviewers can't self-register; tests provision one directly, like the seed/create-reviewer script. */
+export async function signInReviewer(app) {
+  const { User } = await import('../src/models/index.js');
+  const { hashPassword } = await import('../src/services/auth.service.js');
+  counter += 1;
+  const email = `reviewer${counter}@example.com`;
+  await User.create({ name: `Reviewer ${counter}`, email, role: 'reviewer', passwordHash: await hashPassword('StrongPass123!') });
+  const agent = request.agent(app);
+  const res = await agent.post('/api/auth/login').send({ email, password: 'StrongPass123!' });
+  if (res.status !== 200) throw new Error(`reviewer login failed: ${res.status}`);
+  return { agent, user: res.body.data.user };
+}

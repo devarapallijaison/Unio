@@ -5,6 +5,7 @@ import * as brand from '../controllers/brand.controller.js';
 import * as creator from '../controllers/creator.controller.js';
 import * as project from '../controllers/project.controller.js';
 import * as pub from '../controllers/public.controller.js';
+import * as verify from '../controllers/verification.controller.js';
 import { dbState } from '../config/db.js';
 import { optionalAuth, requireAuth, requireRole } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimit.js';
@@ -99,6 +100,16 @@ router.get('/brand/invitations', asBrand, validate({ query: v.statusListQuery(IN
 router.patch('/brand/invitations/:id/cancel', asBrand, validate({ params: idParams }), brand.cancelInvitation);
 router.get('/brand/projects', asBrand, validate({ query: v.statusListQuery(PROJECT_STATUS) }), brand.listProjects);
 
+/* ---------- Verification ---------- */
+router.get('/creator/verifications', asCreator, verify.listOwn);
+router.post('/creator/verifications', asCreator, validate({ body: v.verificationCreateBody }), verify.create);
+router.put('/creator/verifications/:id', asCreator, validate({ params: idParams, body: v.verificationUpdateBody }), verify.update);
+router.delete('/creator/verifications/:id', asCreator, validate({ params: idParams }), verify.remove);
+
+const asReviewer = [requireAuth, requireRole('reviewer')];
+router.get('/review/verifications', asReviewer, validate({ query: v.reviewListQuery }), verify.listForReview);
+router.patch('/review/verifications/:id', asReviewer, validate({ params: idParams, body: v.reviewDecisionBody }), verify.decide);
+
 /* ---------- Projects (participants only) ---------- */
 router.get('/projects/:id', requireAuth, validate({ params: idParams }), project.getProject);
 router.patch('/projects/:id/status', requireAuth, validate({ params: idParams, body: v.projectStatusBody }), project.updateStatus);
@@ -108,5 +119,6 @@ router.patch(
   validate({ params: v.deliverableParams, body: v.deliverableBody }),
   project.updateDeliverable,
 );
+router.post('/projects/:id/feedback', requireAuth, requireRole('brand'), validate({ params: idParams, body: v.feedbackBody }), project.addFeedback);
 
 export default router;

@@ -13,3 +13,7 @@ export async function updateDeliverable(req, res) {
   const { id, deliverableId } = req.valid.params;
   ok(res, await projects.updateDeliverable(req.user, id, deliverableId, req.valid.body));
 }
+
+export async function addFeedback(req, res) {
+  ok(res, await projects.addFeedback(req.user, req.valid.params.id, req.valid.body), 201);
+}

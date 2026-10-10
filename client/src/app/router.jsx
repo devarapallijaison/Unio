@@ -66,6 +66,7 @@ export const router = createBrowserRouter([
               { path: 'applications', lazy: page(() => import('../pages/creator/CreatorApplications.jsx')) },
               { path: 'invitations', lazy: page(() => import('../pages/creator/CreatorInvitations.jsx')) },
               { path: 'projects', lazy: page(() => import('../pages/shared/ProjectsList.jsx'), { role: 'creator' }) },
+              { path: 'verification', lazy: page(() => import('../pages/creator/CreatorVerification.jsx')) },
             ],
           },
         ],
@@ -87,6 +88,16 @@ export const router = createBrowserRouter([
               { path: 'projects', lazy: page(() => import('../pages/shared/ProjectsList.jsx'), { role: 'brand' }) },
               { path: 'profile', lazy: page(() => import('../pages/brand/BrandProfile.jsx')) },
             ],
+          },
+        ],
+      },
+      {
+        path: 'review',
+        element: <ProtectedRoute role="reviewer" />,
+        children: [
+          {
+            element: <DashboardLayout role="reviewer" />,
+            children: [{ index: true, lazy: page(() => import('../pages/review/ReviewQueue.jsx')) }],
           },
         ],
       },

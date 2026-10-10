@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CalendarDays, ExternalLink, Link2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ExternalLink, Link2, Star } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { ConfirmAction } from '../../components/dashboard/Kit.jsx';
@@ -7,7 +7,7 @@ import { Avatar } from '../../components/ui/Avatar.jsx';
 import { StatusPill, Tag } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Alert, ErrorState, PageLoader } from '../../components/ui/Feedback.jsx';
-import { Input } from '../../components/ui/Form.jsx';
+import { Input, Textarea } from '../../components/ui/Form.jsx';
 import { isPlaceholderUrl } from '../../components/ui/MediaFrame.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
@@ -143,6 +143,62 @@ function DeliverableRow({ projectId, deliverable, index, role, locked }) {
   );
 }
 
+function FeedbackPanel({ project, role }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [error, setError] = useState('');
+  const submit = useProjectMutation(project._id, (body) => endpoints.projects.feedback(project._id, body), 'Thanks. Your feedback is now on the creator’s profile.');
+
+  if (project.status !== 'completed') return null;
+  const fb = project.feedback;
+
+  return (
+    <div className="rounded-lg border border-beige/70 bg-white p-5">
+      <p className="eyebrow">Client feedback</p>
+      {fb?.rating ? (
+        <>
+          <div className="mt-2 flex gap-0.5" aria-label={`${fb.rating} out of 5`}>
+            {Array.from({ length: 5 }).map((_, n) => (
+              <Star key={n} className={`size-4 ${n < fb.rating ? 'fill-forest text-forest' : 'text-beige'}`} strokeWidth={1.5} />
+            ))}
+          </div>
+          {fb.comment && <p className="mt-2 text-[14px] leading-relaxed">“{fb.comment}”</p>}
+          <p className="mt-2 text-[12px] text-muted">Left {formatDate(fb.createdAt)} · shown on the creator’s public profile</p>
+        </>
+      ) : role === 'brand' ? (
+        <form
+          className="mt-3 space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!rating) return setError('Choose a rating from 1 to 5.');
+            setError('');
+            submit.mutate({ rating, comment: comment.trim() });
+          }}
+        >
+          <fieldset>
+            <legend className="sr-only">Rating</legend>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} type="button" onClick={() => setRating(n)} aria-label={`${n} star${n > 1 ? 's' : ''}`} aria-pressed={rating === n} className="rounded p-0.5">
+                  <Star className={`size-6 ${n <= rating ? 'fill-forest text-forest' : 'text-beige hover:text-forest/60'}`} strokeWidth={1.5} />
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <Textarea aria-label="Comment" rows={3} maxLength={1000} placeholder="What was it like working together?" value={comment} onChange={(e) => setComment(e.target.value)} />
+          {(error || submit.error) && <Alert tone="error">{error || submit.error.message}</Alert>}
+          <p className="text-[12px] text-muted">Feedback is public, can be left once, and can’t be edited.</p>
+          <Button type="submit" size="sm" loading={submit.isPending}>
+            Publish feedback
+          </Button>
+        </form>
+      ) : (
+        <p className="mt-2 text-[14px] text-muted">The brand hasn’t left feedback for this project.</p>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectDetail() {
   const { id } = useParams();
   const query = useQuery({ queryKey: ['mine', 'project', id], queryFn: () => endpoints.projects.get(id) });
@@ -258,6 +314,7 @@ export default function ProjectDetail() {
           </section>
 
           <aside className="space-y-4">
+            <FeedbackPanel project={project} role={role} />
             <div className="rounded-lg border border-beige/70 bg-white p-5">
               <p className="eyebrow">Brief</p>
               <p className="mt-2 line-clamp-[8] text-[14px] leading-relaxed text-ink/85">{project.campaign?.brief}</p>

@@ -12,6 +12,16 @@ const deliverableSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+/** Written by the brand once, after the project is completed. Never seeded or generated. */
+const feedbackSchema = new mongoose.Schema(
+  {
+    rating: { type: Number, min: 1, max: 5, required: true },
+    comment: { type: String, trim: true, maxlength: 1000, default: '' },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
 const projectSchema = new mongoose.Schema(
   {
     campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', required: true },
@@ -21,6 +31,7 @@ const projectSchema = new mongoose.Schema(
     sourceId: { type: mongoose.Schema.Types.ObjectId, required: true },
     status: { type: String, enum: PROJECT_STATUS, default: 'not_started', index: true },
     deliverables: { type: [deliverableSchema], default: [] },
+    feedback: { type: feedbackSchema, default: undefined },
   },
   schemaOptions,
 );

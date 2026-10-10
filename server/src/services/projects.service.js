@@ -122,6 +122,19 @@ export async function updateProjectStatus(user, id, status) {
   return getProject(user, id);
 }
 
+/** Brand feedback: real, one-time, only after the work is completed. */
+export async function addFeedback(user, id, { rating, comment }) {
+  const project = await Project.findById(id);
+  if (!project) throw ApiError.notFound('Project not found');
+  const role = await participantRole(project, user);
+  if (role !== 'brand') throw ApiError.forbidden('Only the brand on this project can leave feedback');
+  if (project.status !== 'completed') throw ApiError.conflict('Feedback can be left once the project is completed', 'NOT_COMPLETED');
+  if (project.feedback?.rating) throw ApiError.conflict('Feedback has already been left for this project', 'ALREADY_REVIEWED');
+  project.feedback = { rating, comment: comment ?? '', createdAt: new Date() };
+  await project.save();
+  return getProject(user, id);
+}
+
 const DELIVERABLE_TRANSITIONS = {
   creator: { pending: ['submitted'], revision_requested: ['submitted'] },
   brand: { submitted: ['approved', 'revision_requested'] },

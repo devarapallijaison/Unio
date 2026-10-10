@@ -33,7 +33,7 @@ test('seed is idempotent and references are valid', async () => {
   const snapshot = async () =>
     Object.fromEntries(
       await Promise.all(
-        ['users', 'creatorProfiles', 'brandProfiles', 'portfolioItems', 'campaigns', 'applications', 'invitations', 'projects'].map(
+        ['users', 'creatorProfiles', 'brandProfiles', 'portfolioItems', 'campaigns', 'applications', 'invitations', 'projects', 'verificationSubmissions'].map(
           async (c) => [c, await db.collection(c).countDocuments()],
         ),
       ),
@@ -60,6 +60,14 @@ test('seed is idempotent and references are valid', async () => {
       if (doc.campaignId) assert.ok(campaignIds.has(String(doc.campaignId)), `${coll} has dangling campaignId`);
     }
   }
+  // Seed never fabricates verification outcomes.
+  assert.equal(await db.collection('verificationSubmissions').countDocuments({ status: { $in: ['VERIFIED', 'REJECTED'] } }), 0);
+  assert.ok(await db.collection('verificationSubmissions').countDocuments({ status: 'PENDING' }) > 0);
+  assert.ok(await db.collection('users').findOne({ role: 'reviewer' }));
+  // Re-seeding must not overwrite media a creator replaced.
+  await db.collection('portfolioItems').updateOne({}, { $set: { mediaUrl: 'https://real.cdn.test/x.jpg' } });
+  await seed();
+  assert.equal(await db.collection('portfolioItems').countDocuments({ mediaUrl: 'https://real.cdn.test/x.jpg' }), 1);
   const hash = (await db.collection('users').findOne({})).passwordHash;
   assert.match(hash, /^\$2[aby]\$/);
 });

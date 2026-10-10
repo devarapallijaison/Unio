@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ImagePlus, Pencil, Star, Trash2 } from 'lucide-react';
+import { ImagePlus, Pencil, ShieldCheck, Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -14,6 +14,8 @@ import { Checkbox, Input, Select, TagInput, Textarea, applyServerErrors } from '
 import { MediaFrame } from '../../components/ui/MediaFrame.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
+import { VerificationBadge } from '../../components/verification/VerificationBadge.jsx';
+import { Link } from 'react-router';
 import { CATEGORIES, TOOLS } from '../../lib/taxonomy.js';
 import { endpoints } from '../../services/api.js';
 
@@ -137,6 +139,8 @@ export default function CreatorPortfolio() {
   useDocumentTitle('Portfolio');
   const [editing, setEditing] = useState(null); // null | 'new' | item
   const query = useQuery({ queryKey: ['mine', 'portfolio'], queryFn: endpoints.creator.portfolio });
+  const verifications = useQuery({ queryKey: ['mine', 'verifications'], queryFn: endpoints.creator.verifications });
+  const statusFor = (id) => verifications.data?.find((v) => v.portfolioItemId === id)?.status;
 
   return (
     <>
@@ -181,6 +185,14 @@ export default function CreatorPortfolio() {
                   </Button>
                   <DeleteButton item={item} />
                 </div>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <VerificationBadge status={statusFor(item._id) ?? 'SELF_REPORTED'} />
+                {statusFor(item._id) !== 'VERIFIED' && (
+                  <Link to={`/creator/verification?portfolio=${item._id}`} className="inline-flex items-center gap-1 text-[12px] text-forest hover:underline">
+                    <ShieldCheck className="size-3.5" /> {statusFor(item._id) ? 'Manage evidence' : 'Verify this piece'}
+                  </Link>
+                )}
               </div>
               {item.tools?.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">

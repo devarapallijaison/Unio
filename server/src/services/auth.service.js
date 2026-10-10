@@ -12,7 +12,7 @@ export async function hashPassword(password) {
 }
 
 export async function getProfileForUser(user) {
-  if (!user) return null;
+  if (!user || user.role === 'reviewer') return null;
   const Model = user.role === 'creator' ? CreatorProfile : BrandProfile;
   return Model.findOne({ userId: user._id }).lean();
 }

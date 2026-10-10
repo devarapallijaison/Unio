@@ -3,6 +3,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { mapBy } from '../utils/db.js';
 import { ciExact, escapeRegex, pageResult, paginate } from '../utils/http.js';
 import { publicCreator } from './serializers.js';
+import { publicSignals, signalCounts } from './verification.service.js';
 
 const SORTS = {
   featured: { featured: -1, updatedAt: -1, _id: 1 },
@@ -47,8 +48,9 @@ export async function listCreators(q) {
     previews.set(key, list);
   }
 
+  const countsFor = await signalCounts(docs.map((d) => d._id));
   return pageResult(
-    docs.map((d) => ({ ...publicCreator(d), portfolioPreview: previews.get(String(d._id)) ?? [] })),
+    docs.map((d) => ({ ...publicCreator(d), ...countsFor(d._id), portfolioPreview: previews.get(String(d._id)) ?? [] })),
     total,
     pg,
   );
@@ -62,7 +64,7 @@ export async function getCreator(id, viewer) {
     .sort({ featured: -1, createdAt: -1 })
     .lean();
 
-  const result = { creator: publicCreator(profile), portfolio, viewer: null };
+  const result = { creator: publicCreator(profile), portfolio, signals: await publicSignals(profile), viewer: null };
 
   if (viewer?.role === 'brand') {
     const invitations = await Invitation.find({ brandId: viewer._id, creatorId: profile._id }, 'campaignId status').lean();

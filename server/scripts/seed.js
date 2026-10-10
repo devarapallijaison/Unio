@@ -22,6 +22,7 @@ import {
   PortfolioItem,
   Project,
   User,
+  VerificationSubmission,
 } from '../src/models/index.js';
 import { hashPassword } from '../src/services/auth.service.js';
 import { createProjectFromSource } from '../src/services/projects.service.js';
@@ -257,11 +258,11 @@ async function seedCreator(c, passwordHash) {
     await PortfolioItem.findOneAndUpdate(
       { creatorId: profile._id, title: item.title },
       {
-        $set: {
-          ...item,
+        $set: { ...item, featured: !!item.featured },
+        // Media links are only set on first insert so re-seeding never overwrites real uploads.
+        $setOnInsert: {
           mediaUrl: media(slug, item.mediaType === 'video' ? 'mp4' : 'jpg'),
           thumbnailUrl: media(`${slug}-thumb`),
-          featured: !!item.featured,
         },
       },
       { upsert: true, returnDocument: 'after', runValidators: true },
@@ -306,7 +307,7 @@ async function upsertInvitation(campaign, creator, message, status) {
 
 async function main() {
   await connectDB();
-  await Promise.all([User, CreatorProfile, BrandProfile, PortfolioItem, Campaign, Application, Invitation, Project].map((m) => m.syncIndexes()));
+  await Promise.all([User, CreatorProfile, BrandProfile, PortfolioItem, Campaign, Application, Invitation, Project, VerificationSubmission].map((m) => m.syncIndexes()));
   console.log(`Seeding database "${mongoose.connection.name}"...`);
 
   const passwordHash = await hashPassword(PASSWORD);
@@ -353,12 +354,54 @@ async function main() {
     );
   }
 
+  // Reviewer account (operator-provisioned role; cannot be chosen at sign-up).
+  await upsertUser({ name: 'UNIO Reviewer', email: 'reviewer@unio.example', role: 'reviewer' }, passwordHash);
+
+  // Verification demo: only SELF_REPORTED and PENDING claims are seeded. Nothing is ever seeded as
+  // VERIFIED or REJECTED; those states only come from a reviewer's decision. Evidence links point at
+  // the reserved .example domain and are clearly placeholders.
+  const claims = [
+    ['Meera Kulkarni', { type: 'tool', subject: 'Kling', submit: true }],
+    ['Meera Kulkarni', {
+      type: 'workflow', subject: 'Storyboard → Kling → CapCut', submit: true,
+      description: 'Hand-drawn storyboard, keyframes generated per shot, image-to-video in Kling, then edit, grade and sound design in CapCut.',
+    }],
+    ['Meera Kulkarni', { type: 'portfolio', portfolioTitle: 'Dewdrop serum — 15s vertical', submit: true }],
+    ['Rohan Das', { type: 'tool', subject: 'Blender', submit: true }],
+    ['Zoya Siddiqui', { type: 'tool', subject: 'After Effects', submit: false }],
+    ['Ananya Rao', { type: 'tool', subject: 'HeyGen', submit: false }],
+  ];
+  for (const [name, c] of claims) {
+    const creator = creators[name];
+    let { subject } = c;
+    let portfolioItemId;
+    if (c.type === 'portfolio') {
+      const item = await PortfolioItem.findOne({ creatorId: creator._id, title: c.portfolioTitle }, 'title').lean();
+      if (!item) continue;
+      subject = item.title;
+      portfolioItemId = item._id;
+    }
+    const key = c.type === 'portfolio' ? `portfolio:${portfolioItemId}` : `${c.type}:${subject.toLowerCase()}`;
+    await VerificationSubmission.updateOne(
+      { creatorId: creator._id, key },
+      {
+        $setOnInsert: {
+          creatorId: creator._id, type: c.type, key, subject, portfolioItemId, description: c.description ?? '',
+          evidenceUrls: c.submit ? [media(`${slugify(name)}-${slugify(subject)}-evidence`, 'html')] : [],
+          status: c.submit ? 'PENDING' : 'SELF_REPORTED',
+          submittedAt: c.submit ? new Date() : undefined,
+        },
+      },
+      { upsert: true },
+    );
+  }
+
   const counts = {};
-  for (const [name, model] of Object.entries({ users: User, creatorProfiles: CreatorProfile, brandProfiles: BrandProfile, portfolioItems: PortfolioItem, campaigns: Campaign, applications: Application, invitations: Invitation, projects: Project })) {
+  for (const [name, model] of Object.entries({ users: User, creatorProfiles: CreatorProfile, brandProfiles: BrandProfile, portfolioItems: PortfolioItem, campaigns: Campaign, applications: Application, invitations: Invitation, projects: Project, verificationSubmissions: VerificationSubmission })) {
     counts[name] = await model.countDocuments();
   }
   console.table(counts);
-  console.log(`Demo accounts use password from SEED_DEMO_PASSWORD. Example creator: meera-kulkarni@creators.unio.example · brand: team@verdant.unio.example`);
+  console.log(`Demo accounts use password from SEED_DEMO_PASSWORD. Example creator: meera-kulkarni@creators.unio.example · brand: team@verdant.unio.example · reviewer: reviewer@unio.example`);
   await mongoose.disconnect();
 }
 

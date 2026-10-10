@@ -1,17 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ImageOff, MapPin, Send } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, ImageOff, MapPin, Send, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { AvailabilityLabel } from '../../components/creators/CreatorCard.jsx';
 import { InviteDialog } from '../../components/invitations/InviteDialog.jsx';
 import { PortfolioGrid } from '../../components/portfolio/PortfolioGrid.jsx';
+import { ToolTag, VERIFICATION_LEGEND, VerificationBadge } from '../../components/verification/VerificationBadge.jsx';
 import { Avatar } from '../../components/ui/Avatar.jsx';
 import { DemoBadge, StatusPill, Tag } from '../../components/ui/Badge.jsx';
 import { Button, ButtonLink } from '../../components/ui/Button.jsx';
 import { Alert, EmptyState, ErrorState, PageLoader } from '../../components/ui/Feedback.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
-import { formatINR } from '../../lib/format.js';
+import { formatDate, formatINR, pluralize } from '../../lib/format.js';
 import { authLink } from '../../lib/returnTo.js';
 import { endpoints } from '../../services/api.js';
 import NotFoundPage from './NotFoundPage.jsx';
@@ -27,6 +28,59 @@ function TagBlock({ label, items }) {
         ))}
       </div>
     </div>
+  );
+}
+
+/** Track record from real platform data only. Renders nothing when there is nothing to show. */
+function TrackRecord({ signals, name }) {
+  const { completedProjects = 0, feedback = [], workflows = [] } = signals ?? {};
+  if (!completedProjects && !feedback.length && !workflows.length) return null;
+  return (
+    <section className="container-page grid gap-10 pb-16 lg:grid-cols-12">
+      {workflows.length > 0 && (
+        <div className="lg:col-span-6">
+          <p className="font-mono text-xs text-muted">Process</p>
+          <h2 className="mt-2 text-3xl">How {name.split(' ')[0]} works</h2>
+          <ul className="mt-6 space-y-4">
+            {workflows.map((w) => (
+              <li key={w.subject} className="border-t border-beige/80 pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-medium">{w.subject}</p>
+                  <VerificationBadge status={w.status} />
+                </div>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{w.description}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {(completedProjects > 0 || feedback.length > 0) && (
+        <div className={workflows.length ? 'lg:col-span-5 lg:col-start-8' : 'lg:col-span-8'}>
+          <p className="font-mono text-xs text-muted">Track record on UNIO</p>
+          <h2 className="mt-2 text-3xl">{pluralize(completedProjects, 'completed project')}</h2>
+          {feedback.length > 0 ? (
+            <ul className="mt-6 space-y-5">
+              {feedback.map((f, i) => (
+                <li key={i} className="border-t border-beige/80 pt-4">
+                  <div className="flex items-center gap-0.5 text-forest" aria-label={`${f.rating} out of 5`}>
+                    {Array.from({ length: 5 }).map((_, n) => (
+                      <Star key={n} className={`size-3.5 ${n < f.rating ? 'fill-forest' : 'text-beige'}`} strokeWidth={1.5} />
+                    ))}
+                  </div>
+                  {f.comment && <p className="mt-2 font-display text-lg leading-snug">“{f.comment}”</p>}
+                  <p className="mt-1.5 text-[13px] text-muted">
+                    {f.brandName}
+                    {f.campaignTitle ? ` · ${f.campaignTitle}` : ''} · {formatDate(f.createdAt, { month: 'short', year: 'numeric' })}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-[15px] text-muted">No written client feedback yet.</p>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -69,7 +123,7 @@ export default function CreatorDetailPage() {
     );
   }
 
-  const { portfolio, viewer } = query.data;
+  const { portfolio, viewer, signals } = query.data;
   const invitations = viewer?.invitations ?? [];
   const activeInvites = invitations.filter((i) => ['pending', 'accepted'].includes(i.status));
 
@@ -89,6 +143,11 @@ export default function CreatorDetailPage() {
               <div className="flex flex-wrap items-center gap-2">
                 {creator.isDemo && <DemoBadge />}
                 <AvailabilityLabel value={creator.availability} />
+                {signals?.verifiedCount > 0 && (
+                  <span className="inline-flex items-center gap-1 text-[13px] font-medium text-forest" title={VERIFICATION_LEGEND.VERIFIED}>
+                    <BadgeCheck className="size-4" strokeWidth={2} /> {signals.verifiedCount} verified {signals.verifiedCount === 1 ? 'claim' : 'claims'}
+                  </span>
+                )}
               </div>
               <h1 className="mt-3 text-5xl leading-[1] sm:text-6xl">{creator.displayName}</h1>
               {creator.location && (
@@ -112,7 +171,20 @@ export default function CreatorDetailPage() {
             <p className="mt-1 font-display text-4xl">{creator.startingPrice != null ? formatINR(creator.startingPrice) : 'On request'}</p>
             <div className="mt-6 space-y-5 border-t border-beige/60 pt-6">
               <TagBlock label="Skills" items={creator.skills} />
-              <TagBlock label="Tools" items={creator.tools} />
+              {signals?.tools?.length > 0 && (
+                <div>
+                  <p className="eyebrow mb-2.5">Tools</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {signals.tools.map((t) => (
+                      <ToolTag key={t.name} name={t.name} status={t.status} />
+                    ))}
+                  </div>
+                  <p className="mt-2 text-[12px] leading-snug text-muted">
+                    <BadgeCheck className="mr-1 inline size-3.5 text-forest" strokeWidth={2} />
+                    confirmed by a UNIO reviewer. Others are self-reported.
+                  </p>
+                </div>
+              )}
               <TagBlock label="Specialties" items={creator.specialties} />
             </div>
 
@@ -160,7 +232,7 @@ export default function CreatorDetailPage() {
             <p className="font-mono text-xs text-muted">{String(portfolio.length).padStart(2, '0')} pieces</p>
           </div>
           {portfolio.length ? (
-            <PortfolioGrid items={portfolio} />
+            <PortfolioGrid items={portfolio} statusById={signals?.portfolio} />
           ) : (
             <EmptyState icon={ImageOff} title="No portfolio pieces yet">
               {creator.displayName} hasn’t published work samples. You can still invite them and discuss references directly.
@@ -168,6 +240,12 @@ export default function CreatorDetailPage() {
           )}
         </div>
       </section>
+
+      {signals && (signals.completedProjects > 0 || signals.feedback?.length > 0 || signals.workflows?.length > 0) && (
+        <div className="border-t border-beige/80 pt-16">
+          <TrackRecord signals={signals} name={creator.displayName} />
+        </div>
+      )}
 
       {user?.role === 'brand' && (
         <InviteDialog open={inviteOpen} onClose={() => setInviteOpen(false)} creator={creator} existingInvitations={invitations} />

@@ -13,6 +13,8 @@ export const env = {
   isProd: process.env.NODE_ENV === 'production',
   isTest,
   port: Number(process.env.PORT) || 5000,
+  // Number of proxies in front of the API (Render = 1; Vercel rewrite + Render = 2).
+  trustProxy: Number(process.env.TRUST_PROXY) || 1,
   mongoUri: process.env.MONGODB_URI,
   clientOrigins: (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
     .split(',')

@@ -9,8 +9,8 @@ import routes from './routes/index.js';
 export function createApp() {
   const app = express();
 
-  // Render/Vercel sit behind a proxy; needed for secure cookies and rate-limit IPs.
-  if (env.isProd) app.set('trust proxy', 1);
+  // Render/Vercel sit behind proxies; needed for secure cookies and per-visitor rate limits.
+  if (env.isProd) app.set('trust proxy', env.trustProxy);
   app.disable('x-powered-by');
 
   app.use(helmet());

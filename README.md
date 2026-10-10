@@ -146,13 +146,15 @@ API reference: every route is in [`server/src/routes/index.js`](server/src/route
 
 In production the cookie is `Secure; SameSite=None`, so the API must be served over HTTPS. In Atlas → Network Access, allow the host's outbound IPs (or `0.0.0.0/0`).
 
+**How the two connect:** `client/vercel.json` rewrites `/api/*` to the Render API, so the browser only ever talks to the Vercel domain. The session cookie is then first-party, which works in Safari and on iOS. If you rename the Render service, update the URL in `vercel.json`. Set `TRUST_PROXY=2` on Render so rate limits see each visitor's IP.
+
 **Web on Vercel:**
 
 | Setting | Value |
 |---|---|
 | Root directory | `client` |
 | Framework preset | Vite |
-| `VITE_API_URL` | `https://<your-api-host>/api` |
+| `VITE_API_URL` | leave empty; the `/api` rewrite handles it |
 
 `client/vercel.json` rewrites all routes to the SPA.
 

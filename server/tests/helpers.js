@@ -1,0 +1,56 @@
+process.env.NODE_ENV = 'test';
+
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
+import mongoose from 'mongoose';
+import request from 'supertest';
+
+let replSet;
+
+export async function startDb() {
+  replSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
+  await mongoose.connect(replSet.getUri('unio_test'));
+  await mongoose.connection.syncIndexes();
+  const { createApp } = await import('../src/app.js');
+  return createApp();
+}
+
+export async function stopDb() {
+  await mongoose.disconnect();
+  await replSet?.stop();
+}
+
+export async function resetDb() {
+  const collections = await mongoose.connection.db.collections();
+  await Promise.all(collections.map((c) => c.deleteMany({})));
+}
+
+let counter = 0;
+/** Registers a user and returns a supertest agent that carries its session cookie. */
+export async function signUp(app, role, overrides = {}) {
+  counter += 1;
+  const agent = request.agent(app);
+  const body = {
+    name: `${role} ${counter}`,
+    email: `${role}${counter}@example.com`,
+    password: 'StrongPass123!',
+    role,
+    ...overrides,
+  };
+  const res = await agent.post('/api/auth/register').send(body);
+  if (res.status !== 201) throw new Error(`signUp failed: ${res.status} ${JSON.stringify(res.body)}`);
+  return { agent, user: res.body.data.user, profile: res.body.data.profile, body };
+}
+
+export const campaignPayload = (overrides = {}) => ({
+  title: 'AI Summer Skincare Campaign',
+  brief: 'Create a short vertical product advertisement for a summer skincare launch.',
+  category: 'Beauty',
+  budgetMin: 5000,
+  budgetMax: 15000,
+  deadline: '2026-12-01T00:00:00.000Z',
+  requiredSkills: ['AI Video', 'Product Advertising'],
+  requiredTools: ['Kling', 'Runway'],
+  deliverables: [{ title: 'Vertical video', description: '15–30 seconds, 9:16', quantity: 2 }],
+  status: 'open',
+  ...overrides,
+});

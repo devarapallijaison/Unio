@@ -109,6 +109,7 @@ export const endpoints = {
     invitations: (params) => api.get('/brand/invitations', params),
     cancelInvitation: (id) => api.patch(`/brand/invitations/${id}/cancel`),
     projects: (params) => api.get('/brand/projects', params),
+    draftBrief: (body) => api.post('/brand/briefs/draft', body),
   },
   review: {
     list: (params) => api.get('/review/verifications', params),

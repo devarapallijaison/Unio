@@ -3,6 +3,7 @@ import * as campaigns from '../services/campaigns.service.js';
 import * as invitations from '../services/invitations.service.js';
 import { recommendCreators } from '../services/matching.service.js';
 import * as profiles from '../services/profile.service.js';
+import { generateDraft } from '../services/briefBuilder.service.js';
 import * as projects from '../services/projects.service.js';
 import { ok } from '../utils/http.js';
 
@@ -64,4 +65,8 @@ export async function cancelInvitation(req, res) {
 
 export async function listProjects(req, res) {
   ok(res, await projects.listProjects({ brandId: req.user._id }, req.valid.query));
+}
+
+export async function draftBrief(req, res) {
+  ok(res, await generateDraft(req.valid.body));
 }

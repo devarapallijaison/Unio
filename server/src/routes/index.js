@@ -8,7 +8,7 @@ import * as pub from '../controllers/public.controller.js';
 import * as verify from '../controllers/verification.controller.js';
 import { dbState } from '../config/db.js';
 import { optionalAuth, requireAuth, requireRole } from '../middleware/auth.js';
-import { authLimiter } from '../middleware/rateLimit.js';
+import { authLimiter, briefDraftLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 import {
   APPLICATION_STATUS,
@@ -67,6 +67,7 @@ const asBrand = [requireAuth, requireRole('brand')];
 router.get('/brand/profile', asBrand, brand.getProfile);
 router.put('/brand/profile', asBrand, validate({ body: v.brandProfileBody }), brand.updateProfile);
 router.get('/brand/campaigns', asBrand, validate({ query: v.brandListQuery }), brand.listCampaigns);
+router.post('/brand/briefs/draft', asBrand, briefDraftLimiter, validate({ body: v.briefDraftBody }), brand.draftBrief);
 router.post('/brand/campaigns', asBrand, validate({ body: v.campaignBody }), brand.createCampaign);
 router.get('/brand/campaigns/:id', asBrand, validate({ params: idParams }), brand.getCampaign);
 router.put('/brand/campaigns/:id', asBrand, validate({ params: idParams, body: v.campaignBody }), brand.updateCampaign);

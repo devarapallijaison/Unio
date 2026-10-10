@@ -229,7 +229,7 @@ function EntryCard({ entry, onEdit }) {
   });
 
   return (
-    <li className="rounded-lg border border-beige/70 bg-white p-5">
+    <li className="min-w-0 rounded-lg border border-beige/70 bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-medium">{entry.subject}</p>
@@ -353,7 +353,7 @@ export default function CreatorVerification() {
             return (
               <section key={type}>
                 <h2 className="mb-3 font-sans text-[15px] font-semibold">{title}</h2>
-                <ul className="grid gap-3 lg:grid-cols-2">
+                <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
                   {items.map((e) => (
                     <EntryCard key={e._id} entry={e} onEdit={(entry) => setEditing({ entry })} />
                   ))}

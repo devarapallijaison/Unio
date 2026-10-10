@@ -20,6 +20,9 @@ export const env = {
     .filter(Boolean),
   jwtSecret: required('JWT_SECRET', isTest ? 'test-secret' : undefined),
   cookieName: process.env.COOKIE_NAME || 'unio_session',
+  // AI Brief Builder. Optional: without a key the endpoint returns a labelled template draft.
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+  briefModel: process.env.BRIEF_AI_MODEL || 'claude-opus-5-5',
   // Comma-separated DNS servers used when the OS resolver cannot answer SRV lookups (common on Windows).
   dnsServers: (process.env.DNS_SERVERS || '').split(',').map((s) => s.trim()).filter(Boolean),
 };

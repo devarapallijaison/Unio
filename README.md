@@ -35,6 +35,9 @@ npm run dev                         # API on :5000, web on http://localhost:5173
 | `COOKIE_NAME` | Session cookie name (default `unio_session`). |
 | `SEED_DEMO_PASSWORD` | Password given to every seeded demo account. For local or hackathon use only. |
 | `DNS_SERVERS` | Optional. Set it if Node can't resolve `mongodb+srv` records (common on Windows), e.g. `8.8.8.8,1.1.1.1`. The app also retries with public DNS automatically. |
+| `REVIEWER_PASSWORD` | Password used by `npm run create-reviewer` when provisioning a verification reviewer. |
+| `ANTHROPIC_API_KEY` | Optional. Enables the AI Brief Builder (Claude). Without it, “Create with AI” returns a clearly labelled template draft. Server-side only. |
+| `BRIEF_AI_MODEL` | Optional. Claude model for the Brief Builder (default `claude-opus-5-5`). |
 | `CLOUDINARY_*` | Optional. Media is stored as URLs, so the app works without them. |
 
 The client has one optional variable, `VITE_API_URL` (see `client/.env.example`). Leave it empty in development, where Vite proxies `/api`. Never put secrets in `VITE_*` variables: they end up in the browser bundle.
@@ -45,6 +48,7 @@ The client has one optional variable, `VITE_API_URL` (see `client/.env.example`)
 
 - **5 team member profiles** (Fawaz Ahmed, Sai Charitha, Roha Nawaz, Shameer, Jaison). These are **drafts**: skills, tools and bios are suggestions to be edited by each person, and their emails are `firstname.lastname@unio.example`.
 - **10 fictional demo creators** (`isDemo: true`). The UI labels them "Demo".
+- **1 reviewer account**, `reviewer@unio.example`, plus a few demo verification claims. These are only ever SELF_REPORTED or PENDING: nothing is seeded as verified.
 - **3 demo brands**, 8 campaigns (open, draft and closed), 21 portfolio items, plus applications, invitations and 2 projects.
 
 Every demo account uses the `SEED_DEMO_PASSWORD` password. Useful logins:
@@ -58,13 +62,51 @@ Every demo account uses the `SEED_DEMO_PASSWORD` password. Useful logins:
 
 Portfolio media uses placeholder URLs on the reserved `media.unio.example` domain. The UI renders these as clearly labelled "media pending" artwork, never as broken images. Upload real files to Cloudinary (or any host), then replace the URLs from the creator's Portfolio page before a demo.
 
+## Creator verification
+
+Creators can back up three kinds of claim with evidence links: the **tools** they use, their **AI workflows**, and individual **portfolio pieces**.
+
+| Status | Meaning | Public display |
+|---|---|---|
+| `SELF_REPORTED` | Listed by the creator, no evidence reviewed | “Self-reported” (no badge) |
+| `PENDING` | Evidence submitted, waiting for a reviewer | Clock icon, “Pending review” |
+| `VERIFIED` | A reviewer confirmed the evidence | Check mark, “Verified” |
+| `REJECTED` | Evidence not sufficient; the reviewer's note goes to the creator | Shown publicly as self-reported |
+
+- **Creator side:** the **Verification** page in the creator dashboard (`/creator/verification`). Each portfolio piece also has a “Verify this piece” link. Creator API payloads have no `status` field, so a creator can only save a claim (SELF_REPORTED) or submit it (PENDING).
+- **Reviewer side:** the review queue at `/review`. A reviewer opens the evidence, then marks the claim verified or rejects it with a note. Reviewers use a separate `reviewer` role that can't be chosen at sign-up.
+- **Creating a reviewer:** set `REVIEWER_PASSWORD` in `server/.env`, then run:
+  ```bash
+  npm --prefix server run create-reviewer -- reviewer@yourdomain.com "Reviewer Name"
+  ```
+- **Automatic resets:** VERIFIED claims are locked. Changing a verified portfolio piece's media sends its claim back to PENDING.
+- **Track record:** “Completed on UNIO” counts real completed projects. Client feedback appears only after a brand rates a completed project, once per project. Nothing is shown when there is no data.
+
+## AI Brief Builder
+
+When creating a campaign, a brand can click **Create with AI** and describe the idea in a sentence. `POST /api/brand/briefs/draft` returns these fields, which fill the existing form as a **draft**:
+
+- title, category
+- objective, target audience and creative style (written into the brief as labelled sections)
+- deliverables
+- skills and tools
+- budget range
+- deadline
+
+The brand edits anything, can undo, and saves through the normal campaign endpoint.
+
+- **With `ANTHROPIC_API_KEY`:** Claude generates the draft using the Anthropic SDK's structured outputs. Every response is then validated and normalized on the server (budgets swapped or capped, deadline clamped to 3–365 days, tags deduplicated, empty deliverables dropped), and anything filled with a default is reported as a warning.
+- **Without a key, or on request:** a keyword-based template draft is returned instead, labelled “Template draft (no AI used)”.
+- **Errors:** rate limits, timeouts, refusals, malformed responses and API errors each return a clear error code, and the UI offers “Use template instead”.
+- **Rate limit:** each brand is limited to 10 drafts per 15 minutes. The key never leaves the server.
+
 ## Tests
 
 ```bash
 npm test
 ```
 
-27 API integration tests (Node test runner + Supertest) run against an in-memory MongoDB replica set. They cover:
+47 API integration tests (Node test runner + Supertest) run against an in-memory MongoDB replica set. Claude calls are stubbed with a fake client, so no API key is needed. They cover:
 
 - auth
 - role and ownership checks (401, 403 and 404 cases)
@@ -74,6 +116,9 @@ npm test
 - deliverable and project state transitions
 - matching
 - seed idempotency and reference integrity
+- verification permissions and status lifecycle
+- project feedback rules
+- brief draft normalization, template fallback and AI error mapping
 
 ## How it works
 

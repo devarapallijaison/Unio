@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { z } from 'zod';
+import { AiBriefBuilder } from '../../components/campaigns/AiBriefBuilder.jsx';
 import { PageHeader } from '../../components/layout/Layouts.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Alert, ErrorState, PageLoader } from '../../components/ui/Feedback.jsx';
@@ -95,7 +96,33 @@ export default function CampaignFormPage() {
   const existing = useQuery({ queryKey: ['mine', 'brand-campaign', id], queryFn: () => endpoints.brand.campaign(id), enabled: isEdit });
 
   const form = useForm({ resolver: zodResolver(schema), defaultValues: EMPTY });
-  const { register, handleSubmit, control, reset, formState, setError, watch } = form;
+  const { register, handleSubmit, control, reset, formState, setError, watch, getValues } = form;
+  const [beforeDraft, setBeforeDraft] = useState(null);
+
+  // AI/template drafts only fill the form (as a draft); the brand edits and saves explicitly.
+  const applyDraft = (fields) => {
+    if (!beforeDraft) setBeforeDraft(getValues());
+    reset(
+      {
+        ...EMPTY,
+        title: fields.title,
+        category: fields.category,
+        brief: fields.brief,
+        budgetMin: fields.budgetMin ?? '',
+        budgetMax: fields.budgetMax ?? '',
+        deadline: fields.deadline ?? '',
+        requiredSkills: fields.requiredSkills ?? [],
+        requiredTools: fields.requiredTools ?? [],
+        deliverables: fields.deliverables?.length ? fields.deliverables : EMPTY.deliverables,
+        status: 'draft',
+      },
+      { keepDefaultValues: true },
+    );
+  };
+  const undoDraft = () => {
+    if (beforeDraft) reset(beforeDraft, { keepDefaultValues: true });
+    setBeforeDraft(null);
+  };
   const deliverables = useFieldArray({ control, name: 'deliverables' });
 
   useEffect(() => {
@@ -130,6 +157,7 @@ export default function CampaignFormPage() {
           Publish this campaign as <strong>Open</strong> and you’ll be taken back to the creator to send your invitation.
         </Alert>
       )}
+      {!isEdit && <AiBriefBuilder onApply={applyDraft} onUndo={undoDraft} canUndo={!!beforeDraft} />}
       <form onSubmit={handleSubmit((v) => save.mutate(v))} noValidate className="space-y-6">
         <section className="grid gap-5 rounded-lg border border-beige/70 bg-white p-6">
           <Input label="Campaign title" required placeholder="e.g. Summer SPF launch — vertical ads" error={formState.errors.title?.message} {...register('title')} />

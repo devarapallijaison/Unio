@@ -1,5 +1,20 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { env } from '../config/env.js';
+
+/** Per-brand limit for AI brief drafts (each call costs money and takes several seconds). */
+export const briefDraftLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: env.isTest ? 1000 : 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  // Route sits behind requireAuth, so the brand's id is the key; IP is only a safety fallback.
+  keyGenerator: (req) => (req.user ? `brief:${req.user._id}` : ipKeyGenerator(req.ip)),
+  handler: (_req, res) =>
+    res.status(429).json({
+      success: false,
+      error: { code: 'RATE_LIMITED', message: 'You’ve generated several drafts in a short time. Wait a few minutes, or use the template.', details: [] },
+    }),
+});
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

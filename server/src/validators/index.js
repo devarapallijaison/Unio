@@ -208,3 +208,9 @@ export const feedbackBody = z.object({
   rating: z.coerce.number().int().min(1).max(5),
   comment: text(1000).optional(),
 });
+
+/* ---------- AI brief builder ---------- */
+export const briefDraftBody = z.object({
+  idea: text(2000, 15).refine((v) => v.split(/\s+/).length >= 3, 'Describe the idea in a few more words'),
+  mode: z.enum(['auto', 'template']).default('auto'),
+});

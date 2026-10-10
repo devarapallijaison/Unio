@@ -3,7 +3,7 @@ import { after, afterEach, before, beforeEach, describe, test } from 'node:test'
 import Anthropic from '@anthropic-ai/sdk';
 import request from 'supertest';
 import { campaignPayload, resetDb, signUp, startDb, stopDb } from './helpers.js';
-import { __setClientForTests, normalizeDraft, templateDraft } from '../src/services/briefBuilder.service.js';
+import { __setClientForTests, __setFetchForTests, normalizeDraft, templateDraft } from '../src/services/briefBuilder.service.js';
 
 /** Build an SDK error instance without depending on constructor signatures. */
 const sdkError = (Cls, props = {}) => Object.assign(Object.create(Cls.prototype), { message: 'mock', ...props });
@@ -96,7 +96,10 @@ describe('POST /api/brand/briefs/draft', () => {
   });
   after(stopDb);
   beforeEach(resetDb);
-  afterEach(() => __setClientForTests(null));
+  afterEach(() => {
+    __setClientForTests(null);
+    __setFetchForTests(null);
+  });
 
   const IDEA = { idea: 'Short vertical ads for our summer SPF gel, fresh and honest, budget around 15k' };
 
@@ -171,5 +174,74 @@ describe('POST /api/brand/briefs/draft', () => {
     const { fields } = (await agent.post('/api/brand/briefs/draft').send(IDEA)).body.data;
     const res = await agent.post('/api/brand/campaigns').send({ ...campaignPayload(), ...fields, status: 'open' });
     assert.equal(res.status, 201);
+  });
+});
+
+describe('OpenRouter provider', () => {
+  let app;
+  before(async () => {
+    app = await startDb();
+  });
+  after(stopDb);
+  beforeEach(resetDb);
+  afterEach(() => {
+    __setClientForTests(null);
+    __setFetchForTests(null);
+  });
+
+  const IDEA = { idea: 'Short vertical ads for our summer SPF gel, fresh and honest, budget around 15k' };
+  const reply = (status, body) => async () => ({ ok: status >= 200 && status < 300, status, json: async () => body });
+  const completion = (content, finish = 'stop') => ({
+    model: 'anthropic/claude-opus-5.5',
+    choices: [{ finish_reason: finish, message: { role: 'assistant', content } }],
+  });
+
+  test('sends a JSON-schema request and normalizes the reply (even if fenced)', async () => {
+    const calls = [];
+    __setFetchForTests(async (url, init) => {
+      calls.push({ url, init });
+      return reply(200, completion('```json\n' + JSON.stringify(GOOD_DRAFT) + '\n```'))();
+    });
+    const { agent } = await signUp(app, 'brand');
+    const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.source, 'ai');
+    assert.equal(res.body.data.model, 'anthropic/claude-opus-5.5');
+    assert.equal(res.body.data.fields.category, 'Beauty');
+    const sent = JSON.parse(calls[0].init.body);
+    assert.match(calls[0].url, /openrouter\.ai\/api\/v1\/chat\/completions/);
+    assert.equal(sent.response_format.type, 'json_schema');
+    assert.ok(sent.response_format.json_schema.schema.properties.deliverables);
+    assert.match(calls[0].init.headers.Authorization, /^Bearer /);
+  });
+
+  test('Anthropic is preferred when both providers are configured', async () => {
+    __setFetchForTests(async () => assert.fail('OpenRouter should not be called'));
+    __setClientForTests({ beta: { messages: { parse: async () => ({ stop_reason: 'end_turn', model: 'claude-opus-5-5', parsed_output: GOOD_DRAFT }) } } });
+    const { agent } = await signUp(app, 'brand');
+    const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
+    assert.equal(res.body.data.model, 'claude-opus-5-5');
+  });
+
+  test('maps OpenRouter failures to clear errors', async () => {
+    const { agent } = await signUp(app, 'brand');
+    const cases = [
+      [reply(429, { error: { code: 429, message: 'rate limited' } }), 429, 'AI_RATE_LIMITED'],
+      [reply(402, { error: { code: 402, message: 'insufficient credits' } }), 502, 'AI_NO_CREDITS'],
+      [reply(401, { error: { code: 401, message: 'bad key' } }), 502, 'AI_MISCONFIGURED'],
+      [reply(503, { error: { code: 503, message: 'no provider' } }), 502, 'AI_UNAVAILABLE'],
+      [reply(200, { error: { code: 502, message: 'upstream error' } }), 502, 'AI_UNAVAILABLE'],
+      [reply(200, completion('Sorry, here is some prose, not JSON')), 502, 'AI_BAD_RESPONSE'],
+      [reply(200, completion('{"title": "cut off', 'length')), 502, 'AI_BAD_RESPONSE'],
+      [reply(200, completion('', 'content_filter')), 422, 'AI_REFUSED'],
+      [async () => { const e = new Error('aborted'); e.name = 'AbortError'; throw e; }, 504, 'AI_TIMEOUT'],
+      [async () => { throw new TypeError('fetch failed'); }, 502, 'AI_UNAVAILABLE'],
+    ];
+    for (const [impl, status, code] of cases) {
+      __setFetchForTests(impl);
+      const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
+      assert.equal(res.status, status, code);
+      assert.equal(res.body.error.code, code);
+    }
   });
 });

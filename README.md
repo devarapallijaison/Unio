@@ -38,6 +38,8 @@ npm run dev                         # API on :5000, web on http://localhost:5173
 | `REVIEWER_PASSWORD` | Password used by `npm run create-reviewer` when provisioning a verification reviewer. |
 | `ANTHROPIC_API_KEY` | Optional. Enables the AI Brief Builder (Claude). Without it, “Create with AI” returns a clearly labelled template draft. Server-side only. |
 | `BRIEF_AI_MODEL` | Optional. Claude model for the Brief Builder (default `claude-opus-5-5`). |
+| `OPENROUTER_API_KEY` | Optional alternative provider (`sk-or-...` key). Used only when `ANTHROPIC_API_KEY` is empty. |
+| `OPENROUTER_MODEL` | Optional. OpenRouter model ID (default `anthropic/claude-opus-5.5`, which needs credits). Without credits, a free model that supports structured outputs works, e.g. `nvidia/nemotron-3-super-120b-a12b:free`. |
 | `CLOUDINARY_*` | Optional. Media is stored as URLs, so the app works without them. |
 
 The client has one optional variable, `VITE_API_URL` (see `client/.env.example`). Leave it empty in development, where Vite proxies `/api`. Never put secrets in `VITE_*` variables: they end up in the browser bundle.
@@ -96,6 +98,7 @@ When creating a campaign, a brand can click **Create with AI** and describe the 
 The brand edits anything, can undo, and saves through the normal campaign endpoint.
 
 - **With `ANTHROPIC_API_KEY`:** Claude generates the draft using the Anthropic SDK's structured outputs. Every response is then validated and normalized on the server (budgets swapped or capped, deadline clamped to 3–365 days, tags deduplicated, empty deliverables dropped), and anything filled with a default is reported as a warning.
+- **With `OPENROUTER_API_KEY` (and no Anthropic key):** the same request goes to OpenRouter with a JSON-schema response format, routed only to providers that support it. The reply goes through the same validation and normalization. An empty OpenRouter account returns `AI_NO_CREDITS`.
 - **Without a key, or on request:** a keyword-based template draft is returned instead, labelled “Template draft (no AI used)”.
 - **Errors:** rate limits, timeouts, refusals, malformed responses and API errors each return a clear error code, and the UI offers “Use template instead”.
 - **Rate limit:** each brand is limited to 10 drafts per 15 minutes. The key never leaves the server.
@@ -106,7 +109,7 @@ The brand edits anything, can undo, and saves through the normal campaign endpoi
 npm test
 ```
 
-47 API integration tests (Node test runner + Supertest) run against an in-memory MongoDB replica set. Claude calls are stubbed with a fake client, so no API key is needed. They cover:
+50 API integration tests (Node test runner + Supertest) run against an in-memory MongoDB replica set. Claude and OpenRouter calls are stubbed, so no API key is needed. They cover:
 
 - auth
 - role and ownership checks (401, 403 and 404 cases)

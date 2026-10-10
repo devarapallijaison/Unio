@@ -23,6 +23,9 @@ export const env = {
   // AI Brief Builder. Optional: without a key the endpoint returns a labelled template draft.
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   briefModel: process.env.BRIEF_AI_MODEL || 'claude-opus-5-5',
+  // Alternative provider: used only when ANTHROPIC_API_KEY is not set.
+  openRouterApiKey: process.env.OPENROUTER_API_KEY || '',
+  openRouterModel: process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-5.5',
   // Comma-separated DNS servers used when the OS resolver cannot answer SRV lookups (common on Windows).
   dnsServers: (process.env.DNS_SERVERS || '').split(',').map((s) => s.trim()).filter(Boolean),
 };

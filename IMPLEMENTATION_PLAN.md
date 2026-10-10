@@ -5,7 +5,21 @@ Status legend: `[ ]` todo · `[~]` in progress · `[x]` done and tested.
 
 ---
 
-## 0. Current state (2026-10-10)
+## Status (2026-10-10)
+
+Phases 1–10 are implemented. Verified:
+- 27 API tests pass (`npm test`)
+- client production build passes
+- 12-step browser walkthrough passes: apply and invite intent resume, accept → project, wrong-role page, open-redirect guard
+- no horizontal overflow at 360, 768 or 1024px across 24 pages
+
+Open items:
+- **Atlas connection.** Blocked by the Atlas Network Access IP allowlist. Add the dev machine IP, then run `npm run seed`. Until then use `npm run dev:memory`.
+- **Deployment.**
+- **Real media.** Replace the placeholder portfolio URLs.
+- **Team profiles.** Team members confirm their draft profiles.
+
+## 0. Initial state (2026-10-10)
 
 - Repo contains only `README.md`. Remote: `github.com/devarapallijaison/Unio`.
 - Local toolchain: Node 25.7, npm 11.10.
@@ -116,17 +130,18 @@ Button (primary/secondary/ghost/danger, loading state), Input, Textarea, Select,
 Each phase ends with: build passes, tests pass, manual check, small commit(s) (`feat(scope): …`).
 
 ### Phase 1 — Scaffold & infrastructure
-- [ ] Root `.gitignore` (node_modules, .env, dist, coverage), copy spec to `PROJECT_SPEC.md`
-- [ ] `server/`: Express app, helmet, CORS, cookie-parser, JSON limit, `/api/health` (reports DB state), central error + 404 handlers, env validation, `db.js`
-- [ ] `server/.env.example` exactly as spec Section 13
-- [ ] `client/`: Vite + React + Tailwind, tokens, fonts, router skeleton, layout shell, Logo SVGs, favicon
-- [ ] Root scripts: `npm run dev` runs both (concurrently)
+- [x] Root `.gitignore` (node_modules, .env, dist, coverage)
+- [ ] Copy the master spec into `PROJECT_SPEC.md` (file not in repo yet)
+- [x] `server/`: Express app, helmet, CORS, cookie-parser, JSON limit, `/api/health` (reports DB state), central error + 404 handlers, env validation, `db.js`
+- [x] `server/.env.example` exactly as spec Section 13
+- [x] `client/`: Vite + React + Tailwind, tokens, fonts, router skeleton, layout shell, Logo SVGs, favicon
+- [x] Root scripts: `npm run dev` runs both (concurrently)
 - **Checkpoint 1:** both start locally; `/api/health` → `{ success: true, data: { status: 'ok', db: 'connected' } }` against Atlas
 
 ### Phase 2 — Models & seed
-- [ ] 8 models with exact fields, enums, refs, timestamps, indexes (spec §7)
-- [ ] Model tests: required fields, enums, `budgetMax >= budgetMin`, unique compounds
-- [ ] `scripts/seed.js`: idempotent upserts keyed by email / natural keys
+- [x] 8 models with exact fields, enums, refs, timestamps, indexes (spec §7)
+- [x] Model tests: required fields, enums, `budgetMax >= budgetMin`, unique compounds
+- [x] `scripts/seed.js`: idempotent upserts keyed by email / natural keys
   - 5 team members (Fawaz Ahmed, Sai Charitha, Roha Nawaz, Shameer, Jaison) — editable descriptions labelled as draft, placeholder photos
   - 10 fictional demo creators `isDemo: true`, `@example.com` emails
   - 3 demo brands, ~8 campaigns (mix open/closed/draft), portfolio items, sample applications/invitations/projects
@@ -134,56 +149,57 @@ Each phase ends with: build passes, tests pass, manual check, small commit(s) (`
 - **Checkpoint 2:** run seed twice → identical counts, all refs valid
 
 ### Phase 3 — Auth
-- [ ] `POST /register` (creates user + empty creator/brand profile), `/login` (generic 401), `/logout`, `GET /me`
-- [ ] `requireAuth`, `requireRole('creator'|'brand')` middleware
-- [ ] Frontend: AuthContext, Login, Register (role cards), `ProtectedRoute` with loading / logged-out / wrong-role states, safe `returnTo` handling
-- [ ] Tests: register both roles, duplicate email 409, bad login 401, `/me` with/without cookie, passwordHash never returned
+- [x] `POST /register` (creates user + empty creator/brand profile), `/login` (generic 401), `/logout`, `GET /me`
+- [x] `requireAuth`, `requireRole('creator'|'brand')` middleware
+- [x] Frontend: AuthContext, Login, Register (role cards), `ProtectedRoute` with loading / logged-out / wrong-role states, safe `returnTo` handling
+- [x] Tests: register both roles, duplicate email 409, bad login 401, `/me` with/without cookie, passwordHash never returned
 - **Checkpoint 4**
 
 ### Phase 4 — Public discovery: creators
-- [ ] `GET /api/creators` (search via text index, skill/tool/specialty/availability/price filters, sort: featured/newest/price), pagination
-- [ ] `GET /api/creators/:id` with portfolio; no private fields
-- [ ] Pages: `/creators` (filter sidebar → drawer on mobile, URL-synced filters), `/creators/:id` (editorial profile, portfolio grid, lightbox, Invite CTA)
+- [x] `GET /api/creators` (search via text index, skill/tool/specialty/availability/price filters, sort: featured/newest/price), pagination
+- [x] `GET /api/creators/:id` with portfolio; no private fields
+- [x] Pages: `/creators` (filter sidebar → drawer on mobile, URL-synced filters), `/creators/:id` (editorial profile, portfolio grid, lightbox, Invite CTA)
 - **Checkpoint 3 (creators)**
 
 ### Phase 5 — Campaigns (public + brand management)
-- [ ] `GET /api/campaigns` (open only), `/:id`
-- [ ] Brand: profile GET/PUT, campaigns CRUD, status PATCH; `brandId` from session only
-- [ ] Pages: `/campaigns`, `/campaigns/:id`, `/brand/dashboard`, `/brand/campaigns`, `/new`, `/:id/edit` (deliverables repeater)
-- [ ] Tests: non-owner edit → 404, public hides draft/closed
+- [x] `GET /api/campaigns` (open only), `/:id`
+- [x] Brand: profile GET/PUT, campaigns CRUD, status PATCH; `brandId` from session only
+- [x] Pages: `/campaigns`, `/campaigns/:id`, `/brand/dashboard`, `/brand/campaigns`, `/new`, `/:id/edit` (deliverables repeater)
+- [x] Tests: non-owner edit → 404, public hides draft/closed
 
 ### Phase 6 — Creator profile, portfolio, applications
-- [ ] Creator profile GET/PUT, portfolio CRUD (owner-scoped)
-- [ ] `POST /api/campaigns/:id/applications` (open campaign, profile exists, no duplicate), list own, withdraw pending
-- [ ] Brand: `GET /brand/campaigns/:id/applications`, `PATCH /brand/applications/:id/status` → accept creates project
-- [ ] Pages: `/creator/dashboard` (incl. profile completeness), `/creator/profile/edit`, `/creator/portfolio`, `/creator/applications`, `/brand/campaigns/:id/applicants`; Apply flow with intent resume + confirmation step
+- [x] Creator profile GET/PUT, portfolio CRUD (owner-scoped)
+- [x] `POST /api/campaigns/:id/applications` (open campaign, profile exists, no duplicate), list own, withdraw pending
+- [x] Brand: `GET /brand/campaigns/:id/applications`, `PATCH /brand/applications/:id/status` → accept creates project
+- [x] Pages: `/creator/dashboard` (incl. profile completeness), `/creator/profile/edit`, `/creator/portfolio`, `/creator/applications`, `/brand/campaigns/:id/applicants`; Apply flow with intent resume + confirmation step
 - **Checkpoint 5**
 
 ### Phase 7 — Invitations
-- [ ] Brand invite (owns campaign, creator exists, no duplicate active), list sent, cancel pending
-- [ ] Creator list received, respond accept/decline → accept creates project
-- [ ] Invite dialog on creator profile (choose own campaign or link to create one); intent resume
-- [ ] Pages: `/creator/invitations`, `/brand/invitations`
+- [x] Brand invite (owns campaign, creator exists, no duplicate active), list sent, cancel pending
+- [x] Creator list received, respond accept/decline → accept creates project
+- [x] Invite dialog on creator profile (choose own campaign or link to create one); intent resume
+- [x] Pages: `/creator/invitations`, `/brand/invitations`
 - **Checkpoint 6**
 
 ### Phase 8 — Projects & deliverables
-- [ ] Project created from accepted application/invitation, deliverables pre-filled from campaign deliverables
-- [ ] `GET /api/projects/:id` (participants only), status PATCH with role-based transition map, deliverable PATCH (creator: mediaUrl + submit; brand: approve / request revision)
-- [ ] Pages: `/creator/projects`, `/brand/projects`, project detail view
-- [ ] Tests: duplicate project blocked, non-participant 404, invalid transitions 409
+- [x] Project created from accepted application/invitation, deliverables pre-filled from campaign deliverables
+- [x] `GET /api/projects/:id` (participants only), status PATCH with role-based transition map, deliverable PATCH (creator: mediaUrl + submit; brand: approve / request revision)
+- [x] Pages: `/creator/projects`, `/brand/projects`, project detail view
+- [x] Tests: duplicate project blocked, non-participant 404, invalid transitions 409
 - **Checkpoint 7**
 
 ### Phase 9 — Matching
-- [ ] `services/matching.js` with spec weights (40/25/20/10/5) + reasons
-- [ ] `GET /api/brand/campaigns/:id/recommendations` → shown on brand campaign page ("Suggested creators", with honest wording)
+- [x] `services/matching.js` with spec weights (40/25/20/10/5) + reasons
+- [x] `GET /api/brand/campaigns/:id/recommendations` → shown on brand campaign page ("Suggested creators", with honest wording)
 
 ### Phase 10 — Home, polish, QA, deploy
-- [ ] Home page: editorial hero, how-it-works, featured creators & selected work (live API), open campaigns preview, dual CTA, About page, 404
-- [ ] Responsive pass at 360 / 768 / 1024 / 1440
-- [ ] Accessibility pass: focus rings, labels, alt text, keyboard nav for dialogs/menus
-- [ ] Every button wired; loading/empty/error/success states everywhere
-- [ ] Production build; deploy client (Vercel) + server (Render) with CORS/cookies verified
-- [ ] README: setup, env, seed, tests, deploy, demo accounts
+- [x] Home page: editorial hero, how-it-works, featured creators & selected work (live API), open campaigns preview, dual CTA, About page, 404
+- [x] Responsive pass at 360 / 768 / 1024 / 1440
+- [x] Accessibility pass: focus rings, labels, alt text, keyboard nav for dialogs/menus
+- [x] Every button wired; loading/empty/error/success states everywhere
+- [x] Production build passes
+- [ ] Deploy client (Vercel) + server (Render) with CORS/cookies verified — needs hosting accounts
+- [x] README: setup, env, seed, tests, deploy, demo accounts
 - **Checkpoint 8**
 
 ---

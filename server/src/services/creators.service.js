@@ -1,5 +1,6 @@
-import { CreatorProfile, Invitation, PortfolioItem } from '../models/index.js';
+import { Campaign, CreatorProfile, Invitation, PortfolioItem } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
+import { mapBy } from '../utils/db.js';
 import { ciExact, escapeRegex, pageResult, paginate } from '../utils/http.js';
 import { publicCreator } from './serializers.js';
 
@@ -65,7 +66,10 @@ export async function getCreator(id, viewer) {
 
   if (viewer?.role === 'brand') {
     const invitations = await Invitation.find({ brandId: viewer._id, creatorId: profile._id }, 'campaignId status').lean();
-    result.viewer = { invitations };
+    const campaigns = await mapBy(Campaign, invitations.map((i) => i.campaignId), { projection: 'title' });
+    result.viewer = {
+      invitations: invitations.map((i) => ({ ...i, campaignTitle: campaigns.get(String(i.campaignId))?.title ?? 'Campaign' })),
+    };
   } else if (viewer?.role === 'creator') {
     result.viewer = { isSelf: String(profile.userId) === String(viewer._id) };
   }

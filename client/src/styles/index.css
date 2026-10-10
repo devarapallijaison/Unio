@@ -1,0 +1,102 @@
+@import 'tailwindcss';
+
+/* UNIO design tokens — exact brand palette plus supporting neutrals. */
+:root {
+  --color-forest: #47553a;
+  --color-sage: #c7d2c2;
+  --color-mint: #e6eee4;
+  --color-sand: #eadfcf;
+  --color-beige: #d4c7a1;
+  --color-ivory: #faf9f5;
+  --color-ink: #20251d;
+  --color-muted: #656b60;
+}
+
+@theme {
+  --color-forest: #47553a;
+  --color-forest-deep: #3a462f;
+  --color-sage: #c7d2c2;
+  --color-mint: #e6eee4;
+  --color-sand: #eadfcf;
+  --color-beige: #d4c7a1;
+  --color-ivory: #faf9f5;
+  --color-ink: #20251d;
+  --color-muted: #656b60;
+  --color-danger: #8a3b2e;
+
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-sans: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --animate-rise: rise 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-marquee: marquee 40s linear infinite;
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-ivory text-ink font-sans antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display text-ink;
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+  }
+  ::selection {
+    background: var(--color-sage);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-forest);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  img, video { max-width: 100%; display: block; }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-[1240px] px-4 sm:px-6 lg:px-10;
+  }
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.14em] text-muted;
+  }
+  .hairline {
+    @apply border-beige/70;
+  }
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 250ms ease;
+  }
+  .link-underline:hover { background-size: 100% 1px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

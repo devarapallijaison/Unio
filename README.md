@@ -4,6 +4,8 @@ UNIO is a marketplace that connects AI content creators with brands. Brands publ
 
 **Stack:** React 19 + Vite + Tailwind CSS 4 · React Router · TanStack Query · React Hook Form + Zod · Express 5 · Mongoose 9 · MongoDB Atlas (`invitaizen` database) · JWT in HTTP-only cookies.
 
+**web application link** : 'https://unio-psi.vercel.app/ '
+
 ```
 unio/
 ├── client/          React app (Vite)

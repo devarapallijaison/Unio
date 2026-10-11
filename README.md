@@ -1,61 +1,279 @@
-# UNIO — Where Creators and Brands Unite
+# UNIO
+### Where Creators and Brands Unite
 
-UNIO is a marketplace that connects AI content creators with brands. Brands publish briefs, review proposals and invite creators; creators show their portfolios, apply to briefs and deliver projects. Anyone can browse; an account is only needed to take action.
+**UNIO is an AI-native creator marketplace that helps brands and creative agencies discover talent, define creative briefs, and manage collaborations from discovery to delivery.** Creators can showcase AI-powered work, apply to campaigns, respond to invitations, and track projects in one place.
 
-**Stack:** React 19 + Vite + Tailwind CSS 4 · React Router · TanStack Query · React Hook Form + Zod · Express 5 · Mongoose 9 · MongoDB Atlas (`invitaizen` database) · JWT in HTTP-only cookies.
+> Discover the right talent. Build better briefs. Bring creative work to life.
 
-**web application link** : 'https://unio-psi.vercel.app/ '
+---
 
-```
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Environment Configuration](#environment-configuration)
+- [User Roles and Workflows](#user-roles-and-workflows)
+- [Creator Verification](#creator-verification)
+- [AI-Assisted Brief Builder](#ai-assisted-brief-builder)
+- [Demo Data and Accounts](#demo-data-and-accounts)
+- [API and Data](#api-and-data)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Security Notes](#security-notes)
+- [Pre-Submission Checklist](#pre-submission-checklist)
+
+---
+
+## Overview
+
+Traditional creator marketplaces are not always designed around AI-native creative work. UNIO focuses on helping brands evaluate creators based on their portfolios, tools, workflows, and campaign fit—not just a profile description.
+
+The platform supports both sides of the creative relationship:
+
+- **Brands and agencies** can publish briefs, discover creators, review proposals, send invitations, and manage engagements.
+- **Creators** can present their work, list tools and skills, apply to campaigns, respond to invitations, and follow project progress.
+- **Reviewers** can assess submitted evidence for creator verification signals.
+
+Public pages can be browsed without an account. Authentication is required for role-specific actions.
+
+## Key Features
+
+### Creator discovery and AI portfolios
+- Creator profiles with skills, tools, specialties, and portfolio items.
+- Portfolio entries for image and video work using hosted media URLs.
+- Campaign discovery and creator-to-campaign matching.
+- Featured portfolio items and visible verification states.
+
+### Campaigns and collaboration
+- Brands can create and manage campaign briefs.
+- Creators can submit applications and proposals.
+- Brands can review applications and invite creators.
+- Creators can accept or decline invitations.
+- Accepted applications or invitations can create a project for the creator and campaign.
+- Project status helps both sides track the engagement.
+
+### Creator verification signals
+- Creators can submit evidence for tools, workflows, and portfolio pieces.
+- Evidence has a clear status, such as self-reported, pending, verified, or rejected.
+- Reviewer permissions control verification decisions; creators cannot approve their own evidence.
+
+### AI-Assisted Brief Builder
+- Brands can describe a campaign idea in plain language.
+- The brief builder creates an editable structured draft.
+- Draft fields can include objectives, audience, style, deliverables, required skills and tools, budget, and deadline.
+- The brand reviews and edits the draft before saving it as a campaign.
+
+> AI-generated drafts are suggestions, not final campaign decisions. If an AI provider is not configured, the application may use a clearly labelled template-based fallback.
+
+## Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | React 19, Vite, Tailwind CSS, React Router |
+| Data and forms | TanStack Query, React Hook Form, Zod |
+| Backend | Node.js, Express 5 |
+| Database | MongoDB Atlas, Mongoose |
+| Authentication | JWT-based sessions in HTTP-only cookies |
+| Media | Hosted image/video URLs; Cloudinary can be configured where supported |
+| Testing | Node.js test runner, Supertest, in-memory MongoDB for tests |
+
+## Project Structure
+
+```text
 unio/
-├── client/          React app (Vite)
-├── server/          Express API, Mongoose models, seed script, tests
-├── IMPLEMENTATION_PLAN.md
-└── package.json     root scripts (runs both apps)
+├── client/                 # React + Vite frontend
+├── server/                 # Express API, Mongoose models, seed script and tests
+├── IMPLEMENTATION_PLAN.md  # Implementation notes
+└── package.json            # Root-level scripts
 ```
 
-## Quick start
+Check the current repository for the exact script names and route structure before relying on commands in this document.
 
-Requirements: Node.js 22.12+ (developed on Node 25).
+## Getting Started
+
+### Prerequisites
+- A supported Node.js LTS release.
+- npm.
+- MongoDB Atlas credentials for persistent local development, or the project's configured in-memory development mode.
+- Optional AI provider credentials if you want to test live brief generation.
+
+### Install dependencies
+
+From the repository root:
 
 ```bash
-npm run install:all                 # installs root, server and client deps
-cp server/.env.example server/.env  # then fill in the values (see below)
-npm run seed                        # loads demo data into Atlas (safe to re-run)
-npm run dev                         # API on :5000, web on http://localhost:5173
+npm run install:all
 ```
 
-**No Atlas access yet?** Run `npm run dev:memory`. It starts a throwaway in-memory MongoDB, seeds it and runs both apps. The data is lost when it stops.
+### Configure environment variables
 
-### Environment variables (`server/.env`)
+Copy the example file and edit it locally:
+
+```bash
+# macOS/Linux
+cp server/.env.example server/.env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item server/.env.example server/.env
+```
+
+Add the required local values to `server/.env`. Do not commit this file.
+
+### Seed demo data
+
+```bash
+npm run seed
+```
+
+Set `SEED_DEMO_PASSWORD` before seeding so the demo accounts receive the intended password.
+
+### Start the application
+
+```bash
+npm run dev
+```
+
+The documented local URLs are:
+
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:5000`
+
+Use the actual scripts in the root `package.json` if they differ from these examples.
+
+### Run without a persistent database
+
+If the repository provides the in-memory development script, run:
+
+```bash
+npm run dev:memory
+```
+
+This mode is intended for temporary development and demonstrations. Data is not persistent and may be lost when the process stops. Use MongoDB Atlas for persistent data.
+
+## Environment Configuration
+
+Backend environment variables belong in `server/.env`, unless the deployment configuration specifies otherwise.
 
 | Variable | Purpose |
 |---|---|
-| `MONGODB_URI` | Atlas connection string ending in `/invitaizen?...`. Atlas → Network Access must allow your IP (or `0.0.0.0/0` for hosted deploys). |
-| `JWT_SECRET` | Long random string. Generate one with `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
-| `CLIENT_ORIGIN` | Allowed frontend origin(s) for CORS, comma-separated. |
-| `COOKIE_NAME` | Session cookie name (default `unio_session`). |
-| `SEED_DEMO_PASSWORD` | Password given to every seeded demo account. For local or hackathon use only. |
-| `DNS_SERVERS` | Optional. Set it if Node can't resolve `mongodb+srv` records (common on Windows), e.g. `8.8.8.8,1.1.1.1`. The app also retries with public DNS automatically. |
-| `REVIEWER_PASSWORD` | Password used by `npm run create-reviewer` when provisioning a verification reviewer. |
-| `ANTHROPIC_API_KEY` | Optional. Enables the AI Brief Builder (Claude). Without it, “Create with AI” returns a clearly labelled template draft. Server-side only. |
-| `BRIEF_AI_MODEL` | Optional. Claude model for the Brief Builder (default `claude-opus-5-5`). |
-| `OPENROUTER_API_KEY` | Optional alternative provider (`sk-or-...` key). Used only when `ANTHROPIC_API_KEY` is empty. |
-| `OPENROUTER_MODEL` | Optional. OpenRouter model ID (default `anthropic/claude-opus-5.5`, which needs credits). Without credits, a free model that supports structured outputs works, e.g. `nvidia/nemotron-3-super-120b-a12b:free`. |
-| `CLOUDINARY_*` | Optional. Media is stored as URLs, so the app works without them. |
+| `MONGODB_URI` | MongoDB connection string for the `invitaizen` database. Keep the database name consistent with the application configuration. |
+| `JWT_SECRET` | Long, randomly generated secret used to sign sessions or tokens. |
+| `CLIENT_ORIGIN` | Exact frontend origin allowed by the API's CORS configuration. |
+| `COOKIE_NAME` | Session cookie name; documented default is `unio_session`. |
+| `SEED_DEMO_PASSWORD` | Password assigned to seeded demo accounts. |
+| `REVIEWER_PASSWORD` | Password used when provisioning a reviewer account. |
+| `DNS_SERVERS` | Optional DNS resolver override if MongoDB SRV lookup fails in the local environment. |
+| `ANTHROPIC_API_KEY` | Optional server-side key for Anthropic-powered brief generation. |
+| `BRIEF_AI_MODEL` | Optional model identifier for the Anthropic provider. |
+| `OPENROUTER_API_KEY` | Optional alternative provider key. |
+| `OPENROUTER_MODEL` | Model identifier used with OpenRouter, if enabled. |
+| `CLOUDINARY_*` | Optional media-hosting settings, if the current upload integration uses them. |
 
-The client has one optional variable, `VITE_API_URL` (see `client/.env.example`). Leave it empty in development, where Vite proxies `/api`. Never put secrets in `VITE_*` variables: they end up in the browser bundle.
+The frontend may also use `VITE_API_URL` as described in `client/.env.example`. **Never put secrets in `VITE_*` variables**, because client-side values can be exposed in the browser bundle.
 
-## Demo data
+To generate a random secret locally:
 
-`npm run seed` is idempotent: it upserts on stable keys, so running it twice creates nothing new. It seeds:
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
 
-- **5 team member profiles** (Fawaz Ahmed, Sai Charitha, Roha Nawaz, Shameer, Jaison). These are **drafts**: skills, tools and bios are suggestions to be edited by each person, and their emails are `firstname.lastname@unio.example`.
-- **10 fictional demo creators** (`isDemo: true`). The UI labels them "Demo".
-- **1 reviewer account**, `reviewer@unio.example`, plus a few demo verification claims. These are only ever SELF_REPORTED or PENDING: nothing is seeded as verified.
-- **3 demo brands**, 8 campaigns (open, draft and closed), 21 portfolio items, plus applications, invitations and 2 projects.
+## User Roles and Workflows
 
-Every demo account uses the `SEED_DEMO_PASSWORD` password. Useful logins:
+### Creator workflow
+1. Browse public creators and campaigns.
+2. Register or sign in as a creator.
+3. Complete the creator profile and portfolio.
+4. Apply to relevant campaigns or respond to invitations.
+5. Track accepted engagements in the projects area.
+
+### Brand workflow
+1. Register or sign in as a brand.
+2. Create a campaign brief manually or start with the AI-Assisted Brief Builder.
+3. Discover creators and review their portfolios and verification signals.
+4. Review applications or invite creators to a campaign.
+5. Manage resulting projects and deliverables.
+
+### Reviewer workflow
+1. Sign in using a reviewer account provisioned by the project.
+2. Review submitted verification evidence.
+3. Approve or reject evidence based on the review process.
+4. Ensure only authorized reviewers can change verification status.
+
+### Workflow integrity
+- The server must enforce user roles and resource ownership.
+- Creators must explicitly submit applications.
+- Brands may invite creators only to campaigns they own.
+- Duplicate applications, invitations, and projects should be prevented.
+- Accepting an application or invitation should create no more than one project for a given campaign/creator pair.
+
+## Creator Verification
+
+Verification states documented by the project:
+
+| Status | Meaning |
+|---|---|
+| `SELF_REPORTED` | The creator listed the tool, workflow, or claim without reviewed evidence. |
+| `PENDING` | Evidence has been submitted and is awaiting review. |
+| `VERIFIED` | An authorized reviewer has reviewed and confirmed the evidence. |
+| `REJECTED` | The evidence was not sufficient; a reviewer may provide an explanatory note. |
+
+Creators manage submissions through `/creator/verification`. Portfolio items may also provide a verification action. A creator must not be able to set their own evidence status to `VERIFIED`.
+
+To provision a reviewer, configure `REVIEWER_PASSWORD` in `server/.env`, then use the documented script if it exists in the current checkout:
+
+```bash
+npm --prefix server run create-reviewer -- reviewer@yourdomain.com "Reviewer Name"
+```
+
+Use an account controlled by the team. Never publish the reviewer's password.
+
+Verification claims should reflect real evidence. Client feedback and completed-project indicators should come from actual project records, not invented testimonials or results.
+
+## AI-Assisted Brief Builder
+
+The documented endpoint is:
+
+```http
+POST /api/brand/briefs/draft
+```
+
+A brand enters a rough idea and receives a structured, editable draft. Supported fields may include:
+- Campaign title and category
+- Objective and target audience
+- Creative direction or style
+- Deliverables
+- Required skills and tools
+- Budget range and deadline
+
+The draft should populate the campaign form and must not be published automatically.
+
+**Provider configuration**
+- With `ANTHROPIC_API_KEY`, the backend can request a structured draft from the configured Anthropic model.
+- With `OPENROUTER_API_KEY`, the backend can use a configured compatible model if that integration is enabled.
+- Without a provider key, the application may offer a template-based fallback. Label this as a template rather than AI-generated output.
+
+Provider keys must remain on the server. Test the configured provider and fallback behavior before the demo. The project documentation specifies a limit of ten brief drafts per brand per 15 minutes; verify this against the current implementation.
+
+## Demo Data and Accounts
+
+Run the seed command to create the project's sample data. According to the project documentation, the seed process is intended to be idempotent and to use stable identifiers to avoid duplicate records when run repeatedly.
+
+Documented seed data includes:
+- Five team-member creator profiles: Fawaz Ahmed, Sai Charitha, Roha Nawaz, Shameer, and Jaison.
+- Ten fictional creator profiles marked as demo accounts.
+- A reviewer account and sample verification claims.
+- Three demo brands and eight campaigns.
+- Portfolio items and sample applications, invitations, and projects.
+
+Team-member bios, skills, tools, and portfolio content should be reviewed by the people represented. Fictional accounts and placeholder content should be clearly understood as demo data.
+
+### Example demo account emails
 
 | Role | Email |
 |---|---|
@@ -63,103 +281,141 @@ Every demo account uses the `SEED_DEMO_PASSWORD` password. Useful logins:
 | Creator | `zoya-siddiqui@creators.unio.example` |
 | Brand | `team@verdant.unio.example` |
 | Brand | `studio@northwind.unio.example` |
+| Reviewer | `reviewer@unio.example` |
 
-Portfolio media uses placeholder URLs on the reserved `media.unio.example` domain. The UI renders these as clearly labelled "media pending" artwork, never as broken images. Upload real files to Cloudinary (or any host), then replace the URLs from the creator's Portfolio page before a demo.
+These are demo identities, not necessarily real email inboxes. The passwords depend on the deployed environment's seed configuration. Verify each account before sharing evaluation instructions.
 
-## Creator verification
+### Portfolio media
 
-Creators can back up three kinds of claim with evidence links: the **tools** they use, their **AI workflows**, and individual **portfolio pieces**.
+Some demo portfolio records may use placeholder URLs under `media.unio.example`. These are not production assets. Replace them with working, authorized image or video URLs before the final demonstration and confirm that each URL opens correctly.
 
-| Status | Meaning | Public display |
-|---|---|---|
-| `SELF_REPORTED` | Listed by the creator, no evidence reviewed | “Self-reported” (no badge) |
-| `PENDING` | Evidence submitted, waiting for a reviewer | Clock icon, “Pending review” |
-| `VERIFIED` | A reviewer confirmed the evidence | Check mark, “Verified” |
-| `REJECTED` | Evidence not sufficient; the reviewer's note goes to the creator | Shown publicly as self-reported |
+UNIO stores media URLs and related metadata rather than large image/video binaries in MongoDB.
 
-- **Creator side:** the **Verification** page in the creator dashboard (`/creator/verification`). Each portfolio piece also has a “Verify this piece” link. Creator API payloads have no `status` field, so a creator can only save a claim (SELF_REPORTED) or submit it (PENDING).
-- **Reviewer side:** the review queue at `/review`. A reviewer opens the evidence, then marks the claim verified or rejects it with a note. Reviewers use a separate `reviewer` role that can't be chosen at sign-up.
-- **Creating a reviewer:** set `REVIEWER_PASSWORD` in `server/.env`, then run:
-  ```bash
-  npm --prefix server run create-reviewer -- reviewer@yourdomain.com "Reviewer Name"
-  ```
-- **Automatic resets:** VERIFIED claims are locked. Changing a verified portfolio piece's media sends its claim back to PENDING.
-- **Track record:** “Completed on UNIO” counts real completed projects. Client feedback appears only after a brand rates a completed project, once per project. Nothing is shown when there is no data.
+## API and Data
 
-## AI Brief Builder
+The application exposes a REST API. The documented response envelope is:
 
-When creating a campaign, a brand can click **Create with AI** and describe the idea in a sentence. `POST /api/brand/briefs/draft` returns these fields, which fill the existing form as a **draft**:
+**Success**
+```json
+{
+  "success": true,
+  "data": {}
+}
+```
 
-- title, category
-- objective, target audience and creative style (written into the brief as labelled sections)
-- deliverables
-- skills and tools
-- budget range
-- deadline
+**Error**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "A human-readable explanation",
+    "details": {}
+  }
+}
+```
 
-The brand edits anything, can undo, and saves through the normal campaign endpoint.
+Confirm the actual API response shape against the current implementation. For available routes, inspect `server/src/routes/index.js` and the associated route files.
 
-- **With `ANTHROPIC_API_KEY`:** Claude generates the draft using the Anthropic SDK's structured outputs. Every response is then validated and normalized on the server (budgets swapped or capped, deadline clamped to 3–365 days, tags deduplicated, empty deliverables dropped), and anything filled with a default is reported as a warning.
-- **With `OPENROUTER_API_KEY` (and no Anthropic key):** the same request goes to OpenRouter with a JSON-schema response format, routed only to providers that support it. The reply goes through the same validation and normalization. An empty OpenRouter account returns `AI_NO_CREDITS`.
-- **Without a key, or on request:** a keyword-based template draft is returned instead, labelled “Template draft (no AI used)”.
-- **Errors:** rate limits, timeouts, refusals, malformed responses and API errors each return a clear error code, and the UI offers “Use template instead”.
-- **Rate limit:** each brand is limited to 10 drafts per 15 minutes. The key never leaves the server.
+The documented creator-matching weights are:
+- Skills: 40%
+- Tools: 25%
+- Category: 20%
+- Budget: 10%
+- Availability: 5%
 
-## Tests
+Treat matching as a recommendation aid, not as a guarantee of creative quality or campaign success.
+
+## Testing
+
+From the repository root, run:
 
 ```bash
 npm test
+npm run build
 ```
 
-50 API integration tests (Node test runner + Supertest) run against an in-memory MongoDB replica set. Claude and OpenRouter calls are stubbed, so no API key is needed. They cover:
+The project documentation reports API integration tests using Node's test runner, Supertest, and an in-memory MongoDB replica set. Verify the current test count and ensure the commands pass in the exact commit being submitted.
 
-- auth
-- role and ownership checks (401, 403 and 404 cases)
-- validation
-- the apply → accept → project and invite → accept → project workflows
-- duplicate blocking
-- deliverable and project state transitions
-- matching
-- seed idempotency and reference integrity
-- verification permissions and status lifecycle
-- project feedback rules
-- brief draft normalization, template fallback and AI error mapping
+Documented test areas include:
+- Authentication and role enforcement
+- Resource ownership and input validation
+- Application and invitation workflows
+- Project creation and duplicate prevention
+- Project status transitions
+- Creator matching
+- Seed idempotency
+- Verification permissions
+- Feedback rules
+- Brief normalization and template fallback
+- AI-provider error handling
 
-## How it works
-
-- **Roles:** the user picks `creator` or `brand` at sign-up. The role is always read from the database, and every protected route checks it on the server along with ownership.
-- **Intent preservation:** clicking *Apply* or *Invite* while logged out sends you to `/login?returnTo=/campaigns/:id?intent=apply` (or `intent=invite`). After signing in you return to the same page with the form open for review. Nothing is submitted automatically, and `returnTo` only accepts allow-listed internal paths, which prevents open redirects.
-- **Projects:** accepting an application, or a creator accepting an invitation, creates exactly one project per campaign and creator pair. This uses a transaction plus an idempotent upsert, backed by a unique index. Deliverables are copied from the campaign brief.
-- **Matching:** suggested creators on a campaign's applicants page are ranked by explainable rules: skills 40%, tools 25%, category 20%, budget 10%, availability 5%. Each suggestion shows its reasons.
-
-API reference: every route is in [`server/src/routes/index.js`](server/src/routes/index.js). Responses use `{ success, data }` or `{ success: false, error: { code, message, details } }`.
+If a command is not present in `package.json`, use the scripts actually available and update this README accordingly.
 
 ## Deployment
 
-**API on Render (or similar):**
+### Backend
 
-| Setting | Value |
+The documented backend deployment uses a Node.js host such as Render.
+
+| Setting | Expected value |
 |---|---|
 | Root directory | `server` |
-| Build command | `npm install` |
+| Install command | `npm install` |
 | Start command | `npm start` |
-| Environment | the variables above, plus `NODE_ENV=production` |
-| `CLIENT_ORIGIN` | your frontend URL |
+| Environment | `NODE_ENV=production` plus required environment variables |
+| CORS origin | Exact deployed frontend origin |
 
-In production the cookie is `Secure; SameSite=None`, so the API must be served over HTTPS. In Atlas → Network Access, allow the host's outbound IPs (or `0.0.0.0/0`).
+Confirm these settings against the repository and hosting dashboard. Serve the API over HTTPS in production. Configure secure cookies and proxy trust according to the host and the application's Express configuration.
 
-**How the two connect:** `client/vercel.json` rewrites `/api/*` to the Render API, so the browser only ever talks to the Vercel domain. The session cookie is then first-party, which works in Safari and on iOS. If you rename the Render service, update the URL in `vercel.json`. Set `TRUST_PROXY=2` on Render so rate limits see each visitor's IP.
+For MongoDB Atlas, restrict network access to the backend's required outbound IPs when feasible. Do not use `0.0.0.0/0` unless you have deliberately assessed and accepted the associated exposure.
 
-**Web on Vercel:**
+### Frontend
 
-| Setting | Value |
+The documented frontend deployment uses Vercel.
+
+| Setting | Expected value |
 |---|---|
 | Root directory | `client` |
 | Framework preset | Vite |
-| `VITE_API_URL` | leave empty; the `/api` rewrite handles it |
+| `VITE_API_URL` | Leave empty if the configured `/api` rewrite is used |
 
-`client/vercel.json` rewrites all routes to the SPA.
+Verify that `client/vercel.json` points to the correct deployed backend URL. Update the rewrite and redeploy if the backend address changes.
 
-## Out of scope (MVP)
+### Project links
 
-Payments, subscriptions, real-time chat, notifications, and direct file uploads. Media is attached by URL.
+- **Live application:** https://unio-psi.vercel.app
+- **GitHub repository:** https://github.com/fawazahmed-byte/Unio.git
+- **API health endpoint:** https://unio-gq3j.onrender.com/api/health
+
+## Security Notes
+
+- Never commit `.env`, database connection strings, API keys, JWT secrets, reviewer passwords, or real demo passwords.
+- Keep `.env.example` limited to safe placeholder values.
+- Hash user passwords and never return password hashes from API responses.
+- Keep AI provider keys on the backend.
+- Enforce role checks and resource ownership on the server, not only in the frontend.
+- Use dedicated demo credentials for judges. Do not publish personal account passwords.
+- Rotate any credential that has been exposed in a screenshot, public repository, or submission form.
+- Verify that reviewer-only actions cannot be performed by creators or brands.
+
+## Pre-Submission Checklist
+
+- [ ] A fresh clone can install dependencies successfully.
+- [ ] The documented start, seed, test, and build commands work.
+- [ ] Tests pass on the exact version being submitted.
+- [ ] The production build succeeds.
+- [ ] Seeding can be rerun without duplicating demo records.
+- [ ] `.env` files and secrets are not committed.
+- [ ] MongoDB Atlas access is configured securely.
+- [ ] Creator, brand, and reviewer accounts have been tested.
+- [ ] Creator verification permissions work as intended.
+- [ ] AI brief generation and template fallback have both been tested.
+- [ ] Portfolio media URLs load and placeholder assets are removed from the demo path.
+- [ ] The deployed frontend communicates with the correct backend.
+- [ ] Live application and public repository links are correct.
+- [ ] Evaluation instructions use dedicated demo credentials without exposing personal passwords.
+
+---
+
+**UNIO** — *Where Creators and Brands Unite.*

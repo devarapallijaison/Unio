@@ -90,7 +90,7 @@ function Placeholder({ seed, label, mediaType, showLabel }) {
   const r = ((h >>> 8) % 1000) / 1000;
   const dark = variant === 4;
   return (
-    <div className="relative size-full" role="img" aria-label={`${label || 'Portfolio piece'} â€” media placeholder`}>
+    <div className="relative size-full" role="img" aria-label={`${label || 'Portfolio piece'} — media placeholder`}>
       <svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full" aria-hidden>
         {COMPOSITIONS[variant](r)}
       </svg>
@@ -98,7 +98,7 @@ function Placeholder({ seed, label, mediaType, showLabel }) {
         <span
           className={`absolute bottom-2.5 left-2.5 font-mono text-[9.5px] uppercase tracking-[0.14em] ${dark ? 'text-bone' : 'text-steel'}`}
         >
-          {mediaType === 'video' ? 'Video' : 'Image'} Â· media pending
+          {mediaType === 'video' ? 'Video' : 'Image'} · media pending
         </span>
       )}
     </div>

@@ -1,36 +1,49 @@
 @import 'tailwindcss';
 
-/* UNIO design tokens — exact brand palette plus supporting neutrals. */
-:root {
-  --color-forest: #47553a;
-  --color-sage: #c7d2c2;
-  --color-mint: #e6eee4;
-  --color-sand: #eadfcf;
-  --color-beige: #d4c7a1;
-  --color-ivory: #faf9f5;
-  --color-ink: #20251d;
-  --color-muted: #656b60;
-}
-
+/* UNIO "Steel" design tokens (Round 2, design/UNIO-design-v9.html).
+   Darkness carries hierarchy: navy is the action colour on light, bone on dark.
+   mist only on dark surfaces or as a line. Functional colours only for status. */
 @theme {
-  --color-forest: #47553a;
-  --color-forest-deep: #3a462f;
-  --color-sage: #c7d2c2;
-  --color-mint: #e6eee4;
-  --color-sand: #eadfcf;
-  --color-beige: #d4c7a1;
-  --color-ivory: #faf9f5;
-  --color-ink: #20251d;
-  --color-muted: #656b60;
-  --color-danger: #8a3b2e;
+  --color-ink: #06141b;
+  --color-navy: #11212d;
+  --color-slate: #253745;
+  --color-steel: #4a5c6a;
+  --color-mist: #9ba8ab;
+  --color-bone: #ccd0cf;
+  --color-page: #eef0ef;
+  --color-card: #ffffff;
+  --color-line: #d9dddc;
+  --color-line2: #c4cacb;
+  --color-soft: #f5f6f6;
 
-  --font-display: 'Fraunces', ui-serif, Georgia, serif;
-  --font-sans: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+  --color-ok: #2f6b4f;
+  --color-ok-bg: #e3f0e8;
+  --color-ok-ln: #9cc7b0;
+  --color-wait: #7a4f00;
+  --color-wait-bg: #fbecc8;
+  --color-wait-ln: #ecc977;
+  --color-att: #9b2c3a;
+  --color-att-bg: #f8dfe2;
+  --color-att-ln: #e7a9b3;
+  --color-info: #1d4a6e;
+  --color-info-bg: #dde9f3;
+  --color-info-ln: #a9c6de;
+  --color-ai: #3b4f9a;
+  --color-ai-bg: #e6eaf7;
+  --color-ai-ln: #b7c1e6;
+  --color-gold: #b8862a;
+  --color-gold-lt: #e9c46a;
+
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --radius-sm: 3px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-card: 0 1px 2px rgba(6, 20, 27, 0.05), 0 8px 24px -16px rgba(6, 20, 27, 0.35);
+  --shadow-pop: 0 2px 4px rgba(6, 20, 27, 0.06), 0 24px 48px -24px rgba(6, 20, 27, 0.45);
 
   --animate-rise: rise 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-marquee: marquee 40s linear infinite;
@@ -51,36 +64,44 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply bg-ivory text-ink font-sans antialiased;
-    font-feature-settings: 'ss01', 'cv11';
+    @apply bg-page text-ink font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.55;
     text-rendering: optimizeLegibility;
   }
   h1, h2, h3, h4 {
-    @apply font-display text-ink;
-    font-optical-sizing: auto;
-    letter-spacing: -0.015em;
+    @apply font-sans font-extrabold text-ink;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+  /* The light "accent" word inside a heading: "AI creators, <em>proven.</em>" */
+  h1 em, h2 em {
+    font-style: normal;
+    font-weight: 300;
+    color: var(--color-steel);
   }
   ::selection {
-    background: var(--color-sage);
+    background: var(--color-bone);
     color: var(--color-ink);
   }
   :focus-visible {
-    outline: 2px solid var(--color-forest);
+    outline: 2px solid var(--color-navy);
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: 3px;
   }
   img, video { max-width: 100%; display: block; }
 }
 
 @layer components {
   .container-page {
-    @apply mx-auto w-full max-w-[1240px] px-4 sm:px-6 lg:px-10;
+    @apply mx-auto w-full max-w-[1240px] px-4 lg:px-10;
   }
   .eyebrow {
-    @apply font-mono text-[11px] uppercase tracking-[0.14em] text-muted;
+    @apply font-mono text-[10.5px] uppercase tracking-[0.16em] text-steel;
   }
   .hairline {
-    @apply border-beige/70;
+    @apply border-line;
   }
   .link-underline {
     background-image: linear-gradient(currentColor, currentColor);
@@ -90,6 +111,38 @@
     transition: background-size 250ms ease;
   }
   .link-underline:hover { background-size: 100% 1px; }
+
+  /* Mono table header + rows (v9 .tbl). */
+  .tbl { @apply w-full border-collapse; }
+  .tbl th {
+    @apply whitespace-nowrap border-b border-line bg-soft px-4 py-[11px] text-left font-mono text-[10.5px] font-normal uppercase tracking-[0.12em] text-steel;
+  }
+  .tbl td { @apply border-b border-[#edf0ef] px-4 py-[13px] align-middle text-[13.5px]; }
+  .tbl tr:last-child td { @apply border-b-0; }
+
+  /* Match ring (v9 .ring) — conic fill driven by --v (0–100). */
+  .match-ring {
+    background: conic-gradient(var(--ring-fill, var(--color-navy)) calc(var(--v) * 1%), var(--color-line) 0);
+  }
+
+  /* Rights ticket notches + perforation (v9 .ticket). */
+  .ticket-notch::before,
+  .ticket-notch::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--notch-bg, var(--color-page));
+    transform: translateY(-50%);
+  }
+  .ticket-notch::before { left: -11px; }
+  .ticket-notch::after { right: -11px; }
+}
+
+@media print {
+  .no-print { display: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

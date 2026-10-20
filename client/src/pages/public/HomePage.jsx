@@ -27,10 +27,10 @@ function Hero({ work, isLoading }) {
     <section className="container-page grid gap-12 pb-16 pt-12 md:pt-16 lg:grid-cols-12 lg:gap-8 lg:pb-24 lg:pt-20">
       <div className="lg:col-span-7 animate-rise">
         <p className="eyebrow">AI Creator Marketplace</p>
-        <h1 className="mt-6 text-[clamp(2.75rem,7.2vw,6.25rem)] font-[350] leading-[0.95] tracking-[-0.03em]">
-          Where creators <em className="pr-[0.08em] font-[300] italic text-forest">and</em> brands unite.
+        <h1 className="mt-5 text-[clamp(2.5rem,6.4vw,4.5rem)] leading-[1.02] tracking-[-0.045em]">
+          Where creators <em>and</em> brands unite.
         </h1>
-        <p className="mt-7 max-w-xl text-[17px] leading-relaxed text-muted sm:text-lg">
+        <p className="mt-7 max-w-xl text-[17px] leading-relaxed text-steel sm:text-lg">
           UNIO connects brands with creators who make with AI — product films, campaign imagery, avatars and motion.
           Browse real portfolios, post a brief, and run the work from proposal to final delivery.
         </p>
@@ -42,7 +42,7 @@ function Hero({ work, isLoading }) {
             Browse open briefs
           </ButtonLink>
         </div>
-        <dl className="mt-12 grid max-w-xl grid-cols-2 gap-6 border-t border-beige/80 pt-6">
+        <dl className="mt-12 grid max-w-xl grid-cols-2 gap-6 border-t border-line/80 pt-6">
           <div>
             <dt className="eyebrow">For brands</dt>
             <dd className="mt-2 text-[15px] leading-snug">Publish a brief, compare proposals, invite the creators you like.</dd>
@@ -65,15 +65,15 @@ function Hero({ work, isLoading }) {
             {a && (
               <Link to={`/creators/${a.creator._id}`} className="group absolute right-0 top-0 w-[72%] animate-rise [animation-delay:120ms]">
                 <MediaFrame item={a} aspect="aspect-[4/5]" showLabel={false} />
-                <span className="absolute left-3 top-3 max-w-[80%] truncate rounded-sm bg-ivory/95 px-2.5 py-1 text-[12px] text-ink">
-                  {a.title} — <span className="text-muted group-hover:text-forest">{a.creator.displayName}</span>
+                <span className="absolute left-3 top-3 max-w-[80%] truncate rounded-full bg-ink/80 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">
+                  {a.title} — <span className="text-steel group-hover:text-navy">{a.creator.displayName}</span>
                 </span>
               </Link>
             )}
             {b && (
               <Link to={`/creators/${b.creator._id}`} className="absolute bottom-0 left-0 w-[46%] animate-rise [animation-delay:260ms]">
-                <MediaFrame item={b} aspect="aspect-square" className="ring-8 ring-ivory" showLabel={false} />
-                <p className="mt-2 text-[13px] text-muted">{b.creator.displayName}</p>
+                <MediaFrame item={b} aspect="aspect-square" className="ring-8 ring-page" showLabel={false} />
+                <p className="mt-2 text-[13px] text-steel">{b.creator.displayName}</p>
               </Link>
             )}
             {c && (
@@ -91,12 +91,12 @@ function Hero({ work, isLoading }) {
 function ToolStrip() {
   const row = TOOLS.slice(0, 12);
   return (
-    <section className="overflow-hidden border-y border-beige/80 bg-sand/50 py-4" aria-label="Tools our creators work with">
-      <div className="flex w-max animate-marquee gap-10 whitespace-nowrap motion-reduce:animate-none">
+    <section className="overflow-hidden bg-bone py-3.5" aria-label="Tools our creators work with">
+      <div className="flex w-max animate-marquee gap-8 whitespace-nowrap motion-reduce:animate-none">
         {[...row, ...row].map((tool, i) => (
-          <span key={`${tool}-${i}`} className="flex items-center gap-10 font-display text-xl italic text-forest/80 sm:text-2xl">
+          <span key={`${tool}-${i}`} className="flex items-center gap-8 text-[17px] font-bold tracking-[-0.02em] text-ink">
             {tool}
-            <span className="size-1.5 rounded-full bg-beige" aria-hidden />
+            <span className="text-[11px] text-steel" aria-hidden>✦</span>
           </span>
         ))}
       </div>
@@ -108,8 +108,8 @@ function SectionHead({ index, title, link }) {
   return (
     <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="font-mono text-xs text-muted">{index}</p>
-        <h2 className="mt-2 text-4xl leading-tight sm:text-5xl">{title}</h2>
+        <p className="eyebrow">{index}</p>
+        <h2 className="mt-2.5 text-[30px] sm:text-[40px]">{title}</h2>
       </div>
       {link}
     </div>
@@ -123,11 +123,11 @@ function SelectedWork({ work, isLoading, error, refetch }) {
         index="01 — Selected work"
         title={
           <>
-            Portfolios first. <span className="text-muted">Pitches second.</span>
+            Portfolios first. <em>Pitches second.</em>
           </>
         }
         link={
-          <Link to="/creators" className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:underline">
+          <Link to="/creators" className="inline-flex items-center gap-1.5 text-sm font-semibold text-navy hover:underline">
             Explore all creators <ArrowUpRight className="size-4" />
           </Link>
         }
@@ -145,8 +145,8 @@ function SelectedWork({ work, isLoading, error, refetch }) {
                 <MediaFrame item={item} aspect={aspect} />
                 <div className="mt-3 flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-[15px] font-medium group-hover:text-forest">{item.title}</p>
-                    <p className="text-[13px] text-muted">
+                    <p className="truncate text-[15px] font-semibold group-hover:text-navy">{item.title}</p>
+                    <p className="text-[13px] text-steel">
                       {item.creator.displayName}
                       {item.tools?.length ? ` · ${item.tools.slice(0, 2).join(', ')}` : ''}
                     </p>
@@ -177,20 +177,20 @@ const STEPS = {
 
 function HowItWorks() {
   return (
-    <section className="bg-sand/60">
-      <div className="container-page py-20 lg:py-28">
+    <section className="border-y border-line bg-white">
+      <div className="container-page py-20 lg:py-24">
         <SectionHead index="02 — How it works" title="One workflow, two sides of the table." />
         <div className="grid gap-12 md:grid-cols-2 md:gap-16">
           {Object.entries(STEPS).map(([side, steps]) => (
             <div key={side}>
-              <p className="eyebrow border-b border-beige pb-3">For {side}</p>
+              <p className="eyebrow border-b border-line pb-3">For {side}</p>
               <ol className="mt-2">
                 {steps.map(([title, body], i) => (
-                  <li key={title} className="grid grid-cols-[3rem_1fr] gap-2 border-b border-beige/70 py-6">
-                    <span className="font-display text-3xl italic text-forest/70">{i + 1}</span>
+                  <li key={title} className="grid grid-cols-[2.5rem_1fr] gap-2 border-b border-line py-5">
+                    <span className="grid size-6 place-items-center rounded-full bg-navy font-mono text-[11px] font-bold text-white">{i + 1}</span>
                     <div>
-                      <h3 className="font-sans text-lg font-semibold">{title}</h3>
-                      <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{body}</p>
+                      <h3 className="text-[16px] tracking-[-0.02em]">{title}</h3>
+                      <p className="mt-1 text-[14px] leading-relaxed text-steel">{body}</p>
                     </div>
                   </li>
                 ))}
@@ -218,7 +218,7 @@ function OpenBriefs() {
         index="03 — Open briefs"
         title="Work that’s looking for a creator."
         link={
-          <Link to="/campaigns" className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:underline">
+          <Link to="/campaigns" className="inline-flex items-center gap-1.5 text-sm font-semibold text-navy hover:underline">
             See every open brief <ArrowUpRight className="size-4" />
           </Link>
         }
@@ -231,13 +231,13 @@ function OpenBriefs() {
           <CampaignRowSkeleton />
         </div>
       ) : items.length ? (
-        <div className="border-b border-beige/80">
+        <div className="border-b border-line/80">
           {items.map((c, i) => (
             <CampaignRow key={c._id} campaign={c} index={i + 1} />
           ))}
         </div>
       ) : (
-        <p className="border-t border-beige/80 py-10 text-muted">No open briefs right now. New campaigns appear here as soon as brands publish them.</p>
+        <p className="border-t border-line/80 py-10 text-steel">No open briefs right now. New campaigns appear here as soon as brands publish them.</p>
       )}
     </section>
   );
@@ -245,16 +245,16 @@ function OpenBriefs() {
 
 function ClosingBand() {
   return (
-    <section className="bg-forest text-ivory">
+    <section className="bg-[linear-gradient(135deg,var(--color-ink),var(--color-navy)_55%,var(--color-slate))] text-white">
       <div className="container-page grid gap-10 py-20 md:grid-cols-12 md:items-end lg:py-24">
-        <h2 className="text-[clamp(2.25rem,5vw,4rem)] leading-[1.02] text-ivory md:col-span-8">
-          Your next collaboration starts with a <em className="italic text-sage">brief</em>.
+        <h2 className="text-[clamp(2.25rem,5vw,3.5rem)] tracking-[-0.045em] text-white md:col-span-8">
+          Your next collaboration starts with a <em className="!text-mist">brief</em>.
         </h2>
         <div className="flex flex-col gap-3 sm:flex-row md:col-span-4 md:justify-end">
           <ButtonLink to="/register?role=brand" variant="light" size="lg">
             Post a brief
           </ButtonLink>
-          <ButtonLink to="/register?role=creator" size="lg" className="!border-ivory/40 hover:!bg-ivory/10">
+          <ButtonLink to="/register?role=creator" size="lg" variant="outline-light">
             Join as a creator
           </ButtonLink>
         </div>

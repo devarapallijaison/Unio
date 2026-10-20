@@ -74,11 +74,11 @@ export default function CreatorsPage() {
 
   return (
     <div className="container-page pb-24 pt-12 lg:pt-16">
-      <header className="grid gap-8 border-b border-beige/80 pb-10 lg:grid-cols-12 lg:items-end">
+      <header className="grid gap-8 border-b border-line/80 pb-10 lg:grid-cols-12 lg:items-end">
         <div className="lg:col-span-7">
           <p className="eyebrow">Explore</p>
           <h1 className="mt-3 text-5xl leading-[1] sm:text-6xl">Creators</h1>
-          <p className="mt-4 max-w-lg text-[17px] text-muted">
+          <p className="mt-4 max-w-lg text-[17px] text-steel">
             Filter by skill, tool and budget. Every profile leads with work, so you can judge the craft before you send a brief.
           </p>
         </div>
@@ -96,7 +96,7 @@ export default function CreatorsPage() {
           <div className="sticky top-24">
             <Filters key={JSON.stringify(values)} values={values} set={set} />
             {activeCount > 0 && (
-              <button type="button" onClick={clear} className="mt-8 text-sm text-forest underline-offset-4 hover:underline">
+              <button type="button" onClick={clear} className="mt-8 text-sm text-navy underline-offset-4 hover:underline">
                 Clear all filters
               </button>
             )}
@@ -105,7 +105,7 @@ export default function CreatorsPage() {
 
         <section aria-live="polite" aria-busy={query.isFetching}>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">
+            <p className="text-sm text-steel">
               {data ? pluralize(data.total, 'creator') : 'Loading creators'}
               {query.isFetching && data ? ' · updating…' : ''}
             </p>

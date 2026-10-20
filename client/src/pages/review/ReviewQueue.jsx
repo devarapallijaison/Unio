@@ -48,8 +48,8 @@ function ReviewDialog({ submission, onClose }) {
         <div className="flex flex-wrap items-center gap-3">
           <StatusPill status={s.status} />
           {s.creator?.isDemo && <DemoBadge />}
-          {s.submittedAt && <span className="text-[13px] text-muted">Submitted {formatDate(s.submittedAt)}</span>}
-          <Link to={`/creators/${s.creatorId}`} target="_blank" className="ml-auto text-[13px] text-forest hover:underline">
+          {s.submittedAt && <span className="text-[13px] text-steel">Submitted {formatDate(s.submittedAt)}</span>}
+          <Link to={`/creators/${s.creatorId}`} target="_blank" className="ml-auto text-[13px] text-navy hover:underline">
             Open public profile
           </Link>
         </div>
@@ -59,9 +59,9 @@ function ReviewDialog({ submission, onClose }) {
             <MediaFrame item={s.portfolioItem} aspect="aspect-[4/5]" hover={false} />
             <div className="space-y-2 text-[14px]">
               <p className="eyebrow">Portfolio piece under review</p>
-              <p className="font-medium">{s.portfolioItem.title}</p>
-              {s.portfolioItem.description && <p className="text-muted">{s.portfolioItem.description}</p>}
-              <a href={s.portfolioItem.mediaUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-forest hover:underline">
+              <p className="font-semibold">{s.portfolioItem.title}</p>
+              {s.portfolioItem.description && <p className="text-steel">{s.portfolioItem.description}</p>}
+              <a href={s.portfolioItem.mediaUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-navy hover:underline">
                 <ExternalLink className="size-3.5" /> Media file{isPlaceholderUrl(s.portfolioItem.mediaUrl) ? ' (placeholder)' : ''}
               </a>
             </div>
@@ -81,16 +81,16 @@ function ReviewDialog({ submission, onClose }) {
             <ul className="space-y-1.5">
               {s.evidenceUrls.map((u) => (
                 <li key={u}>
-                  <a href={u} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1.5 text-[14px] text-forest hover:underline">
+                  <a href={u} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1.5 text-[14px] text-navy hover:underline">
                     <ExternalLink className="size-3.5 shrink-0" />
                     <span className="truncate">{u}</span>
                   </a>
-                  {isPlaceholderUrl(u) && <span className="ml-2 text-[12px] text-muted">placeholder link, cannot be checked</span>}
+                  {isPlaceholderUrl(u) && <span className="ml-2 text-[12px] text-steel">placeholder link, cannot be checked</span>}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-[14px] text-muted">No evidence links.</p>
+            <p className="text-[14px] text-steel">No evidence links.</p>
           )}
         </div>
 
@@ -109,7 +109,7 @@ function ReviewDialog({ submission, onClose }) {
               maxLength={1000}
             />
             {decide.error && <Alert tone="error">{decide.error.message}</Alert>}
-            <div className="flex flex-col-reverse gap-2 border-t border-beige/60 pt-5 sm:flex-row sm:justify-end">
+            <div className="flex flex-col-reverse gap-2 border-t border-line/60 pt-5 sm:flex-row sm:justify-end">
               <Button variant="danger" onClick={reject} loading={decide.isPending && decide.variables === 'REJECTED'}>
                 Reject
               </Button>
@@ -119,11 +119,11 @@ function ReviewDialog({ submission, onClose }) {
             </div>
           </>
         ) : (
-          <div className="rounded-md border border-beige/70 bg-white p-4 text-[14px]">
+          <div className="rounded-md border border-line/70 bg-white p-4 text-[14px]">
             <p>
               {statusLabel(s.status)} on {formatDate(s.reviewedAt)}
             </p>
-            {s.reviewNote && <p className="mt-1 text-muted">{s.reviewNote}</p>}
+            {s.reviewNote && <p className="mt-1 text-steel">{s.reviewNote}</p>}
           </div>
         )}
       </div>
@@ -152,23 +152,24 @@ export default function ReviewQueue() {
       />
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="-mx-1 flex gap-1 overflow-x-auto px-1" role="tablist" aria-label="Filter by status">
-          {['PENDING', 'VERIFIED', 'REJECTED', 'SELF_REPORTED'].map((s) => (
-            <button
-              key={s}
-              role="tab"
-              type="button"
-              aria-selected={status === s}
-              onClick={() => {
-                setStatus(s);
-                setPage(1);
-              }}
-              className={`shrink-0 rounded-md px-3 py-1.5 text-[13px] transition-colors ${status === s ? 'bg-ink text-ivory' : 'text-ink/70 hover:bg-ink/5'}`}
-            >
-              {statusLabel(s)}
-              <span className="ml-1.5 font-mono text-[11px] opacity-70">{counts[s] ?? 0}</span>
-            </button>
-          ))}
+        <div className="max-w-full overflow-x-auto">
+          <div className="inline-flex rounded-full border border-line2 bg-white p-[3px]" role="tablist" aria-label="Filter by status">
+            {['PENDING', 'VERIFIED', 'REJECTED', 'SELF_REPORTED'].map((s) => (
+              <button
+                key={s}
+                role="tab"
+                type="button"
+                aria-selected={status === s}
+                onClick={() => {
+                  setStatus(s);
+                  setPage(1);
+                }}
+                className={`shrink-0 whitespace-nowrap rounded-full px-[13px] py-1.5 text-[13px] font-semibold transition-colors ${status === s ? 'bg-navy text-white' : 'text-steel hover:text-ink'}`}
+              >
+                {statusLabel(s)} · {counts[s] ?? 0}
+              </button>
+            ))}
+          </div>
         </div>
         <Select aria-label="Filter by type" value={type} onChange={(e) => { setType(e.target.value); setPage(1); }} className="sm:w-48">
           <option value="">All types</option>
@@ -188,20 +189,20 @@ export default function ReviewQueue() {
         </EmptyState>
       ) : (
         <>
-          <ul className="overflow-hidden rounded-lg border border-beige/70 bg-white">
+          <ul className="overflow-hidden rounded-lg border border-line/70 bg-white">
             {query.data.items.map((s) => (
-              <li key={s._id} className="border-b border-beige/60 last:border-0">
-                <button type="button" onClick={() => setActive(s)} className="grid w-full gap-3 px-5 py-4 text-left hover:bg-mint/40 md:grid-cols-12 md:items-center">
+              <li key={s._id} className="border-b border-line/60 last:border-0">
+                <button type="button" onClick={() => setActive(s)} className="grid w-full gap-3 px-5 py-4 text-left hover:bg-soft/40 md:grid-cols-12 md:items-center">
                   <div className="flex min-w-0 items-center gap-3 md:col-span-4">
                     <Avatar name={s.creator?.displayName ?? '?'} src={s.creator?.photoUrl} size="sm" />
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{s.subject}</p>
-                      <p className="truncate text-[13px] text-muted">{s.creator?.displayName}</p>
+                      <p className="truncate font-semibold">{s.subject}</p>
+                      <p className="truncate text-[13px] text-steel">{s.creator?.displayName}</p>
                     </div>
                   </div>
-                  <span className="text-[13px] text-muted md:col-span-2">{TYPE_LABEL[s.type]}</span>
-                  <span className="text-[13px] text-muted md:col-span-2">{pluralize(s.evidenceUrls?.length ?? 0, 'evidence link')}</span>
-                  <span className="text-[13px] text-muted md:col-span-2">{formatDate(s.status === 'PENDING' ? s.submittedAt : s.reviewedAt ?? s.updatedAt)}</span>
+                  <span className="text-[13px] text-steel md:col-span-2">{TYPE_LABEL[s.type]}</span>
+                  <span className="text-[13px] text-steel md:col-span-2">{pluralize(s.evidenceUrls?.length ?? 0, 'evidence link')}</span>
+                  <span className="text-[13px] text-steel md:col-span-2">{formatDate(s.status === 'PENDING' ? s.submittedAt : s.reviewedAt ?? s.updatedAt)}</span>
                   <span className="md:col-span-2 md:text-right">
                     <StatusPill status={s.status} />
                   </span>

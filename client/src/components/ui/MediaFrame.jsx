@@ -12,61 +12,62 @@ export function isPlaceholderUrl(url) {
   }
 }
 
+/* Steel palette values for the fallback art (SVG fills need literal colours). */
 const C = {
-  forest: '#47553A',
-  sage: '#C7D2C2',
-  mint: '#E6EEE4',
-  sand: '#EADFCF',
-  beige: '#D4C7A1',
-  ivory: '#FAF9F5',
+  slate: '#253745',
+  mist: '#9BA8AB',
+  page: '#EEF0EF',
+  line: '#D9DDDC',
+  line2: '#C4CACB',
+  soft: '#F5F6F6',
 };
 
-/* Six restrained compositions built only from the brand palette. */
+/* Six restrained compositions built only from the Steel palette. */
 const COMPOSITIONS = [
   (r) => (
     <>
-      <rect width="400" height="500" fill={C.sand} />
-      <circle cx="400" cy="500" r={360 - r * 40} fill={C.beige} />
-      <circle cx="400" cy="500" r={250 - r * 30} fill={C.sage} />
-      <circle cx="400" cy="500" r={140 - r * 20} fill={C.forest} />
+      <rect width="400" height="500" fill={C.line} />
+      <circle cx="400" cy="500" r={360 - r * 40} fill={C.line2} />
+      <circle cx="400" cy="500" r={250 - r * 30} fill={C.mist} />
+      <circle cx="400" cy="500" r={140 - r * 20} fill={C.slate} />
     </>
   ),
   (r) => (
     <>
-      <rect width="400" height="500" fill={C.mint} />
-      <rect y={300 + r * 30} width="400" height="250" fill={C.sage} />
-      <circle cx={120 + r * 140} cy={250 + r * 20} r="70" fill={C.forest} />
-      <line x1="0" x2="400" y1={300 + r * 30} y2={300 + r * 30} stroke={C.ivory} strokeWidth="2" />
+      <rect width="400" height="500" fill={C.page} />
+      <rect y={300 + r * 30} width="400" height="250" fill={C.mist} />
+      <circle cx={120 + r * 140} cy={250 + r * 20} r="70" fill={C.slate} />
+      <line x1="0" x2="400" y1={300 + r * 30} y2={300 + r * 30} stroke={C.soft} strokeWidth="2" />
     </>
   ),
   (r) => (
     <>
-      <rect width="400" height="500" fill={C.sage} />
-      <circle cx={160 - r * 20} cy="230" r="110" fill={C.mint} />
-      <circle cx={250 + r * 20} cy="290" r="110" fill={C.ivory} fillOpacity="0.75" />
-      <circle cx="140" cy="100" r="26" fill={C.forest} />
+      <rect width="400" height="500" fill={C.mist} />
+      <circle cx={160 - r * 20} cy="230" r="110" fill={C.page} />
+      <circle cx={250 + r * 20} cy="290" r="110" fill={C.soft} fillOpacity="0.75" />
+      <circle cx="140" cy="100" r="26" fill={C.slate} />
     </>
   ),
   (r) => (
     <>
-      <rect width="400" height="500" fill={C.ivory} />
+      <rect width="400" height="500" fill={C.soft} />
       {[0, 1, 2, 3].map((i) => {
         const h = 160 + ((i * 97 + r * 211) % 220);
-        return <rect key={i} x={36 + i * 86} y={500 - h - 40} width="62" height={h} rx="31" fill={i === (r * 4 | 0) % 4 ? C.forest : C.sage} />;
+        return <rect key={i} x={36 + i * 86} y={500 - h - 40} width="62" height={h} rx="31" fill={i === (r * 4 | 0) % 4 ? C.slate : C.mist} />;
       })}
     </>
   ),
   (r) => (
     <>
-      <rect width="400" height="500" fill={C.forest} />
-      <rect x="40" y="40" width="320" height="420" fill="none" stroke={C.sage} strokeOpacity="0.5" />
-      <circle cx="200" cy={210 + r * 40} r="90" fill={C.sand} />
-      <rect x="110" y={330 + r * 30} width="180" height="2" fill={C.beige} />
+      <rect width="400" height="500" fill={C.slate} />
+      <rect x="40" y="40" width="320" height="420" fill="none" stroke={C.mist} strokeOpacity="0.5" />
+      <circle cx="200" cy={210 + r * 40} r="90" fill={C.line} />
+      <rect x="110" y={330 + r * 30} width="180" height="2" fill={C.line2} />
     </>
   ),
   (r) => (
     <>
-      <rect width="400" height="500" fill={C.sand} />
+      <rect width="400" height="500" fill={C.line} />
       {Array.from({ length: 12 }).map((_, i) => (
         <rect
           key={i}
@@ -75,7 +76,7 @@ const COMPOSITIONS = [
           width="80"
           height="80"
           rx={i % 2 ? 40 : 6}
-          fill={i === Math.floor(r * 12) ? C.forest : C.ivory}
+          fill={i === Math.floor(r * 12) ? C.slate : C.soft}
           fillOpacity={i === Math.floor(r * 12) ? 1 : 0.8}
         />
       ))}
@@ -89,15 +90,15 @@ function Placeholder({ seed, label, mediaType, showLabel }) {
   const r = ((h >>> 8) % 1000) / 1000;
   const dark = variant === 4;
   return (
-    <div className="relative size-full" role="img" aria-label={`${label || 'Portfolio piece'} — media placeholder`}>
+    <div className="relative size-full" role="img" aria-label={`${label || 'Portfolio piece'} â€” media placeholder`}>
       <svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full" aria-hidden>
         {COMPOSITIONS[variant](r)}
       </svg>
       {showLabel && (
         <span
-          className={`absolute bottom-2.5 left-2.5 font-mono text-[9.5px] uppercase tracking-[0.14em] ${dark ? 'text-sage' : 'text-ink/55'}`}
+          className={`absolute bottom-2.5 left-2.5 font-mono text-[9.5px] uppercase tracking-[0.14em] ${dark ? 'text-bone' : 'text-steel'}`}
         >
-          {mediaType === 'video' ? 'Video' : 'Image'} · media pending
+          {mediaType === 'video' ? 'Video' : 'Image'} Â· media pending
         </span>
       )}
     </div>
@@ -114,7 +115,7 @@ export function MediaFrame({ item, aspect = 'aspect-[4/5]', className = '', show
   const usable = src && !isPlaceholderUrl(src) && !failed;
 
   return (
-    <div className={`group/media relative overflow-hidden rounded-md bg-sand ${aspect} ${className}`}>
+    <div className={`group/media relative overflow-hidden rounded-md bg-line ${aspect} ${className}`}>
       <div className={`absolute inset-0 ${hover ? 'transition-transform duration-700 ease-out group-hover/media:scale-[1.03]' : ''}`}>
         {usable ? (
           <img src={src} alt={item?.title ?? ''} loading="lazy" className="size-full object-cover" onError={() => setFailed(true)} />
@@ -123,7 +124,7 @@ export function MediaFrame({ item, aspect = 'aspect-[4/5]', className = '', show
         )}
       </div>
       {item?.mediaType === 'video' && (
-        <span className="absolute right-2.5 top-2.5 flex size-8 items-center justify-center rounded-full bg-ivory/90 text-forest">
+        <span className="absolute right-2.5 top-2.5 flex size-8 items-center justify-center rounded-full bg-white/90 text-ink">
           <Play className="size-3.5 translate-x-[1px] fill-current" />
         </span>
       )}

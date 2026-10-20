@@ -70,36 +70,36 @@ export default function ProjectsList({ role }) {
         </EmptyState>
       ) : (
         <>
-          <ul className="overflow-hidden rounded-lg border border-beige/70 bg-white">
+          <ul className="overflow-hidden rounded-lg border border-line/70 bg-white">
             {query.data.items.map((p) => {
               const prog = deliverableProgress(p);
               const counterpart = role === 'brand' ? p.creator?.displayName : p.brand?.companyName;
               return (
-                <li key={p._id} className="border-b border-beige/60 last:border-0">
-                  <Link to={`/projects/${p._id}`} className="group grid gap-4 px-5 py-5 hover:bg-mint/40 md:grid-cols-12 md:items-center">
+                <li key={p._id} className="border-b border-line/60 last:border-0">
+                  <Link to={`/projects/${p._id}`} className="group grid gap-4 px-5 py-5 hover:bg-soft/40 md:grid-cols-12 md:items-center">
                     <div className="flex min-w-0 items-center gap-3 md:col-span-6">
                       <Avatar name={counterpart ?? '?'} src={role === 'brand' ? p.creator?.photoUrl : undefined} size="md" />
                       <div className="min-w-0">
-                        <p className="truncate font-medium group-hover:text-forest">{p.campaign?.title}</p>
-                        <p className="truncate text-[13px] text-muted">
+                        <p className="truncate font-semibold group-hover:text-navy">{p.campaign?.title}</p>
+                        <p className="truncate text-[13px] text-steel">
                           {role === 'brand' ? 'Creator' : 'Brand'}: {counterpart} · via {p.sourceType}
                         </p>
                       </div>
                     </div>
                     <div className="md:col-span-3">
-                      <div className="flex items-center justify-between text-[12px] text-muted">
+                      <div className="flex items-center justify-between text-[12px] text-steel">
                         <span>
                           {prog.approved}/{prog.total} approved
                         </span>
                         <span>{relativeDeadline(p.campaign?.deadline)}</span>
                       </div>
-                      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-mint">
-                        <div className="h-full bg-forest" style={{ width: `${prog.percent}%` }} />
+                      <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-soft">
+                        <div className="h-full bg-navy" style={{ width: `${prog.percent}%` }} />
                       </div>
                     </div>
                     <div className="flex items-center justify-between gap-3 md:col-span-3 md:justify-end">
                       <StatusPill status={p.status} />
-                      <ArrowRight className="size-4 text-muted transition-transform group-hover:translate-x-0.5" />
+                      <ArrowRight className="size-4 text-steel transition-transform group-hover:translate-x-0.5" />
                     </div>
                   </Link>
                 </li>

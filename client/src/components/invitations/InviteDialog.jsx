@@ -52,10 +52,10 @@ export function InviteDialog({ open, onClose, creator, existingInvitations = [] 
     <Dialog open={open} onClose={close} title={`Invite ${creator.displayName}`} description="Choose one of your open campaigns and add a short note.">
       {sent ? (
         <div className="space-y-5 py-2">
-          <CheckCircle2 className="size-8 text-forest" strokeWidth={1.5} />
+          <CheckCircle2 className="size-8 text-navy" strokeWidth={1.5} />
           <div>
             <h3 className="text-2xl">Invitation sent</h3>
-            <p className="mt-2 text-[15px] text-muted">
+            <p className="mt-2 text-[15px] text-steel">
               {creator.displayName} can now accept or decline your invitation to <span className="text-ink">{selected?.title}</span>. You’ll see their
               answer in your invitations list.
             </p>
@@ -93,7 +93,7 @@ export function InviteDialog({ open, onClose, creator, existingInvitations = [] 
           className="space-y-6"
         >
           <fieldset>
-            <legend className="mb-2 text-[13px] font-medium">Campaign</legend>
+            <legend className="mb-2 text-[13px] font-semibold">Campaign</legend>
             <div className="space-y-2">
               {campaigns.data.items.map((c) => {
                 const status = statusFor(c._id);
@@ -102,7 +102,7 @@ export function InviteDialog({ open, onClose, creator, existingInvitations = [] 
                   <label
                     key={c._id}
                     className={`flex cursor-pointer items-start gap-3 rounded-md border px-4 py-3 transition-colors ${
-                      campaignId === c._id ? 'border-forest bg-mint/60' : 'border-beige bg-white hover:border-forest/50'
+                      campaignId === c._id ? 'border-navy bg-soft/60' : 'border-line bg-white hover:border-navy/50'
                     } ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
                   >
                     <input
@@ -112,11 +112,11 @@ export function InviteDialog({ open, onClose, creator, existingInvitations = [] 
                       checked={campaignId === c._id}
                       onChange={() => setCampaignId(c._id)}
                       disabled={disabled}
-                      className="mt-1 accent-forest"
+                      className="mt-1 accent-navy"
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block font-medium">{c.title}</span>
-                      <span className="block text-[13px] text-muted">
+                      <span className="block font-semibold">{c.title}</span>
+                      <span className="block text-[13px] text-steel">
                         {formatBudget(c.budgetMin, c.budgetMax)} · {relativeDeadline(c.deadline)}
                       </span>
                     </span>
@@ -125,9 +125,9 @@ export function InviteDialog({ open, onClose, creator, existingInvitations = [] 
                 );
               })}
             </div>
-            <p className="mt-2 text-[13px] text-muted">
+            <p className="mt-2 text-[13px] text-steel">
               Need a different brief?{' '}
-              <Link to={`/brand/campaigns/new?returnTo=${encodeURIComponent(returnHere)}`} className="text-forest underline-offset-4 hover:underline">
+              <Link to={`/brand/campaigns/new?returnTo=${encodeURIComponent(returnHere)}`} className="text-navy underline-offset-4 hover:underline">
                 Create a new campaign
               </Link>
             </p>
@@ -144,7 +144,7 @@ export function InviteDialog({ open, onClose, creator, existingInvitations = [] 
 
           {invite.error && <Alert tone="error">{invite.error.message}</Alert>}
 
-          <div className="flex flex-col-reverse gap-2 border-t border-beige/60 pt-5 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-line/60 pt-5 sm:flex-row sm:justify-end">
             <Button variant="ghost" onClick={close}>
               Cancel
             </Button>

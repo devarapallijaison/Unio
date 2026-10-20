@@ -31,11 +31,11 @@ function Recommendations({ campaign }) {
     <Panel
       title={
         <span className="inline-flex items-center gap-2">
-          <Sparkles className="size-4 text-forest" strokeWidth={1.75} /> Suggested creators
+          <Sparkles className="size-4 text-navy" strokeWidth={1.75} /> Suggested creators
         </span>
       }
     >
-      <p className="mb-4 text-[13px] text-muted">
+      <p className="mb-4 text-[13px] text-steel">
         Ranked by overlap with your skills, tools, category and budget. A starting point for your shortlist, not a prediction.
       </p>
       {recs.isLoading ? (
@@ -43,28 +43,28 @@ function Recommendations({ campaign }) {
       ) : recs.error ? (
         <ErrorState error={recs.error} onRetry={recs.refetch} />
       ) : recs.data.length === 0 ? (
-        <p className="text-[14px] text-muted">No available creators to suggest yet.</p>
+        <p className="text-[14px] text-steel">No available creators to suggest yet.</p>
       ) : (
         <ul className="space-y-4">
           {recs.data.slice(0, 6).map(({ creator, score, reasons }) => {
             const existing = invites.data?.items.find((i) => i.campaignId === campaign._id && i.creatorId === creator._id);
             return (
-              <li key={creator._id} className="border-b border-beige/60 pb-4 last:border-0 last:pb-0">
+              <li key={creator._id} className="border-b border-line/60 pb-4 last:border-0 last:pb-0">
                 <div className="flex items-start gap-3">
                   <Avatar name={creator.displayName} src={creator.photoUrl} size="sm" />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <Link to={`/creators/${creator._id}`} className="truncate font-medium hover:text-forest">
+                      <Link to={`/creators/${creator._id}`} className="truncate font-semibold hover:text-navy">
                         {creator.displayName}
                       </Link>
-                      <span className="font-mono text-xs text-forest" title="Match score out of 100">
+                      <span className="font-mono text-xs text-navy" title="Match score out of 100">
                         {score}
                       </span>
                     </div>
-                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-mint" aria-hidden>
-                      <div className="h-full bg-forest/70" style={{ width: `${score}%` }} />
+                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-soft" aria-hidden>
+                      <div className="h-full bg-navy/70" style={{ width: `${score}%` }} />
                     </div>
-                    {reasons.length > 0 && <p className="mt-1.5 text-[12px] leading-snug text-muted">{reasons.slice(0, 2).join(' · ')}</p>}
+                    {reasons.length > 0 && <p className="mt-1.5 text-[12px] leading-snug text-steel">{reasons.slice(0, 2).join(' · ')}</p>}
                     <div className="mt-2">
                       {existing && existing.status !== 'cancelled' && existing.status !== 'declined' ? (
                         <StatusPill status={existing.status} />
@@ -81,7 +81,7 @@ function Recommendations({ campaign }) {
           })}
         </ul>
       )}
-      {campaign.status !== 'open' && <p className="mt-4 text-[12px] text-muted">Open the campaign to send invitations.</p>}
+      {campaign.status !== 'open' && <p className="mt-4 text-[12px] text-steel">Open the campaign to send invitations.</p>}
       {inviting && (
         <InviteDialog
           open
@@ -110,7 +110,7 @@ export default function CampaignApplicants() {
 
   return (
     <>
-      <Link to="/brand/campaigns" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
+      <Link to="/brand/campaigns" className="mb-4 inline-flex items-center gap-1.5 text-sm text-steel hover:text-ink">
         <ArrowLeft className="size-4" /> Campaigns
       </Link>
       <PageHeader

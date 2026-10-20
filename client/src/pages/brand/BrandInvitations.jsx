@@ -70,16 +70,16 @@ export default function BrandInvitations() {
         </EmptyState>
       ) : (
         <>
-          <ul className="overflow-hidden rounded-lg border border-beige/70 bg-white">
+          <ul className="overflow-hidden rounded-lg border border-line/70 bg-white">
             {query.data.items.map((inv) => (
-              <li key={inv._id} className="flex flex-col gap-3 border-b border-beige/60 px-5 py-4 last:border-0 sm:flex-row sm:items-center sm:justify-between">
+              <li key={inv._id} className="flex flex-col gap-3 border-b border-line/60 px-5 py-4 last:border-0 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-center gap-3">
                   <Avatar name={inv.creator?.displayName ?? '?'} src={inv.creator?.photoUrl} size="md" />
                   <div className="min-w-0">
-                    <Link to={`/creators/${inv.creatorId}`} className="font-medium hover:text-forest">
+                    <Link to={`/creators/${inv.creatorId}`} className="font-semibold hover:text-navy">
                       {inv.creator?.displayName}
                     </Link>
-                    <p className="truncate text-[13px] text-muted">
+                    <p className="truncate text-[13px] text-steel">
                       {inv.campaign?.title} · {formatDate(inv.updatedAt)}
                     </p>
                   </div>

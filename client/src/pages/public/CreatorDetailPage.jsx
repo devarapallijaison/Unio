@@ -39,16 +39,16 @@ function TrackRecord({ signals, name }) {
     <section className="container-page grid gap-10 pb-16 lg:grid-cols-12">
       {workflows.length > 0 && (
         <div className="lg:col-span-6">
-          <p className="font-mono text-xs text-muted">Process</p>
+          <p className="eyebrow">Process</p>
           <h2 className="mt-2 text-3xl">How {name.split(' ')[0]} works</h2>
           <ul className="mt-6 space-y-4">
             {workflows.map((w) => (
-              <li key={w.subject} className="border-t border-beige/80 pt-4">
+              <li key={w.subject} className="border-t border-line/80 pt-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium">{w.subject}</p>
+                  <p className="font-semibold">{w.subject}</p>
                   <VerificationBadge status={w.status} />
                 </div>
-                <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{w.description}</p>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-steel">{w.description}</p>
               </li>
             ))}
           </ul>
@@ -56,19 +56,19 @@ function TrackRecord({ signals, name }) {
       )}
       {(completedProjects > 0 || feedback.length > 0) && (
         <div className={workflows.length ? 'lg:col-span-5 lg:col-start-8' : 'lg:col-span-8'}>
-          <p className="font-mono text-xs text-muted">Track record on UNIO</p>
+          <p className="eyebrow">Track record on UNIO</p>
           <h2 className="mt-2 text-3xl">{pluralize(completedProjects, 'completed project')}</h2>
           {feedback.length > 0 ? (
             <ul className="mt-6 space-y-5">
               {feedback.map((f, i) => (
-                <li key={i} className="border-t border-beige/80 pt-4">
-                  <div className="flex items-center gap-0.5 text-forest" aria-label={`${f.rating} out of 5`}>
+                <li key={i} className="border-t border-line/80 pt-4">
+                  <div className="flex items-center gap-0.5 text-navy" aria-label={`${f.rating} out of 5`}>
                     {Array.from({ length: 5 }).map((_, n) => (
-                      <Star key={n} className={`size-3.5 ${n < f.rating ? 'fill-forest' : 'text-beige'}`} strokeWidth={1.5} />
+                      <Star key={n} className={`size-3.5 ${n < f.rating ? 'fill-navy' : 'text-steel'}`} strokeWidth={1.5} />
                     ))}
                   </div>
-                  {f.comment && <p className="mt-2 font-display text-lg leading-snug">“{f.comment}”</p>}
-                  <p className="mt-1.5 text-[13px] text-muted">
+                  {f.comment && <p className="mt-2 font-extrabold tracking-[-0.03em] text-lg leading-snug">“{f.comment}”</p>}
+                  <p className="mt-1.5 text-[13px] text-steel">
                     {f.brandName}
                     {f.campaignTitle ? ` · ${f.campaignTitle}` : ''} · {formatDate(f.createdAt, { month: 'short', year: 'numeric' })}
                   </p>
@@ -76,7 +76,7 @@ function TrackRecord({ signals, name }) {
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-[15px] text-muted">No written client feedback yet.</p>
+            <p className="mt-3 text-[15px] text-steel">No written client feedback yet.</p>
           )}
         </div>
       )}
@@ -130,7 +130,7 @@ export default function CreatorDetailPage() {
   return (
     <article>
       <div className="container-page pt-8">
-        <Link to="/creators" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
+        <Link to="/creators" className="inline-flex items-center gap-1.5 text-sm text-steel hover:text-ink">
           <ArrowLeft className="size-4" /> All creators
         </Link>
       </div>
@@ -144,32 +144,32 @@ export default function CreatorDetailPage() {
                 {creator.isDemo && <DemoBadge />}
                 <AvailabilityLabel value={creator.availability} />
                 {signals?.verifiedCount > 0 && (
-                  <span className="inline-flex items-center gap-1 text-[13px] font-medium text-forest" title={VERIFICATION_LEGEND.VERIFIED}>
+                  <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-navy" title={VERIFICATION_LEGEND.VERIFIED}>
                     <BadgeCheck className="size-4" strokeWidth={2} /> {signals.verifiedCount} verified {signals.verifiedCount === 1 ? 'claim' : 'claims'}
                   </span>
                 )}
               </div>
               <h1 className="mt-3 text-5xl leading-[1] sm:text-6xl">{creator.displayName}</h1>
               {creator.location && (
-                <p className="mt-3 inline-flex items-center gap-1.5 text-muted">
+                <p className="mt-3 inline-flex items-center gap-1.5 text-steel">
                   <MapPin className="size-4" strokeWidth={1.75} /> {creator.location}
                 </p>
               )}
             </div>
           </div>
-          {creator.bio && <p className="mt-8 max-w-2xl font-display text-xl font-[350] leading-relaxed text-ink/90 sm:text-[22px]">{creator.bio}</p>}
+          {creator.bio && <p className="mt-8 max-w-2xl text-[16px] font-medium leading-relaxed text-ink sm:text-[17px]">{creator.bio}</p>}
           {creator.isDemo && (
-            <p className="mt-5 max-w-2xl text-[13px] text-muted">
+            <p className="mt-5 max-w-2xl text-[13px] text-steel">
               This is a fictional demo profile. Its portfolio pieces illustrate the format and are not real client work.
             </p>
           )}
         </div>
 
         <aside className="lg:col-span-4">
-          <div className="rounded-lg border border-beige/80 bg-white p-6 lg:sticky lg:top-24">
+          <div className="rounded-lg border border-line/80 bg-white p-6 lg:sticky lg:top-24">
             <p className="eyebrow">Starting from</p>
-            <p className="mt-1 font-display text-4xl">{creator.startingPrice != null ? formatINR(creator.startingPrice) : 'On request'}</p>
-            <div className="mt-6 space-y-5 border-t border-beige/60 pt-6">
+            <p className="mt-1 font-extrabold tracking-[-0.03em] text-4xl">{creator.startingPrice != null ? formatINR(creator.startingPrice) : 'On request'}</p>
+            <div className="mt-6 space-y-5 border-t border-line/60 pt-6">
               <TagBlock label="Skills" items={creator.skills} />
               {signals?.tools?.length > 0 && (
                 <div>
@@ -179,8 +179,8 @@ export default function CreatorDetailPage() {
                       <ToolTag key={t.name} name={t.name} status={t.status} />
                     ))}
                   </div>
-                  <p className="mt-2 text-[12px] leading-snug text-muted">
-                    <BadgeCheck className="mr-1 inline size-3.5 text-forest" strokeWidth={2} />
+                  <p className="mt-2 text-[12px] leading-snug text-steel">
+                    <BadgeCheck className="mr-1 inline size-3.5 text-navy" strokeWidth={2} />
                     confirmed by a UNIO reviewer. Others are self-reported.
                   </p>
                 </div>
@@ -198,9 +198,9 @@ export default function CreatorDetailPage() {
               </Button>
             )}
             {creator.availability === 'unavailable' && !viewer?.isSelf && (
-              <p className="mt-2 text-center text-[13px] text-muted">This creator isn’t taking new work right now.</p>
+              <p className="mt-2 text-center text-[13px] text-steel">This creator isn’t taking new work right now.</p>
             )}
-            {!user && <p className="mt-2 text-center text-[13px] text-muted">You’ll be asked to sign in with a brand account.</p>}
+            {!user && <p className="mt-2 text-center text-[13px] text-steel">You’ll be asked to sign in with a brand account.</p>}
             {roleNotice && user?.role === 'creator' && !viewer?.isSelf && (
               <Alert tone="info" className="mt-4">
                 Invitations are sent by brand accounts. You’re signed in as a creator — browse{' '}
@@ -208,11 +208,11 @@ export default function CreatorDetailPage() {
               </Alert>
             )}
             {activeInvites.length > 0 && (
-              <div className="mt-5 space-y-2 border-t border-beige/60 pt-4">
+              <div className="mt-5 space-y-2 border-t border-line/60 pt-4">
                 <p className="eyebrow">Your invitations</p>
                 {activeInvites.map((i) => (
                   <div key={i._id} className="flex items-center justify-between gap-3 text-[13px]">
-                    <span className="truncate text-muted">{i.campaignTitle}</span>
+                    <span className="truncate text-steel">{i.campaignTitle}</span>
                     <StatusPill status={i.status} />
                   </div>
                 ))}
@@ -222,14 +222,14 @@ export default function CreatorDetailPage() {
         </aside>
       </header>
 
-      <section className="border-t border-beige/80 bg-sand/40">
+      <section className="border-t border-line/80 bg-line/40">
         <div className="container-page py-16">
           <div className="mb-10 flex items-end justify-between">
             <div>
-              <p className="font-mono text-xs text-muted">Portfolio</p>
+              <p className="eyebrow">Portfolio</p>
               <h2 className="mt-2 text-4xl">Selected work</h2>
             </div>
-            <p className="font-mono text-xs text-muted">{String(portfolio.length).padStart(2, '0')} pieces</p>
+            <p className="eyebrow">{portfolio.length} pieces</p>
           </div>
           {portfolio.length ? (
             <PortfolioGrid items={portfolio} statusById={signals?.portfolio} />
@@ -242,7 +242,7 @@ export default function CreatorDetailPage() {
       </section>
 
       {signals && (signals.completedProjects > 0 || signals.feedback?.length > 0 || signals.workflows?.length > 0) && (
-        <div className="border-t border-beige/80 pt-16">
+        <div className="border-t border-line/80 pt-16">
           <TrackRecord signals={signals} name={creator.displayName} />
         </div>
       )}

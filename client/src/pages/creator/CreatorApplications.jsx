@@ -77,10 +77,10 @@ export default function CreatorApplications() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <p className="eyebrow">{a.brand?.companyName ?? 'Brand'}</p>
-                    <Link to={`/campaigns/${a.campaignId}`} className="mt-1 block font-display text-xl hover:text-forest">
+                    <Link to={`/campaigns/${a.campaignId}`} className="mt-1 block font-extrabold tracking-[-0.03em] text-xl hover:text-navy">
                       {a.campaign?.title ?? 'Campaign'}
                     </Link>
-                    <p className="mt-1 text-[13px] text-muted">
+                    <p className="mt-1 text-[13px] text-steel">
                       Submitted {formatDate(a.submittedAt)}
                       {a.proposedPrice != null && ` · Your price ${formatINR(a.proposedPrice)}`}
                       {a.campaign?.status === 'closed' && ' · Campaign closed'}
@@ -91,8 +91,8 @@ export default function CreatorApplications() {
                     <StatusPill status={a.status} />
                   </div>
                 </div>
-                <details className="group mt-4 border-t border-beige/60 pt-3">
-                  <summary className="cursor-pointer list-none text-[13px] text-forest hover:underline">Show proposal</summary>
+                <details className="group mt-4 border-t border-line/60 pt-3">
+                  <summary className="cursor-pointer list-none text-[13px] text-navy hover:underline">Show proposal</summary>
                   <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-ink/85">{a.proposal}</p>
                 </details>
                 {a.status === 'accepted' && (

@@ -1,7 +1,7 @@
 import { createBrowserRouter, isRouteErrorResponse, useRouteError } from 'react-router';
-import { DashboardLayout, RootLayout } from '../components/layout/Layouts.jsx';
+import { AppRoot, DashboardLayout, PublicFrame, RootLayout } from '../components/layout/Layouts.jsx';
 import { GuestOnly, ProtectedRoute } from '../components/layout/ProtectedRoute.jsx';
-import { ButtonLink } from '../components/ui/Button.jsx';
+import { Button, ButtonLink } from '../components/ui/Button.jsx';
 import AboutPage from '../pages/public/AboutPage.jsx';
 import { LoginPage, RegisterPage } from '../pages/public/AuthPages.jsx';
 import CampaignDetailPage from '../pages/public/CampaignDetailPage.jsx';
@@ -19,89 +19,95 @@ const page = (load, props) => async () => {
 
 function RouteError() {
   const error = useRouteError();
-  if (isRouteErrorResponse(error) && error.status === 404) return <NotFoundPage />;
+  if (isRouteErrorResponse(error) && error.status === 404) {
+    return (
+      <PublicFrame>
+        <NotFoundPage />
+      </PublicFrame>
+    );
+  }
   return (
-    <div className="container-page py-24">
-      <h1 className="text-4xl">Something went wrong</h1>
-      <p className="mt-3 max-w-md text-muted">An unexpected error stopped this page from loading. Reloading usually fixes it.</p>
-      <div className="mt-6 flex gap-2">
-        <button type="button" onClick={() => window.location.reload()} className="rounded-md bg-forest px-4 py-2 text-sm text-ivory">
-          Reload
-        </button>
-        <ButtonLink to="/" variant="ghost">
-          Home
-        </ButtonLink>
+    <PublicFrame>
+      <div className="container-page py-24">
+        <h1 className="text-[30px] sm:text-[38px]">Something went wrong</h1>
+        <p className="mt-3 max-w-md text-steel">An unexpected error stopped this page from loading. Reloading usually fixes it.</p>
+        <div className="mt-6 flex gap-2">
+          <Button onClick={() => window.location.reload()}>Reload</Button>
+          <ButtonLink to="/" variant="secondary">
+            Home
+          </ButtonLink>
+        </div>
       </div>
-    </div>
+    </PublicFrame>
   );
 }
 
+/** Signed-in area for one role: guard → app shell → pages. */
+const workspace = (path, role, children) => ({
+  path,
+  element: <ProtectedRoute role={role} />,
+  errorElement: <RouteError />,
+  children: [{ element: <DashboardLayout role={role} />, children }],
+});
+
+/* Kit preview for comparing components with design/screens. Development builds only:
+   `import.meta.env.DEV` is false in production, so the route and its chunk are dropped. */
+const devRoutes = import.meta.env.DEV ? [{ path: 'dev/kit', lazy: page(() => import('../pages/dev/KitPage.jsx')) }] : [];
+
 export const router = createBrowserRouter([
   {
-    element: <RootLayout />,
+    element: <AppRoot />,
     errorElement: <RouteError />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'creators', element: <CreatorsPage /> },
-      { path: 'creators/:id', element: <CreatorDetailPage /> },
-      { path: 'campaigns', element: <CampaignsPage /> },
-      { path: 'campaigns/:id', element: <CampaignDetailPage /> },
-      { path: 'about', element: <AboutPage /> },
+      {
+        element: <RootLayout />,
+        errorElement: <RouteError />,
+        children: [
+          { index: true, element: <HomePage /> },
+          { path: 'creators', element: <CreatorsPage /> },
+          { path: 'creators/:id', element: <CreatorDetailPage /> },
+          { path: 'campaigns', element: <CampaignsPage /> },
+          { path: 'campaigns/:id', element: <CampaignDetailPage /> },
+          { path: 'about', element: <AboutPage /> },
+          { path: '*', element: <NotFoundPage /> },
+        ],
+      },
+      // Split-screen auth pages carry their own logo (v9 P7/P8), so no public header/footer.
       { path: 'login', element: <GuestOnly><LoginPage /></GuestOnly> },
       { path: 'register', element: <GuestOnly><RegisterPage /></GuestOnly> },
       {
         element: <ProtectedRoute />,
-        children: [{ path: 'projects/:id', lazy: page(() => import('../pages/shared/ProjectDetail.jsx')) }],
-      },
-      {
-        path: 'creator',
-        element: <ProtectedRoute role="creator" />,
+        errorElement: <RouteError />,
         children: [
           {
-            element: <DashboardLayout role="creator" />,
-            children: [
-              { path: 'dashboard', lazy: page(() => import('../pages/creator/CreatorDashboard.jsx')) },
-              { path: 'profile/edit', lazy: page(() => import('../pages/creator/CreatorProfileEdit.jsx')) },
-              { path: 'portfolio', lazy: page(() => import('../pages/creator/CreatorPortfolio.jsx')) },
-              { path: 'applications', lazy: page(() => import('../pages/creator/CreatorApplications.jsx')) },
-              { path: 'invitations', lazy: page(() => import('../pages/creator/CreatorInvitations.jsx')) },
-              { path: 'projects', lazy: page(() => import('../pages/shared/ProjectsList.jsx'), { role: 'creator' }) },
-              { path: 'verification', lazy: page(() => import('../pages/creator/CreatorVerification.jsx')) },
-            ],
+            // Shared project page uses the signed-in user's own sidebar.
+            element: <DashboardLayout />,
+            children: [{ path: 'projects/:id', lazy: page(() => import('../pages/shared/ProjectDetail.jsx')) }],
           },
         ],
       },
-      {
-        path: 'brand',
-        element: <ProtectedRoute role="brand" />,
-        children: [
-          {
-            element: <DashboardLayout role="brand" />,
-            children: [
-              { path: 'dashboard', lazy: page(() => import('../pages/brand/BrandDashboard.jsx')) },
-              { path: 'campaigns', lazy: page(() => import('../pages/brand/BrandCampaigns.jsx')) },
-              { path: 'campaigns/new', lazy: page(() => import('../pages/brand/CampaignFormPage.jsx')) },
-              { path: 'campaigns/:id/edit', lazy: page(() => import('../pages/brand/CampaignFormPage.jsx')) },
-              { path: 'campaigns/:id/applicants', lazy: page(() => import('../pages/brand/CampaignApplicants.jsx')) },
-              { path: 'applications', lazy: page(() => import('../pages/brand/BrandApplications.jsx')) },
-              { path: 'invitations', lazy: page(() => import('../pages/brand/BrandInvitations.jsx')) },
-              { path: 'projects', lazy: page(() => import('../pages/shared/ProjectsList.jsx'), { role: 'brand' }) },
-              { path: 'profile', lazy: page(() => import('../pages/brand/BrandProfile.jsx')) },
-            ],
-          },
-        ],
-      },
-      {
-        path: 'review',
-        element: <ProtectedRoute role="reviewer" />,
-        children: [
-          {
-            element: <DashboardLayout role="reviewer" />,
-            children: [{ index: true, lazy: page(() => import('../pages/review/ReviewQueue.jsx')) }],
-          },
-        ],
-      },
-      { path: '*', element: <NotFoundPage /> },
+      workspace('creator', 'creator', [
+        { path: 'dashboard', lazy: page(() => import('../pages/creator/CreatorDashboard.jsx')) },
+        { path: 'profile/edit', lazy: page(() => import('../pages/creator/CreatorProfileEdit.jsx')) },
+        { path: 'portfolio', lazy: page(() => import('../pages/creator/CreatorPortfolio.jsx')) },
+        { path: 'applications', lazy: page(() => import('../pages/creator/CreatorApplications.jsx')) },
+        { path: 'invitations', lazy: page(() => import('../pages/creator/CreatorInvitations.jsx')) },
+        { path: 'projects', lazy: page(() => import('../pages/shared/ProjectsList.jsx'), { role: 'creator' }) },
+        { path: 'verification', lazy: page(() => import('../pages/creator/CreatorVerification.jsx')) },
+      ]),
+      workspace('brand', 'brand', [
+        { path: 'dashboard', lazy: page(() => import('../pages/brand/BrandDashboard.jsx')) },
+        { path: 'campaigns', lazy: page(() => import('../pages/brand/BrandCampaigns.jsx')) },
+        { path: 'campaigns/new', lazy: page(() => import('../pages/brand/CampaignFormPage.jsx')) },
+        { path: 'campaigns/:id/edit', lazy: page(() => import('../pages/brand/CampaignFormPage.jsx')) },
+        { path: 'campaigns/:id/applicants', lazy: page(() => import('../pages/brand/CampaignApplicants.jsx')) },
+        { path: 'applications', lazy: page(() => import('../pages/brand/BrandApplications.jsx')) },
+        { path: 'invitations', lazy: page(() => import('../pages/brand/BrandInvitations.jsx')) },
+        { path: 'projects', lazy: page(() => import('../pages/shared/ProjectsList.jsx'), { role: 'brand' }) },
+        { path: 'profile', lazy: page(() => import('../pages/brand/BrandProfile.jsx')) },
+      ]),
+      workspace('review', 'reviewer', [{ index: true, lazy: page(() => import('../pages/review/ReviewQueue.jsx')) }]),
+      ...devRoutes,
     ],
   },
 ]);

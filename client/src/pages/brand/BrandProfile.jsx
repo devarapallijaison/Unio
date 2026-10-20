@@ -60,7 +60,7 @@ export default function BrandProfile() {
     <>
       <PageHeader eyebrow="Profile" title="Brand profile" description="Shown to creators on your campaign pages and invitations." />
       <form onSubmit={handleSubmit((v) => save.mutate(v))} noValidate className="space-y-6">
-        <section className="grid gap-5 rounded-lg border border-beige/70 bg-white p-6 sm:grid-cols-2">
+        <section className="grid gap-5 rounded-lg border border-line/70 bg-white p-6 sm:grid-cols-2">
           <Input label="Company name" required error={formState.errors.companyName?.message} {...register('companyName')} />
           <Input label="Industry" placeholder="e.g. Beauty" error={formState.errors.industry?.message} {...register('industry')} />
           <Input label="Website" placeholder="https://" error={formState.errors.websiteUrl?.message} {...register('websiteUrl')} />

@@ -4,14 +4,15 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { dashboardFor, safeReturnTo } from '../../lib/returnTo.js';
 import { ButtonLink } from '../ui/Button.jsx';
 import { ErrorState, PageLoader } from '../ui/Feedback.jsx';
+import { PublicFrame } from './Layouts.jsx';
 
 export function WrongRole({ user, required, message }) {
   return (
     <div className="container-page py-20">
-      <div className="mx-auto max-w-lg rounded-lg border border-beige bg-white p-8">
-        <ShieldAlert className="size-7 text-forest" strokeWidth={1.5} />
+      <div className="mx-auto max-w-lg rounded-lg border border-line bg-white p-8">
+        <ShieldAlert className="size-7 text-navy" strokeWidth={1.6} />
         <h1 className="mt-4 text-2xl">This area is for {required} accounts</h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-muted">
+        <p className="mt-3 text-[14px] leading-relaxed text-steel">
           {message ??
             `You’re signed in as ${user.name} with a ${user.role} account. Each account has one role, so this page isn’t available to you.`}
         </p>
@@ -31,19 +32,27 @@ export function ProtectedRoute({ role }) {
   const { user, isLoading, sessionError, refresh } = useAuth();
   const location = useLocation();
 
-  if (isLoading) return <PageLoader label="Checking your session" />;
+  if (isLoading) return <PublicFrame><PageLoader label="Checking your session" /></PublicFrame>;
   if (sessionError) {
     return (
-      <div className="container-page py-16">
-        <ErrorState error={sessionError} onRetry={refresh} title="We couldn’t check your session" />
-      </div>
+      <PublicFrame>
+        <div className="container-page py-16">
+          <ErrorState error={sessionError} onRetry={refresh} title="We couldn’t check your session" />
+        </div>
+      </PublicFrame>
     );
   }
   if (!user) {
     const returnTo = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?returnTo=${returnTo}`} replace />;
   }
-  if (role && user.role !== role) return <WrongRole user={user} required={role} />;
+  if (role && user.role !== role) {
+    return (
+      <PublicFrame>
+        <WrongRole user={user} required={role} />
+      </PublicFrame>
+    );
+  }
   return <Outlet />;
 }
 

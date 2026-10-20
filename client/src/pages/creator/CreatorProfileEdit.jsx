@@ -87,10 +87,10 @@ export default function CreatorProfileEdit() {
         }
       />
       <form onSubmit={handleSubmit((v) => save.mutate(v))} noValidate className="space-y-6">
-        <section className="grid gap-6 rounded-lg border border-beige/70 bg-white p-6 md:grid-cols-[160px_1fr]">
+        <section className="grid gap-6 rounded-lg border border-line/70 bg-white p-6 md:grid-cols-[160px_1fr]">
           <div className="flex flex-col items-start gap-3">
             <Avatar name={name} src={photo} size="xl" />
-            <p className="text-[12px] text-muted">Initials are shown until you add a photo URL.</p>
+            <p className="text-[12px] text-steel">Initials are shown until you add a photo URL.</p>
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
             <Input label="Display name" required error={formState.errors.displayName?.message} {...register('displayName')} />
@@ -114,7 +114,7 @@ export default function CreatorProfileEdit() {
           </div>
         </section>
 
-        <section className="grid gap-5 rounded-lg border border-beige/70 bg-white p-6">
+        <section className="grid gap-5 rounded-lg border border-line/70 bg-white p-6">
           <Controller name="skills" control={control} render={({ field }) => <TagInput label="Skills" value={field.value} onChange={field.onChange} suggestions={SKILLS} />} />
           <Controller name="tools" control={control} render={({ field }) => <TagInput label="AI tools" value={field.value} onChange={field.onChange} suggestions={TOOLS} />} />
           <Controller
@@ -124,7 +124,7 @@ export default function CreatorProfileEdit() {
           />
         </section>
 
-        <section className="grid gap-5 rounded-lg border border-beige/70 bg-white p-6 sm:grid-cols-2">
+        <section className="grid gap-5 rounded-lg border border-line/70 bg-white p-6 sm:grid-cols-2">
           <Input
             label="Starting price"
             type="number"
@@ -143,8 +143,8 @@ export default function CreatorProfileEdit() {
 
         {save.error && !save.error.details?.length && <Alert tone="error">{save.error.message}</Alert>}
 
-        <div className="sticky bottom-0 -mx-4 flex items-center justify-end gap-3 border-t border-beige/70 bg-ivory/95 px-4 py-4 sm:mx-0 sm:rounded-lg sm:border sm:px-5">
-          {formState.isDirty && <span className="mr-auto text-[13px] text-muted">Unsaved changes</span>}
+        <div className="sticky bottom-0 -mx-4 flex items-center justify-end gap-3 border-t border-line/70 bg-page/95 px-4 py-4 sm:mx-0 sm:rounded-lg sm:border sm:px-5">
+          {formState.isDirty && <span className="mr-auto text-[13px] text-steel">Unsaved changes</span>}
           <Button variant="ghost" onClick={() => reset(toForm(profile.data))} disabled={!formState.isDirty}>
             Discard
           </Button>

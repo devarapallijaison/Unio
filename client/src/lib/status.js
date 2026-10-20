@@ -24,12 +24,13 @@ const LABELS = {
   REJECTED: 'Not verified',
 };
 
+/** Pill tones (components/ui/Badge.jsx): ok · info · wait · att · neutral. */
 const TONES = {
-  positive: ['open', 'accepted', 'approved', 'completed', 'available', 'VERIFIED'],
-  active: ['in_progress', 'submitted'],
-  waiting: ['pending', 'not_started', 'busy', 'PENDING'],
-  attention: ['revision_requested', 'REJECTED'],
-  neutral: ['draft', 'closed', 'rejected', 'withdrawn', 'declined', 'cancelled', 'unavailable', 'SELF_REPORTED'],
+  ok: ['open', 'accepted', 'approved', 'completed', 'available', 'VERIFIED'],
+  info: ['in_progress'],
+  wait: ['pending', 'submitted', 'busy', 'PENDING'],
+  att: ['revision_requested', 'rejected', 'REJECTED'],
+  neutral: ['draft', 'closed', 'not_started', 'withdrawn', 'declined', 'cancelled', 'unavailable', 'SELF_REPORTED'],
 };
 
 export function statusLabel(status) {

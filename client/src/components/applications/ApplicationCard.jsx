@@ -29,22 +29,22 @@ export function ApplicationCard({ application, showCampaign = false }) {
   });
 
   return (
-    <li className="rounded-lg border border-beige/70 bg-white p-5">
+    <li className="rounded-lg border border-line/70 bg-white p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
           <Avatar name={c?.displayName ?? '?'} src={c?.photoUrl} size="md" />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <Link to={`/creators/${application.creatorId}`} className="font-display text-xl hover:text-forest">
+              <Link to={`/creators/${application.creatorId}`} className="font-extrabold tracking-[-0.03em] text-xl hover:text-navy">
                 {c?.displayName ?? 'Creator'}
               </Link>
               {c?.isDemo && <DemoBadge label="Demo" />}
             </div>
-            <p className="text-[13px] text-muted">
+            <p className="text-[13px] text-steel">
               {[c?.location, `Applied ${formatDate(application.submittedAt)}`].filter(Boolean).join(' · ')}
             </p>
             {showCampaign && application.campaign && (
-              <Link to={`/brand/campaigns/${application.campaignId}/applicants`} className="mt-1 block text-[13px] text-forest hover:underline">
+              <Link to={`/brand/campaigns/${application.campaignId}/applicants`} className="mt-1 block text-[13px] text-navy hover:underline">
                 {application.campaign.title}
               </Link>
             )}
@@ -52,11 +52,11 @@ export function ApplicationCard({ application, showCampaign = false }) {
         </div>
         <div className="flex items-center gap-3 sm:flex-col sm:items-end">
           <StatusPill status={application.status} />
-          <p className="font-mono text-sm">{application.proposedPrice != null ? formatINR(application.proposedPrice) : 'Price not given'}</p>
+          <p className="font-bold tabular-nums text-sm">{application.proposedPrice != null ? formatINR(application.proposedPrice) : 'Price not given'}</p>
         </div>
       </div>
 
-      <p className="mt-4 whitespace-pre-line border-l-2 border-sage pl-4 text-[15px] leading-relaxed text-ink/85">{application.proposal}</p>
+      <p className="mt-4 whitespace-pre-line border-l-2 border-line2 pl-4 text-[15px] leading-relaxed text-ink/85">{application.proposal}</p>
 
       {(c?.tools?.length ?? 0) > 0 && (
         <div className="mt-4 flex flex-wrap gap-1.5">
@@ -67,7 +67,7 @@ export function ApplicationCard({ application, showCampaign = false }) {
       )}
 
       {application.status === 'pending' && (
-        <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-beige/60 pt-4">
+        <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-line/60 pt-4">
           <ConfirmAction
             title="Mark as not selected?"
             body={`${c?.displayName ?? 'The creator'} will see that this application wasn’t selected.`}

@@ -13,7 +13,7 @@ export function SearchField({ value, onChange, placeholder, label = 'Search' }) 
       <label className="sr-only" htmlFor="search-field">
         {label}
       </label>
-      <Search className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-muted" strokeWidth={1.75} />
+      <Search className="pointer-events-none absolute left-[18px] top-1/2 size-[18px] -translate-y-1/2 text-steel" strokeWidth={1.8} />
       <input
         id="search-field"
         type="search"
@@ -23,7 +23,7 @@ export function SearchField({ value, onChange, placeholder, label = 'Search' }) 
           debounced(e.target.value);
         }}
         placeholder={placeholder}
-        className="h-12 w-full rounded-md border border-beige bg-white pl-11 pr-10 text-[15px] placeholder:text-muted/70 focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest/15 [&::-webkit-search-cancel-button]:hidden"
+        className="h-[50px] w-full rounded-full border border-line2 bg-white pl-12 pr-11 text-[14px] font-medium placeholder:font-normal placeholder:text-steel/80 focus:border-navy focus:outline-none [&::-webkit-search-cancel-button]:hidden"
       />
       {draft && (
         <button
@@ -32,7 +32,7 @@ export function SearchField({ value, onChange, placeholder, label = 'Search' }) 
             setDraft('');
             onChange('');
           }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-muted hover:text-ink"
+          className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1 text-steel hover:text-ink"
           aria-label="Clear search"
         >
           <X className="size-4" />
@@ -58,8 +58,8 @@ export function ChipGroup({ label, options, value, onChange }) {
               type="button"
               aria-pressed={active}
               onClick={() => onChange(active && v ? '' : v)}
-              className={`rounded-sm border px-2.5 py-1 text-[13px] transition-colors ${
-                active ? 'border-forest bg-forest text-ivory' : 'border-beige bg-white/70 text-ink/80 hover:border-forest/60'
+              className={`rounded-full border px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+                active ? 'border-navy bg-navy text-white' : 'border-line2 bg-white text-slate hover:border-navy'
               }`}
             >
               {text}

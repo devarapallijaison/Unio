@@ -80,7 +80,7 @@ export function ApplyDialog({ open, onClose, campaign }) {
             error={formState.errors.proposedPrice?.message}
             {...register('proposedPrice')}
           />
-          <div className="flex flex-col-reverse gap-2 border-t border-beige/60 pt-5 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-line/60 pt-5 sm:flex-row sm:justify-end">
             <Button variant="ghost" onClick={close}>
               Cancel
             </Button>
@@ -91,10 +91,10 @@ export function ApplyDialog({ open, onClose, campaign }) {
 
       {step === 'review' && (
         <div className="space-y-6">
-          <dl className="divide-y divide-beige/60 rounded-md border border-beige/80 bg-white">
+          <dl className="divide-y divide-line/60 rounded-md border border-line/80 bg-white">
             <div className="px-4 py-3">
               <dt className="eyebrow">Campaign</dt>
-              <dd className="mt-1 font-medium">{campaign.title}</dd>
+              <dd className="mt-1 font-semibold">{campaign.title}</dd>
             </div>
             <div className="px-4 py-3">
               <dt className="eyebrow">Proposal</dt>
@@ -102,12 +102,12 @@ export function ApplyDialog({ open, onClose, campaign }) {
             </div>
             <div className="px-4 py-3">
               <dt className="eyebrow">Your price</dt>
-              <dd className="mt-1 font-mono">{price != null ? formatINR(price) : 'Not specified'}</dd>
+              <dd className="mt-1 font-bold tabular-nums">{price != null ? formatINR(price) : 'Not specified'}</dd>
             </div>
           </dl>
-          <p className="text-[13px] text-muted">You can apply to each campaign once. You can withdraw while the application is pending.</p>
+          <p className="text-[13px] text-steel">You can apply to each campaign once. You can withdraw while the application is pending.</p>
           {apply.error && !apply.error.details?.length && <Alert tone="error">{apply.error.message}</Alert>}
-          <div className="flex flex-col-reverse gap-2 border-t border-beige/60 pt-5 sm:flex-row sm:justify-between">
+          <div className="flex flex-col-reverse gap-2 border-t border-line/60 pt-5 sm:flex-row sm:justify-between">
             <Button variant="ghost" onClick={() => setStep('write')}>
               <ArrowLeft className="size-4" /> Edit
             </Button>
@@ -123,8 +123,8 @@ export function ApplyDialog({ open, onClose, campaign }) {
 
       {step === 'done' && (
         <div className="space-y-5 py-2">
-          <CheckCircle2 className="size-8 text-forest" strokeWidth={1.5} />
-          <p className="text-[15px] text-muted">
+          <CheckCircle2 className="size-8 text-navy" strokeWidth={1.5} />
+          <p className="text-[15px] text-steel">
             Your proposal is with the brand. You’ll see their decision in your applications — accepted applications become a project automatically.
           </p>
           <div className="flex flex-wrap gap-2">

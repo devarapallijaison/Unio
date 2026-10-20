@@ -65,20 +65,20 @@ export default function CreatorDashboard() {
 
       <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
-          <Panel title="Invitations waiting for you" action={<Link to="/creator/invitations" className="text-sm text-forest hover:underline">All</Link>}>
+          <Panel title="Invitations waiting for you" action={<Link to="/creator/invitations" className="text-sm text-navy hover:underline">All</Link>}>
             {invites.isLoading ? (
               <Skeleton className="h-20" />
             ) : invites.error ? (
               <ErrorState error={invites.error} onRetry={invites.refetch} />
             ) : invites.data.items.length === 0 ? (
-              <p className="text-[15px] text-muted">No pending invitations. Brands can invite you directly from your public profile.</p>
+              <p className="text-[15px] text-steel">No pending invitations. Brands can invite you directly from your public profile.</p>
             ) : (
-              <ul className="divide-y divide-beige/60">
+              <ul className="divide-y divide-line/60">
                 {invites.data.items.map((inv) => (
                   <li key={inv._id} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <p className="eyebrow">{inv.brand?.companyName}</p>
-                      <Link to={`/campaigns/${inv.campaignId}`} className="font-medium hover:text-forest">
+                      <Link to={`/campaigns/${inv.campaignId}`} className="font-semibold hover:text-navy">
                         {inv.campaign?.title}
                       </Link>
                     </div>
@@ -89,27 +89,27 @@ export default function CreatorDashboard() {
             )}
           </Panel>
 
-          <Panel title="Recent applications" action={<Link to="/creator/applications" className="text-sm text-forest hover:underline">All</Link>}>
+          <Panel title="Recent applications" action={<Link to="/creator/applications" className="text-sm text-navy hover:underline">All</Link>}>
             {apps.isLoading ? (
               <Skeleton className="h-24" />
             ) : apps.error ? (
               <ErrorState error={apps.error} onRetry={apps.refetch} />
             ) : apps.data.items.length === 0 ? (
               <div className="flex flex-col items-start gap-3">
-                <p className="text-[15px] text-muted">You haven’t applied to any campaigns yet.</p>
+                <p className="text-[15px] text-steel">You haven’t applied to any campaigns yet.</p>
                 <ButtonLink to="/campaigns" variant="subtle" size="sm">
                   Browse open briefs <ArrowRight className="size-3.5" />
                 </ButtonLink>
               </div>
             ) : (
-              <ul className="divide-y divide-beige/60">
+              <ul className="divide-y divide-line/60">
                 {apps.data.items.map((a) => (
                   <li key={a._id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
                     <div className="min-w-0">
-                      <Link to={`/campaigns/${a.campaignId}`} className="block truncate font-medium hover:text-forest">
+                      <Link to={`/campaigns/${a.campaignId}`} className="block truncate font-semibold hover:text-navy">
                         {a.campaign?.title ?? 'Campaign'}
                       </Link>
-                      <p className="text-[13px] text-muted">
+                      <p className="text-[13px] text-steel">
                         {a.brand?.companyName} · {formatDate(a.submittedAt)}
                       </p>
                     </div>
@@ -120,16 +120,16 @@ export default function CreatorDashboard() {
             )}
           </Panel>
 
-          <Panel title="Active projects" action={<Link to="/creator/projects" className="text-sm text-forest hover:underline">All</Link>}>
+          <Panel title="Active projects" action={<Link to="/creator/projects" className="text-sm text-navy hover:underline">All</Link>}>
             {projects.isLoading ? (
               <Skeleton className="h-16" />
             ) : activeProjects.length === 0 ? (
-              <p className="text-[15px] text-muted">When a brand accepts your application or you accept an invitation, the project appears here.</p>
+              <p className="text-[15px] text-steel">When a brand accepts your application or you accept an invitation, the project appears here.</p>
             ) : (
-              <ul className="divide-y divide-beige/60">
+              <ul className="divide-y divide-line/60">
                 {activeProjects.map((p) => (
                   <li key={p._id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
-                    <Link to={`/projects/${p._id}`} className="min-w-0 truncate font-medium hover:text-forest">
+                    <Link to={`/projects/${p._id}`} className="min-w-0 truncate font-semibold hover:text-navy">
                       {p.campaign?.title}
                     </Link>
                     <StatusPill status={p.status} />
@@ -146,16 +146,16 @@ export default function CreatorDashboard() {
           ) : (
             <>
               <div className="flex items-end justify-between">
-                <p className="font-display text-5xl leading-none">{comp.percent}%</p>
-                <p className="text-[13px] text-muted">complete</p>
+                <p className="font-extrabold tracking-[-0.03em] text-5xl leading-none">{comp.percent}%</p>
+                <p className="text-[13px] text-steel">complete</p>
               </div>
-              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-mint" role="progressbar" aria-valuenow={comp.percent} aria-valuemin={0} aria-valuemax={100}>
-                <div className="h-full rounded-full bg-forest transition-[width] duration-700" style={{ width: `${comp.percent}%` }} />
+              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-soft" role="progressbar" aria-valuenow={comp.percent} aria-valuemin={0} aria-valuemax={100}>
+                <div className="h-full rounded-full bg-navy transition-[width] duration-700" style={{ width: `${comp.percent}%` }} />
               </div>
               <ul className="mt-5 space-y-2">
                 {comp.checks.map(([label, ok]) => (
-                  <li key={label} className={`flex items-center gap-2 text-[14px] ${ok ? 'text-ink' : 'text-muted'}`}>
-                    {ok ? <Check className="size-4 text-forest" /> : <Circle className="size-3.5 text-beige" />}
+                  <li key={label} className={`flex items-center gap-2 text-[14px] ${ok ? 'text-ink' : 'text-steel'}`}>
+                    {ok ? <Check className="size-4 text-navy" /> : <Circle className="size-3.5 text-steel" />}
                     {label}
                   </li>
                 ))}

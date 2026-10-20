@@ -51,7 +51,7 @@ export function Dialog({ open, onClose, title, description, children, size = 'md
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
-      <div className="absolute inset-0 bg-ink/40 animate-[rise_200ms_ease-out_both]" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-ink/50 animate-[rise_200ms_ease-out_both]" onClick={onClose} aria-hidden />
       <div
         ref={ref}
         role="dialog"
@@ -59,20 +59,20 @@ export function Dialog({ open, onClose, title, description, children, size = 'md
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
-        className={`relative max-h-[92vh] w-full ${width} overflow-y-auto rounded-t-lg bg-ivory shadow-[0_24px_60px_-20px_rgba(32,37,29,0.35)] sm:rounded-lg animate-rise`}
+        className={`relative max-h-[92vh] w-full ${width} overflow-y-auto rounded-t-xl bg-white shadow-pop sm:rounded-lg animate-rise`}
       >
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-beige/60 bg-ivory px-5 py-4 sm:px-6">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-line bg-white px-5 py-4 sm:px-6">
           <div>
             <h2 id={titleId} className="text-xl">
               {title}
             </h2>
             {description && (
-              <p id={descId} className="mt-1 text-sm text-muted">
+              <p id={descId} className="mt-1 text-sm text-steel">
                 {description}
               </p>
             )}
           </div>
-          <button type="button" onClick={onClose} className="-mr-1 rounded-md p-1.5 text-muted hover:bg-ink/5 hover:text-ink" aria-label="Close">
+          <button type="button" onClick={onClose} className="-mr-1 rounded-full p-1.5 text-steel hover:bg-navy/[0.06] hover:text-ink" aria-label="Close">
             <X className="size-5" />
           </button>
         </div>

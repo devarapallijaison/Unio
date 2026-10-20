@@ -31,10 +31,10 @@ function ApplyPanel({ campaign, viewer, user, onApply, roleNotice }) {
     return (
       <>
         <div className="flex items-center justify-between">
-          <p className="text-[15px] font-medium">You applied</p>
+          <p className="text-[15px] font-semibold">You applied</p>
           <StatusPill status={viewer.application.status} />
         </div>
-        <p className="mt-2 text-[13px] text-muted">Submitted {formatDate(viewer.application.submittedAt)}</p>
+        <p className="mt-2 text-[13px] text-steel">Submitted {formatDate(viewer.application.submittedAt)}</p>
         <ButtonLink to="/creator/applications" variant="secondary" className="mt-4 w-full">
           View my applications
         </ButtonLink>
@@ -46,7 +46,7 @@ function ApplyPanel({ campaign, viewer, user, onApply, roleNotice }) {
       <Button size="lg" className="w-full" onClick={onApply}>
         Apply to this brief
       </Button>
-      {!user && <p className="mt-2 text-center text-[13px] text-muted">You’ll sign in with a creator account first. Nothing is sent until you confirm.</p>}
+      {!user && <p className="mt-2 text-center text-[13px] text-steel">You’ll sign in with a creator account first. Nothing is sent until you confirm.</p>}
       {roleNotice && user?.role === 'brand' && (
         <Alert tone="info" className="mt-4">
           Applications are submitted by creator accounts. You’re signed in as a brand — you can{' '}
@@ -107,7 +107,7 @@ export default function CampaignDetailPage() {
   return (
     <article className="pb-24">
       <div className="container-page pt-8">
-        <Link to="/campaigns" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
+        <Link to="/campaigns" className="inline-flex items-center gap-1.5 text-sm text-steel hover:text-ink">
           <ArrowLeft className="size-4" /> All campaigns
         </Link>
       </div>
@@ -120,11 +120,11 @@ export default function CampaignDetailPage() {
           {brand?.isDemo && <DemoBadge label="Demo brand" />}
           {campaign.status !== 'open' && <StatusPill status={campaign.status} />}
         </div>
-        <h1 className="mt-4 max-w-4xl text-[clamp(2.25rem,5.5vw,4.5rem)] font-[380] leading-[1.02]">{campaign.title}</h1>
-        <dl className="mt-10 grid grid-cols-2 gap-6 border-y border-beige/80 py-6 sm:grid-cols-4">
+        <h1 className="mt-4 max-w-4xl text-[30px] sm:text-[44px]">{campaign.title}</h1>
+        <dl className="mt-10 grid grid-cols-2 gap-6 border-y border-line/80 py-6 sm:grid-cols-4">
           <div>
             <dt className="eyebrow">Budget</dt>
-            <dd className="mt-1.5 font-mono text-[15px]">{formatBudget(campaign.budgetMin, campaign.budgetMax)}</dd>
+            <dd className="mt-1.5 font-bold tabular-nums text-[15px]">{formatBudget(campaign.budgetMin, campaign.budgetMax)}</dd>
           </div>
           <div>
             <dt className="eyebrow">Deadline</dt>
@@ -133,7 +133,7 @@ export default function CampaignDetailPage() {
           <div>
             <dt className="eyebrow">Timing</dt>
             <dd className="mt-1.5 inline-flex items-center gap-1.5 text-[15px]">
-              <CalendarDays className="size-4 text-muted" strokeWidth={1.75} /> {relativeDeadline(campaign.deadline)}
+              <CalendarDays className="size-4 text-steel" strokeWidth={1.75} /> {relativeDeadline(campaign.deadline)}
             </dd>
           </div>
           <div>
@@ -146,22 +146,22 @@ export default function CampaignDetailPage() {
       <div className="container-page grid gap-12 lg:grid-cols-12">
         <div className="space-y-14 lg:col-span-8">
           <section>
-            <h2 className="eyebrow mb-4 font-mono text-[11px]">The brief</h2>
-            <p className="whitespace-pre-line font-display text-xl font-[350] leading-relaxed sm:text-[22px]">{campaign.brief}</p>
+            <h2 className="eyebrow mb-4">The brief</h2>
+            <p className="whitespace-pre-line text-[16px] font-medium leading-relaxed text-ink sm:text-[17px]">{campaign.brief}</p>
           </section>
 
           {campaign.deliverables?.length > 0 && (
             <section>
-              <h2 className="eyebrow mb-4 font-mono text-[11px]">Deliverables</h2>
-              <ol className="border-t border-beige/80">
+              <h2 className="eyebrow mb-4">Deliverables</h2>
+              <ol className="border-t border-line/80">
                 {campaign.deliverables.map((d, i) => (
-                  <li key={`${d.title}-${i}`} className="grid grid-cols-[2.5rem_1fr_auto] gap-3 border-b border-beige/80 py-5">
-                    <span className="font-mono text-xs text-muted">{String(i + 1).padStart(2, '0')}</span>
+                  <li key={`${d.title}-${i}`} className="grid grid-cols-[2.5rem_1fr_auto] gap-3 border-b border-line/80 py-5">
+                    <span className="font-mono text-xs text-steel">{String(i + 1).padStart(2, '0')}</span>
                     <div>
-                      <p className="font-medium">{d.title}</p>
-                      {d.description && <p className="mt-1 text-[15px] text-muted">{d.description}</p>}
+                      <p className="font-semibold">{d.title}</p>
+                      {d.description && <p className="mt-1 text-[15px] text-steel">{d.description}</p>}
                     </div>
-                    <span className="font-mono text-sm">×{d.quantity ?? 1}</span>
+                    <span className="text-sm font-bold tabular-nums">×{d.quantity ?? 1}</span>
                   </li>
                 ))}
               </ol>
@@ -172,7 +172,7 @@ export default function CampaignDetailPage() {
             <section className="grid gap-8 sm:grid-cols-2">
               {skills.length > 0 && (
                 <div>
-                  <h2 className="eyebrow mb-3 font-mono text-[11px]">Skills needed</h2>
+                  <h2 className="eyebrow mb-3">Skills needed</h2>
                   <div className="flex flex-wrap gap-1.5">
                     {skills.map((s) => (
                       <Tag key={s}>{s}</Tag>
@@ -182,7 +182,7 @@ export default function CampaignDetailPage() {
               )}
               {tools.length > 0 && (
                 <div>
-                  <h2 className="eyebrow mb-3 font-mono text-[11px]">Preferred tools</h2>
+                  <h2 className="eyebrow mb-3">Preferred tools</h2>
                   <div className="flex flex-wrap gap-1.5">
                     {tools.map((s) => (
                       <Tag key={s}>{s}</Tag>
@@ -195,22 +195,22 @@ export default function CampaignDetailPage() {
         </div>
 
         <aside className="space-y-4 lg:col-span-4">
-          <div className="rounded-lg border border-beige/80 bg-white p-6 lg:sticky lg:top-24">
+          <div className="rounded-lg border border-line/80 bg-white p-6 lg:sticky lg:top-24">
             <ApplyPanel campaign={campaign} viewer={viewer} user={user} onApply={onApply} roleNotice={roleNotice} />
             {brand && (
-              <div className="mt-6 border-t border-beige/60 pt-6">
+              <div className="mt-6 border-t border-line/60 pt-6">
                 <p className="eyebrow">About the brand</p>
-                <p className="mt-2 font-display text-xl">{brand.companyName}</p>
-                {brand.industry && <p className="text-[13px] text-muted">{brand.industry}</p>}
+                <p className="mt-2 font-extrabold tracking-[-0.03em] text-xl">{brand.companyName}</p>
+                {brand.industry && <p className="text-[13px] text-steel">{brand.industry}</p>}
                 {brand.description && <p className="mt-3 text-[14px] leading-relaxed text-ink/80">{brand.description}</p>}
                 {brand.websiteUrl && !brand.isDemo && (
-                  <a href={brand.websiteUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-sm text-forest hover:underline">
+                  <a href={brand.websiteUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-sm text-navy hover:underline">
                     <Globe className="size-3.5" /> Website
                   </a>
                 )}
               </div>
             )}
-            <Link to="/creators" className="mt-6 inline-flex items-center gap-1.5 border-t border-beige/60 pt-4 text-[13px] text-muted hover:text-ink">
+            <Link to="/creators" className="mt-6 inline-flex items-center gap-1.5 border-t border-line/60 pt-4 text-[13px] text-steel hover:text-ink">
               <Users className="size-3.5" /> See who else creates in {campaign.category}
             </Link>
           </div>

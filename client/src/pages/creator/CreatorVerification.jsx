@@ -101,19 +101,19 @@ function VerificationForm({ entry, preset, portfolio, existingKeys, profileTools
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       {!isEdit && (
         <fieldset>
-          <legend className="mb-2 text-[13px] font-medium">What are you verifying?</legend>
+          <legend className="mb-2 text-[13px] font-semibold">What are you verifying?</legend>
           <div className="grid gap-2 sm:grid-cols-3">
             {TYPES.map((t) => (
               <label
                 key={t.value}
-                className={`cursor-pointer rounded-md border p-3 text-sm transition-colors ${type === t.value ? 'border-forest bg-mint/60' : 'border-beige bg-white hover:border-forest/50'}`}
+                className={`cursor-pointer rounded-md border p-3 text-sm transition-colors ${type === t.value ? 'border-navy bg-soft/60' : 'border-line bg-white hover:border-navy/50'}`}
               >
                 <input type="radio" value={t.value} className="sr-only" {...register('type')} />
-                <span className="font-medium">{t.label}</span>
+                <span className="font-semibold">{t.label}</span>
               </label>
             ))}
           </div>
-          <p className="mt-2 text-[13px] text-muted">{TYPES.find((t) => t.value === type)?.hint}</p>
+          <p className="mt-2 text-[13px] text-steel">{TYPES.find((t) => t.value === type)?.hint}</p>
         </fieldset>
       )}
 
@@ -130,7 +130,7 @@ function VerificationForm({ entry, preset, portfolio, existingKeys, profileTools
               {profileTools
                 .filter((t) => !existingKeys.has(`tool:${t.toLowerCase()}`))
                 .map((t) => (
-                  <button key={t} type="button" onClick={() => setValue('subject', t)} className="rounded-sm border border-dashed border-beige px-2 py-0.5 text-[12px] text-muted hover:border-forest hover:text-forest">
+                  <button key={t} type="button" onClick={() => setValue('subject', t)} className="rounded-sm border border-dashed border-line px-2 py-0.5 text-[12px] text-steel hover:border-navy hover:text-navy">
                     {t}
                   </button>
                 ))}
@@ -143,7 +143,7 @@ function VerificationForm({ entry, preset, portfolio, existingKeys, profileTools
       )}
       {type === 'portfolio' &&
         (isEdit ? (
-          <p className="rounded-md border border-beige/70 bg-white px-3 py-2 text-sm">{entry.subject}</p>
+          <p className="rounded-md border border-line/70 bg-white px-3 py-2 text-sm">{entry.subject}</p>
         ) : available.length ? (
           <Select label="Portfolio piece" required error={formState.errors.portfolioItemId?.message} {...register('portfolioItemId')}>
             <option value="">Choose a piece</option>
@@ -167,8 +167,8 @@ function VerificationForm({ entry, preset, portfolio, existingKeys, profileTools
       />
 
       <fieldset>
-        <legend className="mb-2 text-[13px] font-medium">Evidence links</legend>
-        <p className="mb-2 text-[13px] text-muted">
+        <legend className="mb-2 text-[13px] font-semibold">Evidence links</legend>
+        <p className="mb-2 text-[13px] text-steel">
           Public links a reviewer can open: process recordings, project-file screenshots, a Behance breakdown. Required to submit for review.
         </p>
         <div className="space-y-2">
@@ -189,7 +189,7 @@ function VerificationForm({ entry, preset, portfolio, existingKeys, profileTools
             </div>
           ))}
         </div>
-        {formState.errors.evidence?.message && <p className="mt-1.5 text-[13px] text-danger">{formState.errors.evidence.message}</p>}
+        {formState.errors.evidence?.message && <p className="mt-1.5 text-[13px] text-att">{formState.errors.evidence.message}</p>}
         {evidence.fields.length < 5 && (
           <Button variant="ghost" size="sm" className="mt-2" onClick={() => evidence.append({ url: '' })}>
             <Plus className="size-3.5" /> Add another link
@@ -199,7 +199,7 @@ function VerificationForm({ entry, preset, portfolio, existingKeys, profileTools
 
       {save.error && !save.error.details?.length && <Alert tone="error">{save.error.message}</Alert>}
 
-      <div className="flex flex-col-reverse gap-2 border-t border-beige/60 pt-5 sm:flex-row sm:justify-between">
+      <div className="flex flex-col-reverse gap-2 border-t border-line/60 pt-5 sm:flex-row sm:justify-between">
         <Button variant="ghost" onClick={onDone}>
           Cancel
         </Button>
@@ -229,11 +229,11 @@ function EntryCard({ entry, onEdit }) {
   });
 
   return (
-    <li className="min-w-0 rounded-lg border border-beige/70 bg-white p-5">
+    <li className="min-w-0 rounded-lg border border-line/70 bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium">{entry.subject}</p>
-          <p className="text-[13px] text-muted">
+          <p className="font-semibold">{entry.subject}</p>
+          <p className="text-[13px] text-steel">
             {entry.status === 'PENDING' && entry.submittedAt && `Submitted ${formatDate(entry.submittedAt)}`}
             {['VERIFIED', 'REJECTED'].includes(entry.status) && entry.reviewedAt && `Reviewed ${formatDate(entry.reviewedAt)}`}
             {entry.status === 'SELF_REPORTED' && 'Not submitted for review'}
@@ -246,7 +246,7 @@ function EntryCard({ entry, onEdit }) {
         <ul className="mt-3 space-y-1">
           {entry.evidenceUrls.map((u) => (
             <li key={u}>
-              <a href={u} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1.5 truncate text-[13px] text-forest hover:underline">
+              <a href={u} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1.5 truncate text-[13px] text-navy hover:underline">
                 <ExternalLink className="size-3 shrink-0" />
                 <span className="truncate">{isPlaceholderUrl(u) ? `${u} (placeholder)` : u}</span>
               </a>
@@ -259,7 +259,7 @@ function EntryCard({ entry, onEdit }) {
           {entry.reviewNote}
         </Alert>
       )}
-      <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-beige/60 pt-3">
+      <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-line/60 pt-3">
         <ConfirmAction
           title="Remove this entry?"
           body={entry.status === 'VERIFIED' ? 'Your verified status for this will be removed from your public profile.' : 'This removes the claim and its evidence.'}
@@ -323,7 +323,7 @@ export default function CreatorVerification() {
         }
       />
 
-      <dl className="mb-8 grid gap-px overflow-hidden rounded-lg border border-beige/70 bg-beige/70 sm:grid-cols-4">
+      <dl className="mb-8 grid gap-px overflow-hidden rounded-lg border border-line/70 bg-line2/70 sm:grid-cols-4">
         {[
           ['SELF_REPORTED', 'Listed by you, no evidence reviewed. Shown as “Self-reported”.'],
           ['PENDING', 'Evidence submitted. A reviewer will check it.'],
@@ -332,7 +332,7 @@ export default function CreatorVerification() {
         ].map(([s, d]) => (
           <div key={s} className="bg-white p-4">
             <StatusPill status={s} />
-            <p className="mt-2 text-[13px] leading-snug text-muted">{d}</p>
+            <p className="mt-2 text-[13px] leading-snug text-steel">{d}</p>
           </div>
         ))}
       </dl>

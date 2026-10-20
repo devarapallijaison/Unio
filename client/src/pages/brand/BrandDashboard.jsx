@@ -45,13 +45,13 @@ export default function BrandDashboard() {
       </div>
 
       {awaitingReview.length > 0 && (
-        <div className="mt-6 rounded-lg border border-beige bg-sand/60 px-5 py-4">
+        <div className="mt-6 rounded-lg border border-line bg-line/60 px-5 py-4">
           <p className="text-[15px]">
-            <span className="font-medium">{awaitingReview.length} project{awaitingReview.length > 1 ? 's have' : ' has'} work waiting for your review.</span>{' '}
+            <span className="font-semibold">{awaitingReview.length} project{awaitingReview.length > 1 ? 's have' : ' has'} work waiting for your review.</span>{' '}
             {awaitingReview.slice(0, 3).map((p, i) => (
               <span key={p._id}>
                 {i > 0 && ', '}
-                <Link to={`/projects/${p._id}`} className="text-forest underline-offset-4 hover:underline">
+                <Link to={`/projects/${p._id}`} className="text-navy underline-offset-4 hover:underline">
                   {p.campaign?.title}
                 </Link>
               </span>
@@ -64,7 +64,7 @@ export default function BrandDashboard() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-sans text-[15px] font-semibold">Latest proposals</h2>
-            <Link to="/brand/applications" className="text-sm text-forest hover:underline">
+            <Link to="/brand/applications" className="text-sm text-navy hover:underline">
               All applications
             </Link>
           </div>
@@ -73,9 +73,9 @@ export default function BrandDashboard() {
           ) : pending.error ? (
             <ErrorState error={pending.error} onRetry={pending.refetch} />
           ) : pending.data.items.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-beige bg-white/60 px-5 py-8 text-[15px] text-muted">
+            <div className="rounded-lg border border-dashed border-line bg-white/60 px-5 py-8 text-[15px] text-steel">
               No proposals waiting. Open campaigns receive applications from the public directory, or you can{' '}
-              <Link to="/creators" className="text-forest underline">invite creators</Link>.
+              <Link to="/creators" className="text-navy underline">invite creators</Link>.
             </div>
           ) : (
             <ul className="space-y-3">
@@ -86,29 +86,29 @@ export default function BrandDashboard() {
           )}
         </section>
 
-        <Panel title="Your campaigns" action={<Link to="/brand/campaigns" className="text-sm text-forest hover:underline">Manage</Link>}>
+        <Panel title="Your campaigns" action={<Link to="/brand/campaigns" className="text-sm text-navy hover:underline">Manage</Link>}>
           {campaigns.isLoading ? (
             <Skeleton className="h-40" />
           ) : campaigns.error ? (
             <ErrorState error={campaigns.error} onRetry={campaigns.refetch} />
           ) : campaigns.data.items.length === 0 ? (
             <div className="space-y-3">
-              <p className="text-[15px] text-muted">You haven’t created a campaign yet.</p>
+              <p className="text-[15px] text-steel">You haven’t created a campaign yet.</p>
               <ButtonLink to="/brand/campaigns/new" variant="subtle" size="sm">
                 Write your first brief
               </ButtonLink>
             </div>
           ) : (
-            <ul className="divide-y divide-beige/60">
+            <ul className="divide-y divide-line/60">
               {campaigns.data.items.map((c) => (
                 <li key={c._id} className="py-3 first:pt-0 last:pb-0">
                   <div className="flex items-start justify-between gap-3">
-                    <Link to={`/brand/campaigns/${c._id}/applicants`} className="min-w-0 font-medium leading-snug hover:text-forest">
+                    <Link to={`/brand/campaigns/${c._id}/applicants`} className="min-w-0 font-semibold leading-snug hover:text-navy">
                       {c.title}
                     </Link>
                     <StatusPill status={c.status} />
                   </div>
-                  <p className="mt-1 text-[13px] text-muted">
+                  <p className="mt-1 text-[13px] text-steel">
                     {c.applicationCounts.total} applications
                     {c.applicationCounts.pending > 0 && ` · ${c.applicationCounts.pending} new`} · {relativeDeadline(c.deadline)}
                   </p>

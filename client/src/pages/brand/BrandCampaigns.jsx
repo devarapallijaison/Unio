@@ -64,41 +64,40 @@ export default function BrandCampaigns() {
         </EmptyState>
       ) : (
         <>
-          <div className="overflow-hidden rounded-lg border border-beige/70 bg-white">
-            <table className="w-full text-left text-[14px]">
-              <thead className="hidden border-b border-beige/70 bg-ivory md:table-header-group">
-                <tr className="text-muted">
-                  <th className="px-5 py-3 font-normal">Campaign</th>
-                  <th className="px-3 py-3 font-normal">Status</th>
-                  <th className="px-3 py-3 font-normal">Applications</th>
-                  <th className="px-3 py-3 font-normal">Deadline</th>
-                  <th className="px-5 py-3 text-right font-normal">
+          <div className="overflow-hidden rounded-lg border border-line bg-white">
+            {/* v9 .tbl on desktop; rows stack into cards below md. */}
+            <table className="tbl">
+              <thead className="hidden md:table-header-group">
+                <tr>
+                  <th>Campaign</th>
+                  <th>Status</th>
+                  <th>Applications</th>
+                  <th>Deadline</th>
+                  <th className="text-right">
                     <span className="sr-only">Actions</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {query.data.items.map((c) => (
-                  <tr key={c._id} className="flex flex-col gap-3 border-b border-beige/60 px-5 py-4 last:border-0 md:table-row md:p-0">
-                    <td className="md:px-5 md:py-4">
-                      <Link to={`/brand/campaigns/${c._id}/applicants`} className="font-medium hover:text-forest">
+                  <tr key={c._id} className="flex flex-col gap-3 border-b border-[#edf0ef] px-4 py-4 last:border-0 md:table-row md:p-0 [&>td]:max-md:border-0 [&>td]:max-md:p-0">
+                    <td>
+                      <Link to={`/brand/campaigns/${c._id}/applicants`} className="font-bold hover:text-navy">
                         {c.title}
                       </Link>
-                      <p className="text-[13px] text-muted">
+                      <p className="text-[13px] text-steel">
                         {c.category} · {formatBudget(c.budgetMin, c.budgetMax)}
                       </p>
                     </td>
-                    <td className="md:px-3 md:py-4">
+                    <td>
                       <StatusPill status={c.status} />
                     </td>
-                    <td className="md:px-3 md:py-4">
-                      <span className="font-mono">{c.applicationCounts.total}</span>
-                      {c.applicationCounts.pending > 0 && (
-                        <span className="ml-2 rounded-sm bg-sand px-1.5 py-0.5 text-[12px]">{c.applicationCounts.pending} to review</span>
-                      )}
+                    <td>
+                      <span className="font-bold tabular-nums">{c.applicationCounts.total}</span>
+                      {c.applicationCounts.pending > 0 && <span className="text-steel"> · {c.applicationCounts.pending} to review</span>}
                     </td>
-                    <td className="text-muted md:px-3 md:py-4">{relativeDeadline(c.deadline)}</td>
-                    <td className="md:px-5 md:py-4">
+                    <td className="text-steel">{relativeDeadline(c.deadline)}</td>
+                    <td>
                       <div className="flex flex-wrap gap-1 md:justify-end">
                         <ButtonLink to={`/brand/campaigns/${c._id}/applicants`} variant="secondary" size="sm">
                           Applicants

@@ -94,7 +94,7 @@ function PortfolioForm({ item, onDone }) {
         )}
       />
       {save.error && !save.error.details?.length && <Alert tone="error">{save.error.message}</Alert>}
-      <div className="flex flex-col-reverse gap-2 border-t border-beige/60 pt-5 sm:flex-row sm:justify-end">
+      <div className="flex flex-col-reverse gap-2 border-t border-line/60 pt-5 sm:flex-row sm:justify-end">
         <Button variant="ghost" onClick={onDone}>
           Cancel
         </Button>
@@ -173,11 +173,11 @@ export default function CreatorPortfolio() {
               <MediaFrame item={item} aspect="aspect-[4/5]" />
               <div className="mt-3 flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="flex items-center gap-1.5 font-medium">
-                    {item.featured && <Star className="size-3.5 shrink-0 fill-forest text-forest" aria-label="Featured" />}
+                  <p className="flex items-center gap-1.5 font-semibold">
+                    {item.featured && <Star className="size-3.5 shrink-0 fill-navy text-navy" aria-label="Featured" />}
                     <span className="truncate">{item.title}</span>
                   </p>
-                  <p className="text-[13px] text-muted">{[item.category, item.mediaType].filter(Boolean).join(' · ')}</p>
+                  <p className="text-[13px] text-steel">{[item.category, item.mediaType].filter(Boolean).join(' · ')}</p>
                 </div>
                 <div className="flex shrink-0">
                   <Button variant="ghost" size="sm" onClick={() => setEditing(item)} aria-label={`Edit ${item.title}`}>
@@ -189,7 +189,7 @@ export default function CreatorPortfolio() {
               <div className="mt-2 flex items-center justify-between gap-2">
                 <VerificationBadge status={statusFor(item._id) ?? 'SELF_REPORTED'} />
                 {statusFor(item._id) !== 'VERIFIED' && (
-                  <Link to={`/creator/verification?portfolio=${item._id}`} className="inline-flex items-center gap-1 text-[12px] text-forest hover:underline">
+                  <Link to={`/creator/verification?portfolio=${item._id}`} className="inline-flex items-center gap-1 text-[12px] text-navy hover:underline">
                     <ShieldCheck className="size-3.5" /> {statusFor(item._id) ? 'Manage evidence' : 'Verify this piece'}
                   </Link>
                 )}

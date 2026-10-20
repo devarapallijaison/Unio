@@ -159,7 +159,7 @@ export default function CampaignFormPage() {
       )}
       {!isEdit && <AiBriefBuilder onApply={applyDraft} onUndo={undoDraft} canUndo={!!beforeDraft} />}
       <form onSubmit={handleSubmit((v) => save.mutate(v))} noValidate className="space-y-6">
-        <section className="grid gap-5 rounded-lg border border-beige/70 bg-white p-6">
+        <section className="grid gap-5 rounded-lg border border-line/70 bg-white p-6">
           <Input label="Campaign title" required placeholder="e.g. Summer SPF launch — vertical ads" error={formState.errors.title?.message} {...register('title')} />
           <Input
             label="Category"
@@ -184,22 +184,22 @@ export default function CampaignFormPage() {
           />
         </section>
 
-        <section className="grid gap-5 rounded-lg border border-beige/70 bg-white p-6 sm:grid-cols-3">
+        <section className="grid gap-5 rounded-lg border border-line/70 bg-white p-6 sm:grid-cols-3">
           <Input label="Budget from" type="number" min="0" prefix="₹" error={formState.errors.budgetMin?.message} {...register('budgetMin')} />
           <Input label="Budget to" type="number" min="0" prefix="₹" error={formState.errors.budgetMax?.message} {...register('budgetMax')} />
           <Input label="Deadline" type="date" error={formState.errors.deadline?.message} {...register('deadline')} />
         </section>
 
-        <section className="grid gap-5 rounded-lg border border-beige/70 bg-white p-6">
+        <section className="grid gap-5 rounded-lg border border-line/70 bg-white p-6">
           <Controller name="requiredSkills" control={control} render={({ field }) => <TagInput label="Skills needed" value={field.value} onChange={field.onChange} suggestions={SKILLS} />} />
           <Controller name="requiredTools" control={control} render={({ field }) => <TagInput label="Preferred AI tools" value={field.value} onChange={field.onChange} suggestions={TOOLS} />} />
         </section>
 
-        <section className="rounded-lg border border-beige/70 bg-white p-6">
+        <section className="rounded-lg border border-line/70 bg-white p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="font-sans text-[15px] font-semibold">Deliverables</h2>
-              <p className="text-[13px] text-muted">Each one becomes a trackable item in the project.</p>
+              <p className="text-[13px] text-steel">Each one becomes a trackable item in the project.</p>
             </div>
             <Button variant="subtle" size="sm" onClick={() => deliverables.append({ title: '', description: '', quantity: 1 })} disabled={deliverables.fields.length >= 20}>
               <Plus className="size-3.5" /> Add
@@ -207,7 +207,7 @@ export default function CampaignFormPage() {
           </div>
           <ol className="space-y-3">
             {deliverables.fields.map((field, i) => (
-              <li key={field.id} className="grid gap-3 rounded-md border border-beige/70 bg-ivory p-4 sm:grid-cols-[1fr_1.4fr_90px_auto] sm:items-start">
+              <li key={field.id} className="grid gap-3 rounded-md border border-line/70 bg-page p-4 sm:grid-cols-[1fr_1.4fr_90px_auto] sm:items-start">
                 <Input label="Title" error={formState.errors.deliverables?.[i]?.title?.message} {...register(`deliverables.${i}.title`)} />
                 <Input label="Format / notes" placeholder="15–30s, 9:16" {...register(`deliverables.${i}.description`)} />
                 <Input label="Qty" type="number" min="1" error={formState.errors.deliverables?.[i]?.quantity?.message} {...register(`deliverables.${i}.quantity`)} />
@@ -219,7 +219,7 @@ export default function CampaignFormPage() {
           </ol>
         </section>
 
-        <section className="rounded-lg border border-beige/70 bg-white p-6">
+        <section className="rounded-lg border border-line/70 bg-white p-6">
           <fieldset>
             <legend className="mb-3 font-sans text-[15px] font-semibold">Visibility</legend>
             <div className="grid gap-2 sm:grid-cols-3">
@@ -230,11 +230,11 @@ export default function CampaignFormPage() {
               ].map(([value, label, body]) => (
                 <label
                   key={value}
-                  className={`cursor-pointer rounded-md border p-4 transition-colors ${status === value ? 'border-forest bg-mint/60' : 'border-beige hover:border-forest/50'}`}
+                  className={`cursor-pointer rounded-md border p-4 transition-colors ${status === value ? 'border-navy bg-soft/60' : 'border-line hover:border-navy/50'}`}
                 >
                   <input type="radio" value={value} className="sr-only" {...register('status')} />
-                  <span className="block font-medium">{label}</span>
-                  <span className="mt-1 block text-[13px] text-muted">{body}</span>
+                  <span className="block font-semibold">{label}</span>
+                  <span className="mt-1 block text-[13px] text-steel">{body}</span>
                 </label>
               ))}
             </div>
@@ -244,7 +244,7 @@ export default function CampaignFormPage() {
         {save.error && !save.error.details?.length && <Alert tone="error">{save.error.message}</Alert>}
         {Object.keys(formState.errors).length > 0 && formState.isSubmitted && <Alert tone="error">Please fix the highlighted fields.</Alert>}
 
-        <div className="sticky bottom-0 -mx-4 flex justify-end gap-3 border-t border-beige/70 bg-ivory/95 px-4 py-4 sm:mx-0 sm:rounded-lg sm:border sm:px-5">
+        <div className="sticky bottom-0 -mx-4 flex justify-end gap-3 border-t border-line/70 bg-page/95 px-4 py-4 sm:mx-0 sm:rounded-lg sm:border sm:px-5">
           <Button variant="ghost" onClick={() => navigate(-1)}>
             Cancel
           </Button>

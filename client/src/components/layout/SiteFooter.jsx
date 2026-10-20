@@ -1,25 +1,24 @@
 import { Link } from 'react-router';
-import { LogoFull } from '../ui/Logo.jsx';
+import { Logo } from '../ui/Logo.jsx';
 
+/* Only links to pages that exist; Rights & licensing, UNIO Trust and Contact arrive in later phases. */
 const COLUMNS = [
   {
     title: 'Brands',
     links: [
-      { to: '/creators', label: 'Find creators' },
+      { to: '/creators', label: 'Discover creators' },
       { to: '/register', label: 'Post a brief' },
-      { to: '/brand/dashboard', label: 'Brand dashboard' },
     ],
   },
   {
     title: 'Creators',
     links: [
-      { to: '/campaigns', label: 'Browse campaigns' },
-      { to: '/register', label: 'Create a profile' },
-      { to: '/creator/dashboard', label: 'Creator dashboard' },
+      { to: '/register', label: 'Join as creator' },
+      { to: '/campaigns', label: 'Open campaigns' },
     ],
   },
   {
-    title: 'UNIO',
+    title: 'Company',
     links: [
       { to: '/about', label: 'About' },
       { to: '/about#demo-content', label: 'About demo content' },
@@ -27,24 +26,25 @@ const COLUMNS = [
   },
 ];
 
+/** Ink footer (v9 .ft). */
 export function SiteFooter() {
   return (
-    <footer className="bg-forest text-ivory">
-      <div className="container-page grid gap-12 py-16 md:grid-cols-12 md:py-20">
-        <div className="md:col-span-5">
-          <LogoFull variant="light" className="h-16 sm:h-20" />
-          <p className="mt-6 max-w-sm text-[15px] leading-relaxed text-ivory/75">
-            A marketplace for AI-native creative work. Brands find the right creator; creators find work worth making.
+    <footer className="bg-ink pb-7 pt-10 text-[13px] text-mist">
+      <div className="container-page flex flex-wrap justify-between gap-8">
+        <div className="max-w-[340px]">
+          <Logo onDark className="h-[30px]" />
+          <p className="mt-3 leading-relaxed">
+            India’s marketplace for AI creators — with proof of how the work was made, and clear rights for how it can be used.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-7">
+        <div className="flex flex-wrap gap-x-12 gap-y-6">
           {COLUMNS.map((col) => (
             <div key={col.title}>
-              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-sage">{col.title}</p>
-              <ul className="mt-4 space-y-2.5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-steel">{col.title}</p>
+              <ul className="mt-3 space-y-2">
                 {col.links.map((l) => (
                   <li key={l.label}>
-                    <Link to={l.to} className="link-underline text-[15px] text-ivory/85 hover:text-ivory">
+                    <Link to={l.to} className="text-bone transition-colors hover:text-white">
                       {l.label}
                     </Link>
                   </li>
@@ -54,10 +54,10 @@ export function SiteFooter() {
           ))}
         </div>
       </div>
-      <div className="border-t border-ivory/15">
-        <div className="container-page flex flex-col gap-2 py-6 text-[13px] text-ivory/60 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} UNIO. Built for a hackathon.</p>
-          <p>Profiles marked “Demo” are fictional and show sample work only.</p>
+      <div className="container-page mt-8">
+        <div className="flex flex-col gap-2 border-t border-slate pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p>© 2026 UNIO · Made in India</p>
+          <p className="font-mono text-[11px]">Profiles marked “Demo” are fictional and show sample work only.</p>
         </div>
       </div>
     </footer>

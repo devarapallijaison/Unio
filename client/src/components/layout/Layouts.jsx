@@ -1,127 +1,328 @@
+import { useQuery } from '@tanstack/react-query';
 import {
+  Bell,
   Briefcase,
   FolderKanban,
+  Home,
   Image,
   Inbox,
-  LayoutGrid,
+  LogOut,
   Mail,
-  Megaphone,
-  PlusCircle,
-  Send,
+  Menu,
+  Plus,
+  Search,
   ShieldCheck,
+  Sparkles,
   UserRound,
+  X,
 } from 'lucide-react';
-import { NavLink, Outlet, ScrollRestoration } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { endpoints } from '../../services/api.js';
+import { Avatar } from '../ui/Avatar.jsx';
+import { ButtonLink, IconButton } from '../ui/Button.jsx';
+import { Card, SectionHead } from '../ui/Card.jsx';
+import { Logo } from '../ui/Logo.jsx';
 import { SiteFooter } from './SiteFooter.jsx';
 import { SiteHeader } from './SiteHeader.jsx';
 
 function SkipLink() {
   return (
-    <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-forest focus:px-3 focus:py-2 focus:text-ivory">
+    <a
+      href="#main"
+      className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-3 focus:z-50 focus:rounded-full focus:bg-navy focus:px-4 focus:py-2 focus:text-white"
+    >
       Skip to content
     </a>
   );
 }
 
-export function RootLayout() {
+/** Top-level wrapper shared by every route. */
+export function AppRoot() {
   return (
     <>
       <SkipLink />
-      <SiteHeader />
-      <main id="main" className="min-h-[70vh]">
-        <Outlet />
-      </main>
-      <SiteFooter />
+      <Outlet />
       <ScrollRestoration />
     </>
   );
 }
 
-const NAVS = {
-  creator: [
-    { to: '/creator/dashboard', label: 'Overview', icon: LayoutGrid },
-    { to: '/creator/profile/edit', label: 'Profile', icon: UserRound },
-    { to: '/creator/portfolio', label: 'Portfolio', icon: Image },
-    { to: '/creator/applications', label: 'Applications', icon: Send },
-    { to: '/creator/invitations', label: 'Invitations', icon: Mail },
-    { to: '/creator/projects', label: 'Projects', icon: FolderKanban },
-    { to: '/creator/verification', label: 'Verification', icon: ShieldCheck },
-  ],
-  brand: [
-    { to: '/brand/dashboard', label: 'Overview', icon: LayoutGrid },
-    { to: '/brand/campaigns', label: 'Campaigns', icon: Megaphone, end: true },
-    { to: '/brand/campaigns/new', label: 'New campaign', icon: PlusCircle },
-    { to: '/brand/applications', label: 'Applications', icon: Inbox },
-    { to: '/brand/invitations', label: 'Invitations', icon: Mail },
-    { to: '/brand/projects', label: 'Projects', icon: Briefcase },
-    { to: '/brand/profile', label: 'Brand profile', icon: UserRound },
-  ],
-  reviewer: [{ to: '/review', label: 'Review queue', icon: ShieldCheck, end: true }],
-};
-
-export function DashboardLayout({ role }) {
-  const { user } = useAuth();
-  const nav = NAVS[role];
-
+/** Public chrome: white header, ink footer (guide §3.5). Also wraps guard states outside the app shell. */
+export function PublicFrame({ children }) {
   return (
-    <div className="border-b border-beige/50 bg-mint/40">
-      <div className="container-page grid grid-cols-[minmax(0,1fr)] gap-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 lg:py-10">
-        <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-          <div className="hidden pb-5 lg:block">
-            <p className="eyebrow">{{ brand: 'Brand workspace', creator: 'Creator studio', reviewer: 'Verification desk' }[role]}</p>
-            <p className="mt-1 truncate font-display text-lg">{user?.name}</p>
+    <>
+      <SiteHeader />
+      <main id="main" className="min-h-[70vh]">
+        {children}
+      </main>
+      <SiteFooter />
+    </>
+  );
+}
+
+export function RootLayout() {
+  return (
+    <PublicFrame>
+      <Outlet />
+    </PublicFrame>
+  );
+}
+
+/* ---------- App shell ---------- */
+
+const ACTIVE_PROJECT_STATUSES = ['not_started', 'in_progress', 'submitted', 'revision_requested'];
+
+/** Real counts from existing list endpoints (their `total`). No badge when the count is unknown or zero. */
+function useNavCounts(role) {
+  const applicants = useQuery({
+    queryKey: ['mine', 'applications', 'nav-count'],
+    queryFn: () => endpoints.brand.applications({ status: 'pending', limit: 1 }),
+    enabled: role === 'brand',
+    staleTime: 60_000,
+    select: (d) => d.total,
+  });
+  const projects = useQuery({
+    queryKey: ['mine', 'projects', 'nav-count', role],
+    queryFn: async () => {
+      const list = role === 'brand' ? endpoints.brand.projects : endpoints.creator.projects;
+      const pages = await Promise.all(ACTIVE_PROJECT_STATUSES.map((status) => list({ status, limit: 1 })));
+      return pages.reduce((sum, p) => sum + (p.total ?? 0), 0);
+    },
+    enabled: role === 'brand' || role === 'creator',
+    staleTime: 60_000,
+  });
+  return { applicants: applicants.data, projects: projects.data };
+}
+
+/** Only pages that exist today; later phases add Recommended, Messages, Trust rules, Clients… */
+function navFor(role, counts) {
+  if (role === 'brand') {
+    return {
+      workspace: [
+        { to: '/brand/dashboard', label: 'Overview', icon: Home },
+        { to: '/brand/campaigns', label: 'Campaigns', icon: Briefcase, match: ['/brand/campaigns'] },
+        { to: '/brand/applications', label: 'Applicants', icon: UserRound, count: counts.applicants },
+        { to: '/brand/projects', label: 'Projects', icon: FolderKanban, count: counts.projects, match: ['/projects/'] },
+        { to: '/brand/invitations', label: 'Invitations', icon: Mail },
+      ],
+      account: [{ to: '/brand/profile', label: 'Brand profile', icon: UserRound }],
+      cta: { to: '/brand/campaigns/new', label: 'New brief with AI', icon: Sparkles },
+    };
+  }
+  if (role === 'creator') {
+    return {
+      workspace: [
+        { to: '/creator/dashboard', label: 'Dashboard', icon: Home },
+        { to: '/campaigns', label: 'Find campaigns', icon: Search },
+        { to: '/creator/applications', label: 'Applications', icon: Inbox },
+        { to: '/creator/projects', label: 'Projects', icon: FolderKanban, count: counts.projects, match: ['/projects/'] },
+        { to: '/creator/invitations', label: 'Invitations', icon: Mail },
+      ],
+      account: [
+        { to: '/creator/profile/edit', label: 'Edit profile', icon: UserRound },
+        { to: '/creator/portfolio', label: 'Portfolio', icon: Image },
+        { to: '/creator/verification', label: 'UNIO Trust', icon: ShieldCheck },
+      ],
+      cta: { to: '/creator/portfolio', label: 'Add work', icon: Plus },
+    };
+  }
+  return {
+    workspace: [{ to: '/review', label: 'Verification queue', icon: ShieldCheck, end: true }],
+    account: [],
+    cta: null,
+  };
+}
+
+function isActive(item, pathname) {
+  if (item.end) return pathname === item.to;
+  return pathname === item.to || pathname.startsWith(`${item.to}/`) || (item.match ?? []).some((m) => pathname.startsWith(m));
+}
+
+function SideLink({ item, active, onNavigate }) {
+  const { to, label, icon: Icon, count } = item;
+  return (
+    <Link
+      to={to}
+      onClick={onNavigate}
+      aria-current={active ? 'page' : undefined}
+      className={`flex items-center gap-[11px] rounded-[9px] px-3 py-[9px] text-[14px] transition-colors ${
+        active ? 'bg-bone font-bold text-ink' : 'font-medium text-bone hover:bg-bone/[0.08]'
+      }`}
+    >
+      <Icon className="size-4 shrink-0" strokeWidth={1.8} aria-hidden />
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {count > 0 && (
+        <span className={`rounded-full px-[7px] text-[11px] font-bold text-white ${active ? 'bg-navy' : 'bg-steel'}`}>
+          {count}
+          <span className="sr-only"> open</span>
+        </span>
+      )}
+    </Link>
+  );
+}
+
+const WORKSPACE_SUB = { brand: 'Brand workspace', creator: 'Creator', reviewer: 'UNIO Trust reviewer' };
+
+function workspaceName(user, profile) {
+  return profile?.companyName || profile?.displayName || user?.name || '';
+}
+
+function SidebarContent({ role, nav, pathname, onNavigate, onLogout }) {
+  const { user, profile } = useAuth();
+  const name = workspaceName(user, profile);
+  return (
+    <>
+      <div className="flex flex-col gap-2.5 rounded-xl border border-slate p-3">
+        <div className="flex items-center gap-2.5">
+          <Avatar name={name} size="sm" />
+          <div className="min-w-0">
+            <b className="block truncate text-[14.5px] text-white">{name}</b>
+            <small className="block text-[12px] text-mist">{WORKSPACE_SUB[role]}</small>
           </div>
-          <nav aria-label="Dashboard" className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
-            {nav.map(({ to, label, icon: Icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  `flex shrink-0 items-center gap-2.5 rounded-md px-3 py-2 text-[14px] transition-colors ${
-                    isActive ? 'bg-forest text-ivory' : 'text-ink/80 hover:bg-sage/50'
-                  }`
-                }
-              >
-                <Icon className="size-4" strokeWidth={1.75} />
-                {label}
-              </NavLink>
+        </div>
+      </div>
+      <p className="px-2.5 pt-1.5 font-mono text-[10px] tracking-[0.2em] text-steel">WORKSPACE</p>
+      <nav aria-label="Workspace" className="flex flex-col gap-0.5">
+        {nav.workspace.map((item) => (
+          <SideLink key={item.to} item={item} active={isActive(item, pathname)} onNavigate={onNavigate} />
+        ))}
+      </nav>
+      {nav.account.length > 0 && (
+        <>
+          <p className="px-2.5 pt-1.5 font-mono text-[10px] tracking-[0.2em] text-steel">ACCOUNT</p>
+          <nav aria-label="Account" className="flex flex-col gap-0.5">
+            {nav.account.map((item) => (
+              <SideLink key={item.to} item={item} active={isActive(item, pathname)} onNavigate={onNavigate} />
             ))}
           </nav>
-        </aside>
-        <section className="min-w-0">
+        </>
+      )}
+      <div className="mt-auto flex items-center gap-2.5 border-t border-slate px-2 pt-3.5 text-[13px]">
+        <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-mist" title={user?.email}>
+          {user?.email}
+        </span>
+        <button type="button" onClick={onLogout} className="rounded-full p-1.5 text-mist hover:bg-bone/[0.08] hover:text-white" aria-label="Sign out">
+          <LogOut className="size-4" strokeWidth={1.8} />
+        </button>
+      </div>
+    </>
+  );
+}
+
+/**
+ * Signed-in app shell (guide §3.5): 262px navy sidebar, white 68px top bar,
+ * and on phones a navy bottom tab bar with the first five items.
+ * `role` defaults to the session role (used by shared pages such as /projects/:id).
+ */
+export function DashboardLayout({ role: roleProp }) {
+  const { user, logout } = useAuth();
+  const role = roleProp ?? user?.role;
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const counts = useNavCounts(role);
+  const nav = navFor(role, counts);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => setMenuOpen(false), [pathname]);
+
+  const all = [...nav.workspace, ...nav.account];
+  const current = all.find((item) => isActive(item, pathname));
+  const handleLogout = async () => {
+    await logout.mutateAsync().catch(() => {});
+    navigate('/');
+  };
+
+  return (
+    <div className="min-h-dvh bg-page lg:grid lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[262px_minmax(0,1fr)]">
+      <aside className="sticky top-0 hidden h-dvh flex-col gap-3.5 overflow-y-auto bg-navy px-3.5 py-[22px] text-bone lg:flex">
+        <Link to="/" aria-label="UNIO home" className="px-1">
+          <Logo onDark className="h-[30px]" />
+        </Link>
+        <SidebarContent role={role} nav={nav} pathname={pathname} onLogout={handleLogout} />
+      </aside>
+
+      <div className="flex min-w-0 flex-col">
+        <header className="sticky top-0 z-30 flex h-[68px] items-center gap-3.5 border-b border-line bg-white px-4 lg:px-9">
+          <Link to="/" aria-label="UNIO home" className="shrink-0 lg:hidden">
+            <Logo className="h-6" />
+          </Link>
+          <p className="hidden min-w-0 flex-1 truncate text-[14px] text-steel sm:block">
+            Workspace{current && <> / <b className="font-semibold text-ink">{current.label}</b></>}
+          </p>
+          <span className="flex-1 sm:hidden" />
+          {/* Notifications arrive with /me/unread (Phase 6); until then the bell has no dot or number. */}
+          <IconButton label="Notifications">
+            <Bell className="size-4" strokeWidth={1.8} />
+          </IconButton>
+          {nav.cta && (
+            <ButtonLink to={nav.cta.to} size="sm">
+              <nav.cta.icon className="size-4" strokeWidth={1.8} aria-hidden /> {nav.cta.label}
+            </ButtonLink>
+          )}
+          <IconButton label={menuOpen ? 'Close menu' : 'Open menu'} className="lg:hidden" aria-expanded={menuOpen} aria-controls="app-menu" onClick={() => setMenuOpen((o) => !o)}>
+            {menuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+          </IconButton>
+        </header>
+
+        {menuOpen && (
+          <div id="app-menu" className="flex flex-col gap-3.5 bg-navy px-4 py-5 text-bone lg:hidden">
+            {nav.cta && (
+              <ButtonLink to={nav.cta.to} variant="light" className="w-full">
+                <nav.cta.icon className="size-4" aria-hidden /> {nav.cta.label}
+              </ButtonLink>
+            )}
+            <SidebarContent role={role} nav={nav} pathname={pathname} onNavigate={() => setMenuOpen(false)} onLogout={handleLogout} />
+          </div>
+        )}
+
+        <main id="main" className="flex min-w-0 flex-1 flex-col gap-[22px] px-4 pb-28 pt-5 lg:px-9 lg:pb-14 lg:pt-7">
           <Outlet />
-        </section>
+        </main>
+
+        <nav aria-label="Quick" className="fixed inset-x-0 bottom-0 z-30 flex justify-around bg-navy px-1 py-2 text-[11px] text-bone lg:hidden">
+          {nav.workspace.slice(0, 5).map((item) => {
+            const active = isActive(item, pathname);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                aria-current={active ? 'page' : undefined}
+                className={`flex min-w-0 flex-col items-center gap-[3px] rounded-lg px-2 py-1 ${active ? 'bg-bone text-ink' : ''}`}
+              >
+                <Icon className="size-4" strokeWidth={1.8} aria-hidden />
+                <span className="max-w-[4.5rem] truncate">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );
 }
 
-export function PageHeader({ eyebrow, title, description, actions }) {
+/** Page header (v9 .ph): mono eyebrow, 38px title (30 on phone), one-line subtitle, actions right. */
+export function PageHeader({ eyebrow = 'Workspace', title, description, actions }) {
   return (
-    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
       <div className="min-w-0">
-        {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}
-        <h1 className="text-3xl leading-tight sm:text-4xl">{title}</h1>
-        {description && <p className="mt-2 max-w-2xl text-[15px] text-muted">{description}</p>}
+        {eyebrow && <p className="eyebrow mb-1.5">{eyebrow}</p>}
+        <h1 className="text-[30px] sm:text-[38px]">{title}</h1>
+        {description && <p className="mt-1.5 max-w-2xl text-[15px] text-steel">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
     </div>
   );
 }
 
-/** White content panel used across dashboards. */
-export function Panel({ title, action, children, className = '' }) {
+/** White content panel with a v9 section header. */
+export function Panel({ title, action, children, className = '', bodyClassName = 'p-5' }) {
   return (
-    <section className={`rounded-lg border border-beige/70 bg-white ${className}`}>
-      {(title || action) && (
-        <div className="flex items-center justify-between gap-4 border-b border-beige/60 px-5 py-4">
-          {title && <h2 className="font-sans text-[15px] font-semibold">{title}</h2>}
-          {action}
-        </div>
-      )}
-      <div className="p-5">{children}</div>
-    </section>
+    <Card className={className}>
+      {(title || action) && <SectionHead title={title} action={action} />}
+      <div className={bodyClassName}>{children}</div>
+    </Card>
   );
 }

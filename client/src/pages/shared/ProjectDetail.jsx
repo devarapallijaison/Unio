@@ -77,15 +77,15 @@ function DeliverableRow({ projectId, deliverable, index, role, locked }) {
   };
 
   return (
-    <li className="grid gap-4 border-b border-beige/60 py-6 last:border-0 md:grid-cols-12">
-      <span className="font-mono text-xs text-muted md:col-span-1">{String(index + 1).padStart(2, '0')}</span>
+    <li className="grid gap-4 border-b border-line/60 py-6 last:border-0 md:grid-cols-12">
+      <span className="font-mono text-xs text-steel md:col-span-1">{String(index + 1).padStart(2, '0')}</span>
       <div className="space-y-3 md:col-span-11">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="font-medium">{deliverable.title}</p>
-            {deliverable.description && <p className="mt-0.5 text-[14px] text-muted">{deliverable.description}</p>}
+            <p className="font-semibold">{deliverable.title}</p>
+            {deliverable.description && <p className="mt-0.5 text-[14px] text-steel">{deliverable.description}</p>}
             {deliverable.dueDate && (
-              <p className="mt-1 inline-flex items-center gap-1 text-[12px] text-muted">
+              <p className="mt-1 inline-flex items-center gap-1 text-[12px] text-steel">
                 <CalendarDays className="size-3" /> Due {formatDate(deliverable.dueDate)}
               </p>
             )}
@@ -98,7 +98,7 @@ function DeliverableRow({ projectId, deliverable, index, role, locked }) {
             href={deliverable.mediaUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex max-w-full items-center gap-1.5 truncate rounded-sm bg-mint px-2 py-1 text-[13px] text-forest hover:underline"
+            className="inline-flex max-w-full items-center gap-1.5 truncate rounded-sm bg-soft px-2 py-1 text-[13px] text-navy hover:underline"
           >
             <Link2 className="size-3.5 shrink-0" />
             <span className="truncate">{isPlaceholderUrl(deliverable.mediaUrl) ? 'Placeholder media link' : deliverable.mediaUrl}</span>
@@ -153,17 +153,17 @@ function FeedbackPanel({ project, role }) {
   const fb = project.feedback;
 
   return (
-    <div className="rounded-lg border border-beige/70 bg-white p-5">
+    <div className="rounded-lg border border-line/70 bg-white p-5">
       <p className="eyebrow">Client feedback</p>
       {fb?.rating ? (
         <>
           <div className="mt-2 flex gap-0.5" aria-label={`${fb.rating} out of 5`}>
             {Array.from({ length: 5 }).map((_, n) => (
-              <Star key={n} className={`size-4 ${n < fb.rating ? 'fill-forest text-forest' : 'text-beige'}`} strokeWidth={1.5} />
+              <Star key={n} className={`size-4 ${n < fb.rating ? 'fill-navy text-navy' : 'text-steel'}`} strokeWidth={1.5} />
             ))}
           </div>
           {fb.comment && <p className="mt-2 text-[14px] leading-relaxed">“{fb.comment}”</p>}
-          <p className="mt-2 text-[12px] text-muted">Left {formatDate(fb.createdAt)} · shown on the creator’s public profile</p>
+          <p className="mt-2 text-[12px] text-steel">Left {formatDate(fb.createdAt)} · shown on the creator’s public profile</p>
         </>
       ) : role === 'brand' ? (
         <form
@@ -180,20 +180,20 @@ function FeedbackPanel({ project, role }) {
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((n) => (
                 <button key={n} type="button" onClick={() => setRating(n)} aria-label={`${n} star${n > 1 ? 's' : ''}`} aria-pressed={rating === n} className="rounded p-0.5">
-                  <Star className={`size-6 ${n <= rating ? 'fill-forest text-forest' : 'text-beige hover:text-forest/60'}`} strokeWidth={1.5} />
+                  <Star className={`size-6 ${n <= rating ? 'fill-navy text-navy' : 'text-steel hover:text-navy/60'}`} strokeWidth={1.5} />
                 </button>
               ))}
             </div>
           </fieldset>
           <Textarea aria-label="Comment" rows={3} maxLength={1000} placeholder="What was it like working together?" value={comment} onChange={(e) => setComment(e.target.value)} />
           {(error || submit.error) && <Alert tone="error">{error || submit.error.message}</Alert>}
-          <p className="text-[12px] text-muted">Feedback is public, can be left once, and can’t be edited.</p>
+          <p className="text-[12px] text-steel">Feedback is public, can be left once, and can’t be edited.</p>
           <Button type="submit" size="sm" loading={submit.isPending}>
             Publish feedback
           </Button>
         </form>
       ) : (
-        <p className="mt-2 text-[14px] text-muted">The brand hasn’t left feedback for this project.</p>
+        <p className="mt-2 text-[14px] text-steel">The brand hasn’t left feedback for this project.</p>
       )}
     </div>
   );
@@ -210,13 +210,7 @@ export default function ProjectDetail() {
 
   if (query.isLoading) return <PageLoader label="Loading project" />;
   if (query.error?.status === 404 || query.error?.status === 400) return <NotFoundPage what="project" />;
-  if (query.error) {
-    return (
-      <div className="container-page py-16">
-        <ErrorState error={query.error} onRetry={query.refetch} />
-      </div>
-    );
-  }
+  if (query.error) return <ErrorState error={query.error} onRetry={query.refetch} />;
 
   const deliverables = project.deliverables ?? [];
   const prog = deliverableProgress(project);
@@ -227,27 +221,27 @@ export default function ProjectDetail() {
   const backTo = role === 'brand' ? '/brand/projects' : '/creator/projects';
 
   return (
-    <div className="bg-mint/40 pb-20">
-      <div className="container-page pt-8">
-        <Link to={backTo} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
+    <div>
+      <div>
+        <Link to={backTo} className="inline-flex items-center gap-1.5 text-sm text-steel hover:text-ink">
           <ArrowLeft className="size-4" /> All projects
         </Link>
 
-        <header className="mt-6 flex flex-col gap-6 border-b border-beige/80 pb-8 lg:flex-row lg:items-end lg:justify-between">
+        <header className="mt-5 flex flex-col gap-6 border-b border-line pb-7 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="eyebrow">Project · via {project.sourceType}</p>
               <StatusPill status={project.status} />
             </div>
-            <h1 className="mt-3 text-4xl leading-tight sm:text-5xl">{project.campaign?.title}</h1>
+            <h1 className="mt-2 text-[30px] sm:text-[38px]">{project.campaign?.title}</h1>
             <div className="mt-5 flex flex-wrap items-center gap-6 text-[14px]">
               <span className="flex items-center gap-2">
                 <Avatar name={project.brand?.companyName ?? 'Brand'} size="sm" /> {project.brand?.companyName}
               </span>
-              <span className="text-beige" aria-hidden>
+              <span className="text-steel" aria-hidden>
                 ⟷
               </span>
-              <Link to={`/creators/${project.creatorId}`} className="flex items-center gap-2 hover:text-forest">
+              <Link to={`/creators/${project.creatorId}`} className="flex items-center gap-2 hover:text-navy">
                 <Avatar name={project.creator?.displayName ?? 'Creator'} src={project.creator?.photoUrl} size="sm" /> {project.creator?.displayName}
               </Link>
             </div>
@@ -294,15 +288,15 @@ export default function ProjectDetail() {
         )}
 
         <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <section className="rounded-lg border border-beige/70 bg-white px-5 sm:px-6">
-            <div className="flex items-center justify-between border-b border-beige/60 py-4">
-              <h2 className="font-sans text-[15px] font-semibold">Deliverables</h2>
-              <span className="font-mono text-xs text-muted">
+          <section className="rounded-lg border border-line/70 bg-white px-5 sm:px-6">
+            <div className="flex items-center justify-between border-b border-line py-4">
+              <h2 className="text-[17px] tracking-[-0.02em]">Deliverables</h2>
+              <span className="font-mono text-xs text-steel">
                 {prog.approved}/{prog.total} approved
               </span>
             </div>
             {role === 'creator' && !locked && (
-              <p className="border-b border-beige/60 py-3 text-[13px] text-muted">
+              <p className="border-b border-line/60 py-3 text-[13px] text-steel">
                 Paste a link to each finished file (Drive, Cloudinary, Frame.io…) and submit it. The brand approves or asks for changes per deliverable.
               </p>
             )}
@@ -315,17 +309,17 @@ export default function ProjectDetail() {
 
           <aside className="space-y-4">
             <FeedbackPanel project={project} role={role} />
-            <div className="rounded-lg border border-beige/70 bg-white p-5">
+            <div className="rounded-lg border border-line/70 bg-white p-5">
               <p className="eyebrow">Brief</p>
               <p className="mt-2 line-clamp-[8] text-[14px] leading-relaxed text-ink/85">{project.campaign?.brief}</p>
-              <Link to={`/campaigns/${project.campaignId}`} className="mt-3 inline-block text-[13px] text-forest hover:underline">
+              <Link to={`/campaigns/${project.campaignId}`} className="mt-3 inline-block text-[13px] text-navy hover:underline">
                 Open full brief
               </Link>
             </div>
-            <dl className="grid grid-cols-2 gap-4 rounded-lg border border-beige/70 bg-white p-5 text-[14px]">
+            <dl className="grid grid-cols-2 gap-4 rounded-lg border border-line/70 bg-white p-5 text-[14px]">
               <div>
                 <dt className="eyebrow">Budget</dt>
-                <dd className="mt-1 font-mono text-[13px]">{formatBudget(project.campaign?.budgetMin, project.campaign?.budgetMax)}</dd>
+                <dd className="mt-1 font-bold tabular-nums text-[13px]">{formatBudget(project.campaign?.budgetMin, project.campaign?.budgetMax)}</dd>
               </div>
               <div>
                 <dt className="eyebrow">Deadline</dt>
@@ -341,7 +335,7 @@ export default function ProjectDetail() {
               </div>
             </dl>
             {(project.campaign?.requiredTools?.length ?? 0) > 0 && (
-              <div className="rounded-lg border border-beige/70 bg-white p-5">
+              <div className="rounded-lg border border-line/70 bg-white p-5">
                 <p className="eyebrow mb-2">Preferred tools</p>
                 <div className="flex flex-wrap gap-1.5">
                   {project.campaign.requiredTools.map((t) => (

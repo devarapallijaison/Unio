@@ -22,7 +22,7 @@ function PortfolioViewer({ item, onClose }) {
             <MediaFrame item={item} aspect="aspect-[16/10]" hover={false} />
           )}
           {!real && (
-            <p className="text-[13px] text-muted">
+            <p className="text-[13px] text-steel">
               The media for this piece hasn’t been uploaded yet, so a placeholder is shown.
             </p>
           )}
@@ -32,7 +32,7 @@ function PortfolioViewer({ item, onClose }) {
               <Tag key={t}>{t}</Tag>
             ))}
             {real && (
-              <a href={item.mediaUrl} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1.5 text-sm text-forest hover:underline">
+              <a href={item.mediaUrl} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1.5 text-sm text-navy hover:underline">
                 Open original <ExternalLink className="size-3.5" />
               </a>
             )}
@@ -54,10 +54,10 @@ export function PortfolioGrid({ items, statusById = {} }) {
               <MediaFrame item={item} aspect={RHYTHM[i % RHYTHM.length]} />
             </button>
             <figcaption className="mt-2.5 flex items-baseline justify-between gap-3">
-              <span className="text-[15px] font-medium leading-snug">{item.title}</span>
-              {item.category && <span className="shrink-0 font-mono text-[11px] uppercase tracking-wider text-muted">{item.category}</span>}
+              <span className="text-[15px] font-semibold leading-snug">{item.title}</span>
+              {item.category && <span className="shrink-0 font-mono text-[11px] uppercase tracking-wider text-steel">{item.category}</span>}
             </figcaption>
-            {item.tools?.length > 0 && <p className="mt-0.5 text-[13px] text-muted">{item.tools.join(' · ')}</p>}
+            {item.tools?.length > 0 && <p className="mt-0.5 text-[13px] text-steel">{item.tools.join(' · ')}</p>}
             {statusById[item._id] && statusById[item._id] !== 'SELF_REPORTED' && (
               <VerificationBadge status={statusById[item._id]} className="mt-1" />
             )}

@@ -57,7 +57,7 @@ export default function CampaignsPage() {
         <div className="lg:col-span-7">
           <p className="eyebrow">Open briefs</p>
           <h1 className="mt-3 text-5xl leading-[1] sm:text-6xl">Campaigns</h1>
-          <p className="mt-4 max-w-lg text-[17px] text-muted">
+          <p className="mt-4 max-w-lg text-[17px] text-steel">
             Live briefs from brands looking for AI creators. Read the full brief and deliverables before you pitch.
           </p>
         </div>
@@ -71,7 +71,7 @@ export default function CampaignsPage() {
       </header>
 
       {categories.data?.length > 0 && (
-        <nav className="-mx-4 mb-2 hidden overflow-x-auto border-y border-beige/80 px-4 lg:block" aria-label="Categories">
+        <nav className="-mx-4 mb-2 hidden overflow-x-auto border-y border-line/80 px-4 lg:block" aria-label="Categories">
           <ul className="flex gap-8 py-4">
             {['', ...categories.data].map((c) => {
               const active = (values.category || '') === c;
@@ -81,7 +81,7 @@ export default function CampaignsPage() {
                     type="button"
                     onClick={() => set({ category: c })}
                     aria-pressed={active}
-                    className={`whitespace-nowrap text-[15px] transition-colors ${active ? 'font-medium text-forest' : 'text-muted hover:text-ink'}`}
+                    className={`whitespace-nowrap text-[15px] transition-colors ${active ? 'font-semibold text-navy' : 'text-steel hover:text-ink'}`}
                   >
                     {c || 'All categories'}
                   </button>
@@ -95,7 +95,7 @@ export default function CampaignsPage() {
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_240px] lg:gap-14">
         <section aria-live="polite" aria-busy={query.isFetching} className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">{data ? pluralize(data.total, 'open brief') : 'Loading briefs'}</p>
+            <p className="text-sm text-steel">{data ? pluralize(data.total, 'open brief') : 'Loading briefs'}</p>
             <Select aria-label="Sort campaigns" value={values.sort || 'newest'} onChange={(e) => set({ sort: e.target.value })} className="w-48">
               <option value="newest">Newest first</option>
               <option value="deadline">Deadline soonest</option>
@@ -125,7 +125,7 @@ export default function CampaignsPage() {
             </EmptyState>
           ) : (
             <>
-              <div className="border-b border-beige/80">
+              <div className="border-b border-line/80">
                 {data.items.map((c, i) => (
                   <CampaignRow key={c._id} campaign={c} index={(data.page - 1) * data.limit + i + 1} />
                 ))}
@@ -148,7 +148,7 @@ export default function CampaignsPage() {
           <div className="sticky top-24">
             <Filters key={JSON.stringify(values)} values={values} set={set} />
             {activeCount > 0 && (
-              <button type="button" onClick={clear} className="mt-8 text-sm text-forest underline-offset-4 hover:underline">
+              <button type="button" onClick={clear} className="mt-8 text-sm text-navy underline-offset-4 hover:underline">
                 Clear all filters
               </button>
             )}

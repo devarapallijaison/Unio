@@ -1,47 +1,64 @@
+import { Sparkles } from 'lucide-react';
 import { statusLabel, statusTone } from '../../lib/status.js';
 
-const TONE_CLASSES = {
-  positive: 'bg-mint text-forest border-sage',
-  active: 'bg-sage/60 text-ink border-sage',
-  waiting: 'bg-sand text-ink border-beige',
-  attention: 'bg-sand text-[#6b4b1f] border-beige',
-  neutral: 'bg-white text-muted border-beige/80',
+/** v9 .pill tones. Functional colours appear only for status. */
+const PILL_TONES = {
+  ok: 'bg-ok-bg text-ok border-ok-ln',
+  wait: 'bg-wait-bg text-wait border-wait-ln',
+  att: 'bg-att-bg text-att border-att-ln',
+  info: 'bg-info-bg text-info border-info-ln',
+  neutral: 'bg-[#e8ebeb] text-slate border-line2',
+  dark: 'bg-navy text-white border-navy',
+  ai: 'bg-ai-bg text-ai border-ai-ln',
 };
 
-const DOT = {
-  positive: 'bg-forest',
-  active: 'bg-forest/70',
-  waiting: 'bg-beige',
-  attention: 'bg-[#a87b3a]',
-  neutral: 'bg-muted/50',
-};
-
-export function StatusPill({ status, className = '' }) {
-  const tone = statusTone(status);
+export function Pill({ tone = 'neutral', dot = true, children, className = '', ...props }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border px-2 py-0.5 text-[12px] font-medium ${TONE_CLASSES[tone]} ${className}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[12px] font-semibold ${PILL_TONES[tone] ?? PILL_TONES.neutral} ${className}`}
+      {...props}
     >
-      <span className={`size-1.5 rounded-full ${DOT[tone]}`} aria-hidden />
-      {statusLabel(status)}
-    </span>
-  );
-}
-
-export function Tag({ children, className = '' }) {
-  return (
-    <span className={`inline-flex items-center rounded-sm border border-beige/80 bg-white/60 px-2 py-0.5 text-[12px] text-ink/80 ${className}`}>
+      {dot && <i className="inline-block size-1.5 rounded-full bg-current" aria-hidden />}
       {children}
     </span>
   );
 }
 
+/** Status enum → labelled pill (labels and tones live in lib/status.js). */
+export function StatusPill({ status, className = '' }) {
+  return (
+    <Pill tone={statusTone(status)} className={className}>
+      {statusLabel(status)}
+    </Pill>
+  );
+}
+
+/** Small square tag (v9 .tag) for deliverables, dates, skills. */
+export function Tag({ children, className = '' }) {
+  return (
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-sm border border-line bg-white px-2 py-0.5 text-[12px] text-slate ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+/** Marks fictional seeded profiles (v9 .demo). */
 export function DemoBadge({ className = '', label = 'Demo profile' }) {
   return (
     <span
       title="Fictional profile created to demonstrate the marketplace. Work shown is not real client work."
-      className={`inline-flex items-center rounded-sm border border-dashed border-beige bg-ivory px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted ${className}`}
+      className={`inline-flex items-center rounded-[3px] border border-dashed border-line2 px-1 font-mono text-[9.5px] uppercase tracking-[0.12em] text-steel ${className}`}
     >
+      {label}
+    </span>
+  );
+}
+
+/** Mono "AI" tag for anything AI-generated or AI-filled (v9 .ai-mark). */
+export function AiMark({ label = 'AI', className = '' }) {
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-sm border border-ai-ln bg-ai-bg px-[5px] py-px font-mono text-[10px] tracking-[0.08em] text-ai ${className}`}>
+      <Sparkles className="size-2.5" aria-hidden />
       {label}
     </span>
   );

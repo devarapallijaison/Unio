@@ -103,15 +103,15 @@ export default function CreatorInvitations() {
                       <p className="eyebrow">{inv.brand?.companyName}</p>
                       {inv.brand?.isDemo && <DemoBadge label="Demo brand" />}
                     </div>
-                    <Link to={`/campaigns/${inv.campaignId}`} className="block font-display text-2xl leading-snug hover:text-forest">
+                    <Link to={`/campaigns/${inv.campaignId}`} className="block font-extrabold tracking-[-0.03em] text-2xl leading-snug hover:text-navy">
                       {inv.campaign?.title ?? 'Campaign'}
                     </Link>
-                    <p className="text-[13px] text-muted">
+                    <p className="text-[13px] text-steel">
                       {formatBudget(inv.campaign?.budgetMin, inv.campaign?.budgetMax)} · {relativeDeadline(inv.campaign?.deadline)} · Invited{' '}
                       {formatDate(inv.createdAt)}
                     </p>
                     {inv.message && (
-                      <blockquote className="mt-3 border-l-2 border-sage pl-4 text-[15px] italic text-ink/80">“{inv.message}”</blockquote>
+                      <blockquote className="mt-3 border-l-2 border-line2 pl-4 text-[14px] text-slate">“{inv.message}”</blockquote>
                     )}
                   </div>
                   <InvitationResponseButtons invitation={inv} />

@@ -9,7 +9,17 @@ import {
   VERIFICATION_STATUS,
   VERIFICATION_TYPES,
 } from '../models/enums.js';
-import { CATEGORY_IDS, SPECIALIZATION_IDS, TEAM_SIZE_IDS } from '../models/taxonomy.js';
+import {
+  CATEGORY_IDS,
+  CONTENT_TYPE_IDS,
+  FORMAT_IDS,
+  LANGUAGE_NAMES,
+  SKILL_IDS,
+  SPECIALIZATION_IDS,
+  STYLE_IDS,
+  TEAM_SIZE_IDS,
+  TOOL_NAMES,
+} from '../models/taxonomy.js';
 import { httpUrl, money, objectId, optionalUrl, pageQuery, qNumber, qText, tagList, text } from './common.js';
 
 /* ---------- Auth ---------- */
@@ -112,27 +122,97 @@ export const campaignListQuery = z.object({
 });
 
 /* ---------- Creator profile & portfolio ---------- */
-export const creatorProfileBody = z.object({
-  displayName: text(120, 2),
-  bio: text(2000).optional(),
-  photoUrl: optionalUrl,
-  location: text(120).optional(),
-  skills: tagList.optional(),
-  tools: tagList.optional(),
-  specialties: tagList.optional(),
-  startingPrice: money.optional().nullable(),
-  availability: z.enum(AVAILABILITY).optional(),
+
+/** Controlled-list array: only known ids, deduplicated, capped. */
+const idList = (ids, max, label) =>
+  z
+    .array(z.enum(ids, `Pick ${label} from the list`))
+    .max(max, `Choose up to ${max}`)
+    .transform((list) => [...new Set(list)]);
+
+/** Optional whole number; '' or null clears it. */
+const optInt = (min, max) =>
+  z.preprocess((v) => (v === '' ? null : v), z.number().int().min(min).max(max).nullable().optional());
+
+const toolName = z.enum(TOOL_NAMES, 'Pick a tool from the list');
+
+/*
+ * Trust fields (verifiedTools, certifiedTools, pendingTools, madeOnUnioCount, rating*, trustLevel),
+ * featured and isDemo are computed or curated server-side: they are not in this schema, so Zod strips them.
+ */
+export const creatorProfileBody = z
+  .object({
+    displayName: text(120, 2),
+    headline: text(140).optional(),
+    bio: text(2000).optional(),
+    photoUrl: optionalUrl,
+    location: text(120).optional(),
+    category: z.enum(CATEGORY_IDS, 'Choose your main category').optional(),
+    secondaryCategories: idList(CATEGORY_IDS, 2, 'categories').optional(),
+    contentTypes: idList(CONTENT_TYPE_IDS, CONTENT_TYPE_IDS.length, 'content types').optional(),
+    specializations: idList(SPECIALIZATION_IDS, SPECIALIZATION_IDS.length, 'specializations').optional(),
+    styles: idList(STYLE_IDS, STYLE_IDS.length, 'styles').optional(),
+    formats: idList(FORMAT_IDS, FORMAT_IDS.length, 'formats').optional(),
+    languages: idList(LANGUAGE_NAMES, LANGUAGE_NAMES.length, 'languages').optional(),
+    skills: idList(SKILL_IDS, SKILL_IDS.length, 'skills').optional(),
+    tools: idList(TOOL_NAMES, 20, 'tools').optional(),
+    workflow: z.array(toolName).max(8, 'Up to 8 steps').optional(),
+    howIWork: z.array(z.object({ title: text(60, 2), detail: text(160).optional() })).max(6, 'Up to 6 steps').optional(),
+    startingPrice: money.optional().nullable(),
+    turnaroundDays: optInt(1, 60),
+    revisionsIncluded: optInt(0, 10),
+    commerciallySafe: z.boolean().optional(),
+    availability: z.enum(AVAILABILITY).optional(),
+  })
+  .refine((b) => !b.category || !(b.secondaryCategories ?? []).includes(b.category), {
+    path: ['secondaryCategories'],
+    message: 'Your main category is already included',
+  });
+
+const workflowStepBody = z.object({
+  tool: toolName,
+  version: text(30).optional(),
+  generations: optInt(0, 100000),
+  note: text(200).optional(),
 });
 
+/** madeOnUnio, projectId and contentHash are server-controlled and not accepted here. */
 export const portfolioBody = z.object({
   title: text(160, 2),
   description: text(1000).optional(),
   mediaType: z.enum(MEDIA_TYPES).default('image'),
   mediaUrl: httpUrl,
   thumbnailUrl: optionalUrl,
-  tools: tagList.optional(),
+  tools: idList(TOOL_NAMES, 20, 'tools').optional(),
   category: text(80).optional(),
   featured: z.boolean().optional(),
+  contentType: z.enum(CONTENT_TYPE_IDS, 'Pick a content type').optional().nullable(),
+  format: z.enum(FORMAT_IDS, 'Pick a format').optional().nullable(),
+  industry: z.enum(SPECIALIZATION_IDS, 'Pick an industry').optional().nullable(),
+  skills: idList(SKILL_IDS, SKILL_IDS.length, 'skills').optional(),
+  styles: idList(STYLE_IDS, STYLE_IDS.length, 'styles').optional(),
+  workflow: z.array(workflowStepBody).max(12, 'Up to 12 steps').optional(),
+  generations: optInt(0, 100000),
+  versionsCount: optInt(1, 50),
+  timeTakenDays: optInt(0, 365),
+  durationSec: optInt(0, 36000),
+  briefSummary: text(500).optional(),
+  deliveredSummary: text(500).optional(),
+  licence: z
+    .object({ licensedTo: text(160).optional(), summary: text(300).optional(), notForLicensing: z.boolean().optional() })
+    .optional(),
+  versions: z
+    .array(
+      z.object({
+        label: text(30, 1),
+        mediaUrl: optionalUrl,
+        thumbnailUrl: optionalUrl,
+        note: text(300).optional(),
+        status: z.enum(['changes', 'approved']).optional(),
+      }),
+    )
+    .max(10)
+    .optional(),
 });
 
 /* ---------- Brand profile & campaigns ---------- */

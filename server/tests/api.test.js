@@ -159,7 +159,7 @@ describe('public discovery', () => {
 
   test('creator search/filter/paginate in MongoDB and hides private fields', async () => {
     const { agent } = await signUp(app, 'creator', { name: 'Kling Specialist' });
-    await agent.put('/api/creator/profile').send({ displayName: 'Kling Specialist', tools: ['Kling'], skills: ['AI Video'], startingPrice: 5000 });
+    await agent.put('/api/creator/profile').send({ displayName: 'Kling Specialist', tools: ['Kling'], skills: ['edit'], startingPrice: 5000 });
     await signUp(app, 'creator', { name: 'Someone Else' });
 
     const byTool = await request(app).get('/api/creators?tool=kling');

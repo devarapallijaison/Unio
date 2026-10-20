@@ -3,6 +3,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { mapBy } from '../utils/db.js';
 import { pageResult, paginate } from '../utils/http.js';
 import { campaignSummary, creatorSummary, publicBrand } from './serializers.js';
+import { recomputeCreatorTrust } from './trust.service.js';
 
 function deliverablesFromCampaign(campaign) {
   const specs = campaign.deliverables?.length
@@ -119,6 +120,8 @@ export async function updateProjectStatus(user, id, status) {
 
   project.status = status;
   await project.save();
+  // ★ Made on UNIO counts completed projects; recompute so the profile stays exact.
+  if (status === 'completed') await recomputeCreatorTrust(project.creatorId);
   return getProject(user, id);
 }
 
@@ -132,6 +135,7 @@ export async function addFeedback(user, id, { rating, comment }) {
   if (project.feedback?.rating) throw ApiError.conflict('Feedback has already been left for this project', 'ALREADY_REVIEWED');
   project.feedback = { rating, comment: comment ?? '', createdAt: new Date() };
   await project.save();
+  await recomputeCreatorTrust(project.creatorId);
   return getProject(user, id);
 }
 

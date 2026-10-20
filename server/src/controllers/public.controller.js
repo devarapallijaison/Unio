@@ -12,6 +12,10 @@ export async function getCreator(req, res) {
   ok(res, await creators.getCreator(req.valid.params.id, req.user));
 }
 
+export async function getPortfolioPiece(req, res) {
+  ok(res, await creators.getPortfolioPiece(req.valid.params.id));
+}
+
 export async function listCampaigns(req, res) {
   ok(res, await campaigns.listPublicCampaigns(req.valid.query));
 }

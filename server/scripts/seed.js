@@ -26,6 +26,9 @@ import {
 } from '../src/models/index.js';
 import { hashPassword } from '../src/services/auth.service.js';
 import { createProjectFromSource } from '../src/services/projects.service.js';
+import { recomputeCreatorTrust } from '../src/services/trust.service.js';
+import { decide } from '../src/services/verification.service.js';
+import { demoCreators, team } from './seed-creators.js';
 
 const PASSWORD = process.env.SEED_DEMO_PASSWORD;
 if (!PASSWORD || PASSWORD.length < 8) {
@@ -37,122 +40,7 @@ const media = (slug, ext = 'jpg') => `https://media.unio.example/placeholder/${s
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 const inDays = (n) => new Date(Date.now() + n * 86_400_000);
 
-/* ------------------------------------------------------------------ */
-/* Team members — DRAFT profiles, to be edited by each person          */
-/* ------------------------------------------------------------------ */
-const DRAFT_NOTE = 'Draft profile — skills, tools and work samples are placeholders until confirmed.';
-const team = [
-  { name: 'Fawaz Ahmed', email: 'fawaz.ahmed@unio.example', location: 'Hyderabad', skills: ['AI Video', 'Creative Direction'], tools: ['Runway', 'CapCut'], specialties: ['Product Advertising'] },
-  { name: 'Sai Charitha', email: 'sai.charitha@unio.example', location: 'Hyderabad', skills: ['AI Image Generation', 'Brand Design'], tools: ['Midjourney', 'Figma'], specialties: ['Beauty'] },
-  { name: 'Roha Nawaz', email: 'roha.nawaz@unio.example', location: 'Hyderabad', skills: ['Storyboarding', 'AI Video'], tools: ['Kling', 'Premiere Pro'], specialties: ['Fashion'] },
-  { name: 'Shameer', email: 'shameer@unio.example', location: 'Hyderabad', skills: ['Motion Design', 'AI Animation'], tools: ['After Effects', 'Pika'], specialties: ['Tech'] },
-  { name: 'Jaison', email: 'jaison@unio.example', location: 'Hyderabad', skills: ['AI Voice', 'Video Editing'], tools: ['ElevenLabs', 'DaVinci Resolve'], specialties: ['Education'] },
-].map((t) => ({
-  ...t,
-  bio: `Part of the team building UNIO. ${DRAFT_NOTE}`,
-  startingPrice: null,
-  availability: 'available',
-  featured: false,
-  isDemo: false,
-  portfolio: [],
-}));
-
-/* ------------------------------------------------------------------ */
-/* Fictional demo creators (isDemo: true)                              */
-/* ------------------------------------------------------------------ */
-const demoCreators = [
-  {
-    name: 'Meera Kulkarni', location: 'Pune', startingPrice: 12000, availability: 'available', featured: true,
-    bio: 'Short-form product films for skincare and wellness brands. I storyboard by hand, generate shots in Kling and Runway, and finish the edit and sound myself so the result feels directed rather than generated.',
-    skills: ['AI Video', 'Product Advertising', 'Storyboarding'], tools: ['Kling', 'Runway', 'CapCut'], specialties: ['Beauty', 'Wellness'],
-    portfolio: [
-      { title: 'Dewdrop serum — 15s vertical', mediaType: 'video', category: 'Beauty', tools: ['Kling', 'CapCut'], featured: true, description: 'Macro liquid shots and a single-take reveal, cut to a 15-second 9:16 spot.' },
-      { title: 'Morning ritual — product stills', mediaType: 'image', category: 'Beauty', tools: ['Runway'], description: 'Soft daylight still-life set for a launch carousel.' },
-      { title: 'Herbal tea launch teaser', mediaType: 'video', category: 'Wellness', tools: ['Runway', 'CapCut'], description: 'Steam, botanicals and a slow push-in, built for Reels.' },
-    ],
-  },
-  {
-    name: 'Arjun Menon', location: 'Kochi', startingPrice: 8000, availability: 'available', featured: true,
-    bio: 'AI-assisted product photography for fashion and lifestyle labels. Consistent lighting across a whole catalogue is the part I care about most.',
-    skills: ['AI Image Generation', 'Product Photography', 'Retouching'], tools: ['Midjourney', 'Photoshop', 'Magnific'], specialties: ['Fashion', 'Lifestyle'],
-    portfolio: [
-      { title: 'Linen capsule — catalogue set', mediaType: 'image', category: 'Fashion', tools: ['Midjourney', 'Photoshop'], featured: true, description: 'Twelve looks on a consistent sand backdrop for an e-commerce drop.' },
-      { title: 'Leather goods on stone', mediaType: 'image', category: 'Lifestyle', tools: ['Magnific', 'Photoshop'], description: 'Upscaled hero images with hand-retouched stitching detail.' },
-    ],
-  },
-  {
-    name: 'Zoya Siddiqui', location: 'Bengaluru', startingPrice: 15000, availability: 'busy', featured: true,
-    bio: 'Motion designer turning SaaS product stories into crisp explainer animation. I combine After Effects with generated textures and transitions.',
-    skills: ['Motion Design', 'AI Animation', 'Explainer Video'], tools: ['After Effects', 'Runway', 'Pika'], specialties: ['Tech', 'SaaS'],
-    portfolio: [
-      { title: 'Fintech onboarding explainer', mediaType: 'video', category: 'Tech', tools: ['After Effects', 'Runway'], featured: true, description: '60-second walkthrough with generated ambient backgrounds.' },
-      { title: 'Feature launch loop', mediaType: 'video', category: 'SaaS', tools: ['Pika'], description: 'Seamless 6-second loop for a product announcement.' },
-      { title: 'Data-viz title cards', mediaType: 'image', category: 'Tech', tools: ['After Effects'], description: 'Title system for a quarterly report video.' },
-    ],
-  },
-  {
-    name: 'Kabir Malhotra', location: 'Mumbai', startingPrice: 20000, availability: 'available', featured: false,
-    bio: 'Music visuals and lyric videos for independent artists and audio brands. Every frame is cut to the beat.',
-    skills: ['AI Video', 'Music Visuals', 'Color Grading'], tools: ['Kling', 'Suno', 'DaVinci Resolve'], specialties: ['Music', 'Entertainment'],
-    portfolio: [
-      { title: 'Neon monsoon — lyric video', mediaType: 'video', category: 'Music', tools: ['Kling', 'DaVinci Resolve'], featured: true, description: 'Rain-soaked city visuals graded to a single teal-amber palette.' },
-      { title: 'Album cover series', mediaType: 'image', category: 'Music', tools: ['Midjourney'], description: 'Four alternate covers explored for an EP release.' },
-    ],
-  },
-  {
-    name: 'Ananya Rao', location: 'Hyderabad', startingPrice: 6000, availability: 'available', featured: true,
-    bio: 'UGC-style ads with AI avatars and natural voiceover for D2C brands. Fast turnarounds, multiple hooks per brief.',
-    skills: ['AI Avatars', 'UGC Ads', 'Scriptwriting'], tools: ['HeyGen', 'ElevenLabs', 'CapCut'], specialties: ['D2C', 'Beauty'],
-    portfolio: [
-      { title: 'Three hooks, one sunscreen', mediaType: 'video', category: 'Beauty', tools: ['HeyGen', 'ElevenLabs'], featured: true, description: 'A/B test set: same product, three opening hooks.' },
-      { title: 'Snack brand testimonial', mediaType: 'video', category: 'D2C', tools: ['HeyGen', 'CapCut'], description: 'Talking-head avatar with subtitles burned in.' },
-    ],
-  },
-  {
-    name: 'Rohan Das', location: 'Kolkata', startingPrice: 18000, availability: 'available', featured: false,
-    bio: '3D product visualisation for consumer electronics, mixing Blender scenes with diffusion-based texturing.',
-    skills: ['3D Visualization', 'AI Image Generation', 'Product Advertising'], tools: ['Blender', 'Stable Diffusion', 'ComfyUI'], specialties: ['Electronics', 'Tech'],
-    portfolio: [
-      { title: 'Earbuds exploded view', mediaType: 'image', category: 'Electronics', tools: ['Blender', 'ComfyUI'], featured: true, description: 'Component breakdown render for a spec sheet.' },
-      { title: 'Smartwatch turntable', mediaType: 'video', category: 'Electronics', tools: ['Blender'], description: '360° turntable with generated material variations.' },
-    ],
-  },
-  {
-    name: 'Ishita Bansal', location: 'New Delhi', startingPrice: 7000, availability: 'available', featured: false,
-    bio: 'Food and beverage imagery that looks cooked, not rendered. Menus, packaging mockups and seasonal campaigns.',
-    skills: ['AI Image Generation', 'Food Styling', 'Packaging Mockups'], tools: ['Midjourney', 'Firefly', 'Lightroom'], specialties: ['Food & Beverage'],
-    portfolio: [
-      { title: 'Festive mithai box', mediaType: 'image', category: 'Food & Beverage', tools: ['Midjourney', 'Lightroom'], featured: true, description: 'Overhead packaging shot for a Diwali gifting range.' },
-      { title: 'Cold brew summer menu', mediaType: 'image', category: 'Food & Beverage', tools: ['Firefly'], description: 'Menu board imagery in a warm, sunlit style.' },
-    ],
-  },
-  {
-    name: 'Vihaan Shah', location: 'Ahmedabad', startingPrice: 25000, availability: 'busy', featured: false,
-    bio: 'Brand films and travel stories. I write the script first, then build each scene with generated footage and real sound design.',
-    skills: ['Brand Storytelling', 'AI Video', 'Scriptwriting'], tools: ['Veo', 'Runway', 'Premiere Pro'], specialties: ['Travel', 'Hospitality'],
-    portfolio: [
-      { title: 'Stepwell at dawn — brand film', mediaType: 'video', category: 'Travel', tools: ['Veo', 'Premiere Pro'], featured: true, description: '90-second heritage-hotel story with original narration.' },
-      { title: 'Coastal resort stills', mediaType: 'image', category: 'Hospitality', tools: ['Runway'], description: 'Key art for a monsoon-season booking campaign.' },
-    ],
-  },
-  {
-    name: 'Nikhil Varma', location: 'Chennai', startingPrice: 4000, availability: 'available', featured: false,
-    bio: 'Social carousels and explainer graphics for education and creator-economy brands. Clear type, clean grids.',
-    skills: ['Social Media Design', 'AI Image Generation', 'Copywriting'], tools: ['Ideogram', 'Canva', 'Figma'], specialties: ['Education'],
-    portfolio: [
-      { title: 'Exam-prep carousel series', mediaType: 'image', category: 'Education', tools: ['Ideogram', 'Figma'], featured: true, description: 'Ten-slide carousels with generated illustrations.' },
-    ],
-  },
-  {
-    name: 'Sana Qureshi', location: 'Jaipur', startingPrice: 10000, availability: 'unavailable', featured: false,
-    bio: 'Fashion lookbooks with a handcrafted feel: block-print textures, desert light, and consistent model styling across a collection.',
-    skills: ['AI Image Generation', 'Fashion Lookbooks', 'Art Direction'], tools: ['Flux', 'Midjourney', 'Photoshop'], specialties: ['Fashion'],
-    portfolio: [
-      { title: 'Block-print resort lookbook', mediaType: 'image', category: 'Fashion', tools: ['Flux', 'Photoshop'], featured: true, description: 'Sixteen-page lookbook for a resort-wear capsule.' },
-      { title: 'Indigo textures study', mediaType: 'image', category: 'Fashion', tools: ['Midjourney'], description: 'Texture explorations used as campaign backdrops.' },
-    ],
-  },
-].map((c) => ({ ...c, email: `${slugify(c.name)}@creators.unio.example`, isDemo: true }));
+/* Creators (team drafts + v9 demo cast) live in seed-creators.js */
 
 /* ------------------------------------------------------------------ */
 /* Fictional demo brands and campaigns                                 */
@@ -246,8 +134,13 @@ async function seedCreator(c, passwordHash) {
     {
       $set: {
         displayName: c.name, bio: c.bio, location: c.location, skills: c.skills, tools: c.tools,
-        specialties: c.specialties, startingPrice: c.startingPrice ?? undefined, availability: c.availability,
+        specialties: c.specialties ?? [], startingPrice: c.startingPrice ?? undefined, availability: c.availability,
         featured: c.featured, isDemo: c.isDemo,
+        // Round 2 (taxonomy ids). Trust fields are NOT set here — recomputeCreatorTrust() owns them.
+        headline: c.headline ?? '', category: c.category, secondaryCategories: c.secondaryCategories ?? [],
+        contentTypes: c.contentTypes ?? [], specializations: c.specializations ?? [], styles: c.styles ?? [],
+        formats: c.formats ?? [], languages: c.languages ?? [], workflow: c.workflow ?? [], howIWork: c.howIWork ?? [],
+        turnaroundDays: c.turnaroundDays, revisionsIncluded: c.revisionsIncluded ?? 2, commerciallySafe: !!c.commerciallySafe,
       },
     },
     { upsert: true, returnDocument: 'after', runValidators: true },
@@ -255,10 +148,12 @@ async function seedCreator(c, passwordHash) {
 
   for (const item of c.portfolio) {
     const slug = `${slugify(c.name)}-${slugify(item.title)}`;
+    // A piece's tools always include the tools named in its workflow (same rule as the API).
+    const tools = [...new Set([...(item.tools ?? []), ...(item.workflow ?? []).map((s) => s.tool)])];
     await PortfolioItem.findOneAndUpdate(
       { creatorId: profile._id, title: item.title },
       {
-        $set: { ...item, featured: !!item.featured },
+        $set: { ...item, tools, featured: !!item.featured },
         // Media links are only set on first insert so re-seeding never overwrites real uploads.
         $setOnInsert: {
           mediaUrl: media(slug, item.mediaType === 'video' ? 'mp4' : 'jpg'),
@@ -355,22 +250,25 @@ async function main() {
   }
 
   // Reviewer account (operator-provisioned role; cannot be chosen at sign-up).
-  await upsertUser({ name: 'UNIO Reviewer', email: 'reviewer@unio.example', role: 'reviewer' }, passwordHash);
+  const reviewer = await upsertUser({ name: 'UNIO Reviewer', email: 'reviewer@unio.example', role: 'reviewer' }, passwordHash);
 
-  // Verification demo: only SELF_REPORTED and PENDING claims are seeded. Nothing is ever seeded as
-  // VERIFIED or REJECTED; those states only come from a reviewer's decision. Evidence links point at
-  // the reserved .example domain and are clearly placeholders.
+  // Verification demo. Claims are seeded as PENDING (submitted, with placeholder evidence on the reserved
+  // .example domain) or SELF_REPORTED. Demo creators' "v" tools are then APPROVED through the same
+  // verification.service.decide() a reviewer uses, by the seeded reviewer, with a "Demo seed" note
+  // (guide §9). Nothing is written as VERIFIED directly, and team drafts are never verified.
   const claims = [
-    ['Meera Kulkarni', { type: 'tool', subject: 'Kling', submit: true }],
     ['Meera Kulkarni', {
       type: 'workflow', subject: 'Storyboard → Kling → CapCut', submit: true,
       description: 'Hand-drawn storyboard, keyframes generated per shot, image-to-video in Kling, then edit, grade and sound design in CapCut.',
     }],
     ['Meera Kulkarni', { type: 'portfolio', portfolioTitle: 'Dewdrop serum — 15s vertical', submit: true }],
-    ['Rohan Das', { type: 'tool', subject: 'Blender', submit: true }],
-    ['Zoya Siddiqui', { type: 'tool', subject: 'After Effects', submit: false }],
-    ['Ananya Rao', { type: 'tool', subject: 'HeyGen', submit: false }],
   ];
+  for (const c of demoCreators) {
+    for (const [tool, state] of Object.entries(c.toolStates ?? {})) {
+      if (state === 'v' || state === 'p') claims.push([c.name, { type: 'tool', subject: tool, submit: true, approve: state === 'v' }]);
+    }
+  }
+  const toApprove = [];
   for (const [name, c] of claims) {
     const creator = creators[name];
     let { subject } = c;
@@ -394,7 +292,19 @@ async function main() {
       },
       { upsert: true },
     );
+    if (c.approve) toApprove.push({ creatorId: creator._id, key });
   }
+
+  for (const { creatorId, key } of toApprove) {
+    const claim = await VerificationSubmission.findOne({ creatorId, key }, 'status').lean();
+    // Idempotent: only claims still waiting are decided; an existing decision is left alone.
+    if (claim?.status === 'PENDING') {
+      await decide(reviewer, claim._id, { decision: 'VERIFIED', note: 'Demo seed — sample review for demonstration, not a real check.' });
+    }
+  }
+
+  // Trust fields come only from the recompute (claims, completed projects, feedback).
+  for (const creator of Object.values(creators)) await recomputeCreatorTrust(creator._id);
 
   const counts = {};
   for (const [name, model] of Object.entries({ users: User, creatorProfiles: CreatorProfile, brandProfiles: BrandProfile, portfolioItems: PortfolioItem, campaigns: Campaign, applications: Application, invitations: Invitation, projects: Project, verificationSubmissions: VerificationSubmission })) {

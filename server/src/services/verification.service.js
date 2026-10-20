@@ -4,6 +4,7 @@ import { mapBy } from '../utils/db.js';
 import { pageResult, paginate } from '../utils/http.js';
 import { requireCreatorProfile } from './profile.service.js';
 import { creatorSummary } from './serializers.js';
+import { recomputeCreatorTrust } from './trust.service.js';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -73,6 +74,7 @@ export async function create(user, { type, subject, portfolioItemId, description
       status,
       submittedAt: status === 'PENDING' ? new Date() : undefined,
     });
+    await recomputeCreatorTrust(profile._id);
     const { reviewerId: _r, ...rest } = doc.toObject();
     return rest;
   } catch (err) {
@@ -110,6 +112,7 @@ export async function update(user, id, { subject, description, evidenceUrls, sub
     if (err?.code === 11000) throw ApiError.conflict('Another entry already covers this tool or workflow', 'ALREADY_EXISTS');
     throw err;
   }
+  await recomputeCreatorTrust(profile._id);
   const { reviewerId: _r, ...rest } = doc.toObject();
   return rest;
 }
@@ -118,6 +121,7 @@ export async function remove(user, id) {
   const profile = await requireCreatorProfile(user);
   const res = await VerificationSubmission.deleteOne({ _id: id, creatorId: profile._id });
   if (!res.deletedCount) throw ApiError.notFound('Verification entry not found');
+  await recomputeCreatorTrust(profile._id);
   return { deleted: true };
 }
 
@@ -130,6 +134,7 @@ export async function invalidatePortfolioEvidence(creatorId, portfolioItemId) {
       $unset: { reviewerId: 1, reviewedAt: 1 },
     },
   );
+  await recomputeCreatorTrust(creatorId);
 }
 
 /* ------------------------------------------------------------------ */
@@ -173,6 +178,7 @@ export async function decide(reviewer, id, { decision, note }) {
     if (!exists) throw ApiError.notFound('Submission not found');
     throw ApiError.invalidTransition(exists.status, decision);
   }
+  await recomputeCreatorTrust(doc.creatorId);
   const [hydrated] = await hydrateForReview([doc]);
   return hydrated;
 }
@@ -197,7 +203,8 @@ export async function publicSignals(profile) {
   const toolSignals = new Map(docs.filter((d) => d.type === 'tool').map((d) => [slug(d.subject), d]));
   const tools = [...new Set([...(profile.tools ?? []), ...[...toolSignals.values()].map((d) => d.subject)])].map((name) => {
     const sig = toolSignals.get(slug(name));
-    return { name, status: sig ? publicStatus(sig.status) : 'SELF_REPORTED' };
+    const status = sig ? publicStatus(sig.status) : 'SELF_REPORTED';
+    return { name, status, reviewedAt: status === 'VERIFIED' ? sig.reviewedAt : undefined };
   });
 
   const workflows = docs

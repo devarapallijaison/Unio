@@ -13,7 +13,21 @@ export function createApp() {
   if (env.isProd) app.set('trust proxy', env.trustProxy);
   app.disable('x-powered-by');
 
-  app.use(helmet());
+  // CSP takes effect once Express serves the React build (guide §12). frame-src allows YouTube/Vimeo
+  // embeds on portfolio pieces; img/media allow hosted (https) media.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          'img-src': ["'self'", 'data:', 'blob:', 'https:'],
+          'media-src': ["'self'", 'blob:', 'https:'],
+          'frame-src': ["'self'", 'https://www.youtube.com', 'https://www.youtube-nocookie.com', 'https://player.vimeo.com'],
+          'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+          'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
+        },
+      },
+    }),
+  );
   app.use(
     cors({
       origin(origin, cb) {

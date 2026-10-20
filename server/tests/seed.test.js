@@ -43,8 +43,14 @@ test('seed is idempotent and references are valid', async () => {
   const second = await snapshot();
 
   assert.deepEqual(second, first);
-  assert.equal(first.creatorProfiles, 15);
-  assert.equal(await db.collection('creatorProfiles').countDocuments({ isDemo: true }), 10);
+  assert.equal(first.creatorProfiles, 17);
+  assert.equal(await db.collection('creatorProfiles').countDocuments({ isDemo: true }), 12);
+  // The 11 v9 creators are present with a category and at least one piece showing how it was made.
+  for (const name of ['Meera Kulkarni', 'Ananya Rao', 'Arjun Menon', 'Rohan Das', 'Kabir Malhotra', 'Ishita Bansal', 'Zoya Siddiqui', 'Vihaan Shah', 'Sana Qureshi', 'Dev Patil', 'Tara Iyer']) {
+    const p = await db.collection('creatorProfiles').findOne({ displayName: name });
+    assert.ok(p?.category, `${name} needs a category`);
+    assert.ok(await db.collection('portfolioItems').countDocuments({ creatorId: p._id, 'workflow.0': { $exists: true } }), `${name} needs a piece with workflow`);
+  }
   for (const name of ['Fawaz Ahmed', 'Sai Charitha', 'Roha Nawaz', 'Shameer', 'Jaison']) {
     assert.ok(await db.collection('creatorProfiles').findOne({ displayName: name }), `${name} missing`);
   }
@@ -60,10 +66,24 @@ test('seed is idempotent and references are valid', async () => {
       if (doc.campaignId) assert.ok(campaignIds.has(String(doc.campaignId)), `${coll} has dangling campaignId`);
     }
   }
-  // Seed never fabricates verification outcomes.
-  assert.equal(await db.collection('verificationSubmissions').countDocuments({ status: { $in: ['VERIFIED', 'REJECTED'] } }), 0);
+  // Verification outcomes come only from the reviewer service (guide §9): every VERIFIED claim was decided
+  // by the seeded reviewer with a "Demo seed" note, only for demo creators, and nothing is REJECTED.
+  const reviewer = await db.collection('users').findOne({ role: 'reviewer' });
+  assert.ok(reviewer);
+  assert.equal(await db.collection('verificationSubmissions').countDocuments({ status: 'REJECTED' }), 0);
+  const verified = await db.collection('verificationSubmissions').find({ status: 'VERIFIED' }).toArray();
+  assert.ok(verified.length > 0);
+  for (const v of verified) {
+    assert.equal(String(v.reviewerId), String(reviewer._id));
+    assert.match(v.reviewNote, /^Demo seed/);
+    assert.ok(v.reviewedAt);
+    const p = await db.collection('creatorProfiles').findOne({ _id: v.creatorId });
+    assert.equal(p.isDemo, true, 'team drafts are never verified');
+    assert.ok(p.verifiedTools.includes(v.subject), 'trust fields come from the recompute');
+  }
   assert.ok(await db.collection('verificationSubmissions').countDocuments({ status: 'PENDING' }) > 0);
-  assert.ok(await db.collection('users').findOne({ role: 'reviewer' }));
+  // No invented ratings or ★ Made on UNIO counts without completed projects.
+  assert.equal(await db.collection('creatorProfiles').countDocuments({ $or: [{ ratingCount: { $gt: 0 } }, { madeOnUnioCount: { $gt: 0 } }] }), 0);
   // Re-seeding must not overwrite media a creator replaced.
   await db.collection('portfolioItems').updateOne({}, { $set: { mediaUrl: 'https://real.cdn.test/x.jpg' } });
   await seed();

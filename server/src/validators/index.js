@@ -98,15 +98,47 @@ export const loginBody = z.object({
 });
 
 /* ---------- Public discovery ---------- */
+/** Comma-separated multi-value query param → array of known ids ("a,b" or repeated params). */
+const csv = (ids, label) =>
+  z.preprocess(
+    (v) => {
+      if (v == null || v === '') return undefined;
+      const list = (Array.isArray(v) ? v.join(',') : String(v)).split(',').map((s) => s.trim()).filter(Boolean);
+      return list.length ? [...new Set(list)] : undefined;
+    },
+    z.array(z.enum(ids, `Unknown ${label}`)).max(30).optional(),
+  );
+const flag = z.preprocess((v) => (v === undefined || v === '' ? undefined : v === '1' || v === 'true' || v === true), z.boolean().optional());
+
+export const DISCOVER_SORTS = ['rating', 'price', 'fast', 'mou', 'newest', 'featured', 'price_asc', 'price_desc'];
+
+/**
+ * Discover filters (guide F1-b). OR within one filter, AND across filters. Round 1 params
+ * (search, skill, tool, specialty, availability, minPrice, price_* sorts) stay as aliases.
+ */
 export const creatorListQuery = z.object({
+  q: qText,
+  cat: csv(CATEGORY_IDS, 'category'),
+  types: csv(CONTENT_TYPE_IDS, 'content type'),
+  spec: csv(SPECIALIZATION_IDS, 'specialization'),
+  skills: csv(SKILL_IDS, 'skill'),
+  tools: csv(TOOL_NAMES, 'tool'),
+  vonly: flag,
+  styles: csv(STYLE_IDS, 'style'),
+  formats: csv(FORMAT_IDS, 'format'),
+  langs: csv(LANGUAGE_NAMES, 'language'),
+  trust: csv(['v', 'c', 'm'], 'trust level'),
+  maxPrice: qNumber,
+  minPrice: qNumber,
+  maxDays: qNumber,
+  avail: flag,
+  // Round 1 aliases
   search: qText,
   skill: qText,
   tool: qText,
   specialty: qText,
   availability: z.enum(AVAILABILITY).optional().or(z.literal('').transform(() => undefined)),
-  minPrice: qNumber,
-  maxPrice: qNumber,
-  sort: z.enum(['featured', 'newest', 'price_asc', 'price_desc']).default('featured'),
+  sort: z.enum(DISCOVER_SORTS).default('rating'),
   ...pageQuery,
 });
 

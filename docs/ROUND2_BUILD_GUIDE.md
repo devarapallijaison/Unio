@@ -789,3 +789,8 @@ Payments/escrow · email sending (approval links are copied by the agency) · re
 ## 14. Open decisions (ask Fawwaz; defaults in brackets)
 
 1. Matching weights (table in F4). 2. Revision rounds included [2]. 3. Final taxonomy lists — cut/rename before seeding [as in 5.1]. 4. Round 1 campaign category mapping [5.1]. 5. Agency client approval: notify agency vs final decision [notify]. 6. Trust score ring on C7 [hide unless formula approved]. 7. Max video upload size [200 MB]. 8. Deploy branch [`main` after merge].
+
+## 15. Before freeze (Friday 23 Oct, 8 pm IST)
+
+- [ ] If Phase 9 (agency workspace) is not built, remove the Join page copy that promises it: the agency "Send approval links · No login for clients" next step and the "You can switch between Brand and Agency later in settings" line (`client/src/pages/public/AuthPages.jsx`, `ROLES`).
+- [ ] Placeholder art never appears where a real thumbnail exists — check every `MediaFrame` use (cards, proof wall, profile, piece page, projects) with real media URLs; the Steel fallback is only for missing or failed media.

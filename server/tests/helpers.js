@@ -25,6 +25,15 @@ export async function resetDb() {
 }
 
 let counter = 0;
+
+/** Minimum per-role sign-up fields (guide §6.1). `agency` = role brand + accountType agency. */
+export function registerFields(kind, n = counter) {
+  if (kind === 'creator') return { role: 'creator', category: 'video', city: 'Pune' };
+  const brandBase = { role: 'brand', jobTitle: 'Marketing manager', companyName: `Company ${n}` };
+  if (kind === 'agency') return { ...brandBase, accountType: 'agency', teamSize: '2-10', websiteUrl: 'https://agency.example.com' };
+  return { ...brandBase, accountType: 'brand', industry: 'beauty' };
+}
+
 /** Registers a user and returns a supertest agent that carries its session cookie. */
 export async function signUp(app, role, overrides = {}) {
   counter += 1;
@@ -33,7 +42,7 @@ export async function signUp(app, role, overrides = {}) {
     name: `${role} ${counter}`,
     email: `${role}${counter}@example.com`,
     password: 'StrongPass123!',
-    role,
+    ...registerFields(role),
     ...overrides,
   };
   const res = await agent.post('/api/auth/register').send(body);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, test } from 'node:test';
 import request from 'supertest';
-import { campaignPayload, resetDb, signUp, startDb, stopDb } from './helpers.js';
+import { campaignPayload, registerFields, resetDb, signUp, startDb, stopDb } from './helpers.js';
 import { Project, User } from '../src/models/index.js';
 import { scoreMatch } from '../src/services/matching.service.js';
 
@@ -40,7 +40,7 @@ describe('auth', () => {
   test('register creator creates user + profile, hashes password, sets cookie', async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ name: 'Example Creator', email: ' Creator@Example.com ', password: 'StrongPass123!', role: 'creator' });
+      .send({ name: 'Example Creator', email: ' Creator@Example.com ', password: 'StrongPass123!', ...registerFields('creator') });
     assert.equal(res.status, 201);
     assert.equal(res.body.data.user.email, 'creator@example.com');
     assert.equal(res.body.data.user.passwordHash, undefined);
@@ -52,7 +52,7 @@ describe('auth', () => {
   });
 
   test('register brand creates brand profile', async () => {
-    const { profile } = await signUp(app, 'brand', { name: 'Acme Studio' });
+    const { profile } = await signUp(app, 'brand', { companyName: 'Acme Studio' });
     assert.equal(profile.companyName, 'Acme Studio');
   });
 
@@ -60,14 +60,16 @@ describe('auth', () => {
     await signUp(app, 'creator', { email: 'dup@example.com' });
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ name: 'Again', email: 'DUP@example.com', password: 'StrongPass123!', role: 'brand' });
+      .send({ name: 'Again', email: 'DUP@example.com', password: 'StrongPass123!', ...registerFields('brand') });
     assert.equal(res.status, 409);
   });
 
   test('invalid registration input → 400 with details', async () => {
-    const res = await request(app).post('/api/auth/register').send({ name: 'x', email: 'bad', password: 'short', role: 'admin' });
-    assert.equal(res.status, 400);
-    assert.ok(res.body.error.details.length >= 3);
+    const bad = await request(app).post('/api/auth/register').send({ name: 'x', email: 'bad', password: 'short', role: 'creator' });
+    assert.equal(bad.status, 400);
+    assert.ok(bad.body.error.details.length >= 3);
+    const unknownRole = await request(app).post('/api/auth/register').send({ name: 'Admin', email: 'a@example.com', password: 'StrongPass123!', role: 'admin' });
+    assert.equal(unknownRole.status, 400);
   });
 
   test('login: generic 401 for wrong password and unknown email', async () => {

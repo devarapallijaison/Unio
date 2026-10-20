@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { AVAILABILITY, schemaOptions, stringList, urlField } from './enums.js';
+import { CATEGORY_IDS } from './taxonomy.js';
 
 const creatorProfileSchema = new mongoose.Schema(
   {
@@ -8,6 +9,8 @@ const creatorProfileSchema = new mongoose.Schema(
     bio: { type: String, trim: true, maxlength: 2000, default: '' },
     photoUrl: urlField(),
     location: { type: String, trim: true, maxlength: 120, default: '' },
+    // Main creator category (taxonomy id). Set at sign-up from Round 2; Round 1 profiles may not have one.
+    category: { type: String, enum: CATEGORY_IDS },
     skills: stringList,
     tools: stringList,
     specialties: stringList,
@@ -19,6 +22,7 @@ const creatorProfileSchema = new mongoose.Schema(
   schemaOptions,
 );
 
+creatorProfileSchema.index({ category: 1 });
 creatorProfileSchema.index({ skills: 1 });
 creatorProfileSchema.index({ tools: 1 });
 creatorProfileSchema.index({ specialties: 1 });

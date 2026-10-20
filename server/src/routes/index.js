@@ -15,6 +15,7 @@ import {
   INVITATION_STATUS,
   PROJECT_STATUS,
 } from '../models/enums.js';
+import { TAXONOMY } from '../models/taxonomy.js';
 import { idParams, objectId } from '../validators/common.js';
 import * as v from '../validators/index.js';
 import { ok } from '../utils/http.js';
@@ -22,6 +23,12 @@ import { ok } from '../utils/http.js';
 const router = Router();
 
 router.get('/health', (_req, res) => ok(res, { status: 'ok', db: dbState(), time: new Date().toISOString() }));
+
+/* ---------- Controlled lists (static; cached by browsers for an hour) ---------- */
+router.get('/taxonomy', (_req, res) => {
+  res.set('Cache-Control', 'public, max-age=3600');
+  ok(res, TAXONOMY);
+});
 
 /* ---------- Auth ---------- */
 router.post('/auth/register', authLimiter, validate({ body: v.registerBody }), authCtrl.register);

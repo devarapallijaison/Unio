@@ -9,21 +9,78 @@ import {
   VERIFICATION_STATUS,
   VERIFICATION_TYPES,
 } from '../models/enums.js';
+import { CATEGORY_IDS, SPECIALIZATION_IDS, TEAM_SIZE_IDS } from '../models/taxonomy.js';
 import { httpUrl, money, objectId, optionalUrl, pageQuery, qNumber, qText, tagList, text } from './common.js';
 
 /* ---------- Auth ---------- */
 const emailField = z.string().trim().toLowerCase().max(254).pipe(z.email('Enter a valid email address'));
-export const registerBody = z.object({
+const passwordField = z
+  .string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(128)
+  .regex(/[A-Za-z]/, 'Password must contain a letter')
+  .regex(/\d/, 'Password must contain a number');
+
+/** Website as typed on the join form ("masalatrail.in") — https:// is added when missing. */
+const website = z.preprocess(
+  (v) => (typeof v === 'string' && v.trim() && !/^https?:\/\//i.test(v.trim()) ? `https://${v.trim()}` : v),
+  httpUrl,
+);
+
+const account = {
   name: text(120, 2),
   email: emailField,
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128)
-    .regex(/[A-Za-z]/, 'Password must contain a letter')
-    .regex(/\d/, 'Password must contain a number'),
-  role: z.enum(SELF_SERVE_ROLES, 'Choose creator or brand'),
-});
+  password: passwordField,
+};
+const brandSide = {
+  role: z.literal('brand'),
+  jobTitle: text(80, 2),
+};
+
+/**
+ * Sign-up fields differ by role (guide §6.1). Agencies are role 'brand' + accountType 'agency',
+ * so a derived `kind` (creator | brand | agency) picks the branch. Reviewer is never self-serve.
+ */
+export const registerBody = z.preprocess(
+  (raw) => {
+    if (!raw || typeof raw !== 'object') return raw;
+    const kind = raw.role === 'brand' ? (raw.accountType === 'agency' ? 'agency' : 'brand') : raw.role;
+    return { ...raw, kind };
+  },
+  z.discriminatedUnion(
+    'kind',
+    [
+      z.object({
+        kind: z.literal('creator'),
+        role: z.literal('creator'),
+        ...account,
+        displayName: z.union([z.literal(''), text(120, 2)]).optional(),
+        category: z.enum(CATEGORY_IDS, 'Choose what kind of creator you are'),
+        city: text(120, 2),
+      }),
+      z.object({
+        kind: z.literal('brand'),
+        ...brandSide,
+        accountType: z.literal('brand').default('brand'),
+        ...account,
+        companyName: text(160, 2),
+        industry: z.enum(SPECIALIZATION_IDS, 'Choose your industry'),
+        websiteUrl: z.union([z.literal(''), website]).optional(),
+      }),
+      z.object({
+        kind: z.literal('agency'),
+        ...brandSide,
+        accountType: z.literal('agency'),
+        ...account,
+        companyName: text(160, 2),
+        teamSize: z.enum(TEAM_SIZE_IDS, 'Choose your team size'),
+        websiteUrl: website,
+        firstClientName: z.union([z.literal(''), text(120, 2)]).optional(),
+      }),
+    ],
+    { error: `Choose ${SELF_SERVE_ROLES.join(' or ')} (agencies sign up as brand + agency)` },
+  ),
+);
 
 export const loginBody = z.object({
   email: emailField,

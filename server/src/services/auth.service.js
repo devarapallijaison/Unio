@@ -17,7 +17,41 @@ export async function getProfileForUser(user) {
   return Model.findOne({ userId: user._id }).lean();
 }
 
-export async function register({ name, email, password, role }) {
+const initialsOf = (name) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
+
+/** Profile document for a new account. Fields come from the per-role register schema (validators). */
+function profileFor(userId, body) {
+  if (body.role === 'creator') {
+    return {
+      Model: CreatorProfile,
+      doc: { userId, displayName: body.displayName || body.name, category: body.category, location: body.city },
+    };
+  }
+  const doc = {
+    userId,
+    companyName: body.companyName,
+    accountType: body.accountType,
+    contactName: body.name,
+    jobTitle: body.jobTitle,
+    websiteUrl: body.websiteUrl || undefined,
+  };
+  if (body.accountType === 'agency') {
+    doc.teamSize = body.teamSize;
+    if (body.firstClientName) doc.clients = [{ name: body.firstClientName, initials: initialsOf(body.firstClientName) }];
+  } else {
+    doc.industry = body.industry;
+  }
+  return { Model: BrandProfile, doc };
+}
+
+export async function register(body) {
+  const { name, email, password, role } = body;
   if (await User.exists({ email })) {
     throw ApiError.conflict('An account with this email already exists', 'EMAIL_TAKEN');
   }
@@ -25,11 +59,8 @@ export async function register({ name, email, password, role }) {
   const user = await User.create({ name, email, role, passwordHash: await hashPassword(password) });
 
   try {
-    if (role === 'creator') {
-      await CreatorProfile.create({ userId: user._id, displayName: name });
-    } else {
-      await BrandProfile.create({ userId: user._id, companyName: name });
-    }
+    const { Model, doc } = profileFor(user._id, body);
+    await Model.create(doc);
   } catch (err) {
     // Keep users and profiles consistent: never leave a user without a profile.
     await User.deleteOne({ _id: user._id });

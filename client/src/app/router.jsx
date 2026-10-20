@@ -1,15 +1,21 @@
-import { createBrowserRouter, isRouteErrorResponse, useRouteError } from 'react-router';
+import { Navigate, createBrowserRouter, isRouteErrorResponse, useLocation, useRouteError } from 'react-router';
 import { AppRoot, DashboardLayout, PublicFrame, RootLayout } from '../components/layout/Layouts.jsx';
 import { GuestOnly, ProtectedRoute } from '../components/layout/ProtectedRoute.jsx';
 import { Button, ButtonLink } from '../components/ui/Button.jsx';
-import AboutPage from '../pages/public/AboutPage.jsx';
 import { LoginPage, RegisterPage } from '../pages/public/AuthPages.jsx';
 import CampaignDetailPage from '../pages/public/CampaignDetailPage.jsx';
 import CampaignsPage from '../pages/public/CampaignsPage.jsx';
 import CreatorDetailPage from '../pages/public/CreatorDetailPage.jsx';
 import CreatorsPage from '../pages/public/CreatorsPage.jsx';
 import HomePage from '../pages/public/HomePage.jsx';
+import HowItWorksPage from '../pages/public/HowItWorksPage.jsx';
 import NotFoundPage from '../pages/public/NotFoundPage.jsx';
+
+/** Old /about links (including #demo-content) land on How it works. */
+function AboutRedirect() {
+  const { hash } = useLocation();
+  return <Navigate to={`/how-it-works${hash}`} replace />;
+}
 
 /** Dashboard pages are code-split so public pages load less JavaScript. */
 const page = (load, props) => async () => {
@@ -63,12 +69,13 @@ export const router = createBrowserRouter([
         element: <RootLayout />,
         errorElement: <RouteError />,
         children: [
-          { index: true, element: <HomePage /> },
+          { index: true, element: <HomePage />, handle: { darkHeader: true } },
           { path: 'creators', element: <CreatorsPage /> },
           { path: 'creators/:id', element: <CreatorDetailPage /> },
           { path: 'campaigns', element: <CampaignsPage /> },
           { path: 'campaigns/:id', element: <CampaignDetailPage /> },
-          { path: 'about', element: <AboutPage /> },
+          { path: 'how-it-works', element: <HowItWorksPage /> },
+          { path: 'about', element: <AboutRedirect /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

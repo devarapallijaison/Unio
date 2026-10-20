@@ -60,6 +60,7 @@ export const api = {
 
 /* ---------- Typed endpoint helpers (mirror server/src/routes/index.js) ---------- */
 export const endpoints = {
+  taxonomy: () => api.get('/taxonomy'),
   auth: {
     me: () => api.get('/auth/me'),
     login: (body) => api.post('/auth/login', body),

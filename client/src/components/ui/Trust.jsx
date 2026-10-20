@@ -47,21 +47,23 @@ export function MadeOnUnio({ count, className = '' }) {
   );
 }
 
-/** Workflow as connected pills: Midjourney → Kling ✓ → Runway ✓ (v9 .chain). */
-export function ToolChain({ steps = [], className = '' }) {
+const CHAIN_STEP = {
+  light: { plain: 'border-line bg-[#eef1f1] text-slate', verified: 'border-ok-ln bg-ok-bg text-ok', arrow: 'text-mist' },
+  dark: { plain: 'border-slate bg-white/[0.06] text-bone', verified: 'border-ok-ln/40 bg-ok-ln/15 text-ok-ln', arrow: 'text-steel' },
+};
+
+/** Workflow as connected pills: Midjourney → Kling ✓ → Runway ✓ (v9 .chain). `dark` for navy/ink surfaces. */
+export function ToolChain({ steps = [], dark = false, className = '' }) {
   if (!steps.length) return null;
+  const tone = dark ? CHAIN_STEP.dark : CHAIN_STEP.light;
   return (
-    <div className={`flex flex-wrap items-center gap-1 text-[12px] font-semibold text-slate ${className}`}>
+    <div className={`flex flex-wrap items-center gap-1 text-[12px] font-semibold ${className}`}>
       {steps.map((step, i) => {
         const { name, verified } = typeof step === 'string' ? { name: step, verified: false } : step;
         return (
           <span key={`${name}-${i}`} className="contents">
-            {i > 0 && <em className="not-italic font-normal text-mist" aria-hidden>→</em>}
-            <span
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${
-                verified ? 'border-ok-ln bg-ok-bg text-ok' : 'border-line bg-[#eef1f1]'
-              }`}
-            >
+            {i > 0 && <em className={`not-italic font-normal ${tone.arrow}`} aria-hidden>→</em>}
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${verified ? tone.verified : tone.plain}`}>
               {verified && <Check className="size-3" strokeWidth={2.4} aria-label="verified" />}
               {name}
             </span>

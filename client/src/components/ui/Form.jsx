@@ -12,16 +12,20 @@ const tone = (error, ai) => {
   return 'border-[#9aa5aa] bg-white';
 };
 
-export function Field({ label, hint, error, required, children, id, className = '', labelExtra }) {
+/** `note` = small text under the label (v9 .fld small), e.g. "Optional". `hint` sits under the control. */
+export function Field({ label, hint, note, error, required, children, id, className = '', labelExtra }) {
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       {label && (
-        <label htmlFor={id} className="flex items-center gap-2 text-[13px] font-semibold text-ink">
-          <span>
-            {label}
-            {required && <span className="ml-0.5 text-att" aria-hidden>*</span>}
+        <label htmlFor={id} className="flex flex-col gap-0.5 text-[13px] font-semibold text-ink">
+          <span className="flex items-center gap-2">
+            <span>
+              {label}
+              {required && <span className="ml-0.5 text-att" aria-hidden>*</span>}
+            </span>
+            {labelExtra}
           </span>
-          {labelExtra}
+          {note && <small className="text-[12px] font-normal text-steel">{note}</small>}
         </label>
       )}
       {children}
@@ -44,11 +48,11 @@ function describedBy(id, error, hint) {
   return undefined;
 }
 
-export const Input = forwardRef(function Input({ label, hint, error, required, className, prefix, ai, labelExtra, ...props }, ref) {
+export const Input = forwardRef(function Input({ label, hint, note, error, required, className, prefix, ai, labelExtra, ...props }, ref) {
   const autoId = useId();
   const id = props.id ?? autoId;
   return (
-    <Field label={label} hint={hint} error={error} required={required} id={id} className={className} labelExtra={labelExtra}>
+    <Field label={label} hint={hint} note={note} error={error} required={required} id={id} className={className} labelExtra={labelExtra}>
       <div className="relative">
         {prefix && (
           <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-steel">{prefix}</span>
@@ -66,11 +70,11 @@ export const Input = forwardRef(function Input({ label, hint, error, required, c
   );
 });
 
-export const Textarea = forwardRef(function Textarea({ label, hint, error, required, className, rows = 5, ai, labelExtra, ...props }, ref) {
+export const Textarea = forwardRef(function Textarea({ label, hint, note, error, required, className, rows = 5, ai, labelExtra, ...props }, ref) {
   const autoId = useId();
   const id = props.id ?? autoId;
   return (
-    <Field label={label} hint={hint} error={error} required={required} id={id} className={className} labelExtra={labelExtra}>
+    <Field label={label} hint={hint} note={note} error={error} required={required} id={id} className={className} labelExtra={labelExtra}>
       <textarea
         ref={ref}
         id={id}
@@ -84,11 +88,11 @@ export const Textarea = forwardRef(function Textarea({ label, hint, error, requi
   );
 });
 
-export const Select = forwardRef(function Select({ label, hint, error, required, className, children, ai, labelExtra, ...props }, ref) {
+export const Select = forwardRef(function Select({ label, hint, note, error, required, className, children, ai, labelExtra, ...props }, ref) {
   const autoId = useId();
   const id = props.id ?? autoId;
   return (
-    <Field label={label} hint={hint} error={error} required={required} id={id} className={className} labelExtra={labelExtra}>
+    <Field label={label} hint={hint} note={note} error={error} required={required} id={id} className={className} labelExtra={labelExtra}>
       <select
         ref={ref}
         id={id}
@@ -177,7 +181,7 @@ export function Segmented({ options, value, onChange, label, className = '' }) {
 }
 
 /** Tag entry: type and press Enter or comma. Controlled via value/onChange (array of strings). */
-export function TagInput({ label, hint, error, value = [], onChange, placeholder = 'Type and press Enter', suggestions = [], max = 30 }) {
+export function TagInput({ label, hint, note, error, value = [], onChange, placeholder = 'Type and press Enter', suggestions = [], max = 30 }) {
   const id = useId();
   const [draft, setDraft] = useState('');
 
@@ -201,7 +205,7 @@ export function TagInput({ label, hint, error, value = [], onChange, placeholder
   const unused = suggestions.filter((s) => !value.some((v) => v.toLowerCase() === s.toLowerCase())).slice(0, 8);
 
   return (
-    <Field label={label} hint={hint} error={error} id={id}>
+    <Field label={label} hint={hint} note={note} error={error} id={id}>
       <div
         className={`flex min-h-11 flex-wrap items-center gap-1.5 rounded-md border px-2 py-1.5 focus-within:border-navy focus-within:ring-2 focus-within:ring-navy/15 ${tone(error)}`}
       >

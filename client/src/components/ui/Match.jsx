@@ -14,7 +14,7 @@ export function MatchRing({ score, size = 'md', dark = false, className = '' }) 
     <span
       role="img"
       aria-label={`Match score ${v} out of 100`}
-      style={{ '--v': v, '--ring-fill': dark ? 'var(--color-bone)' : undefined }}
+      style={{ '--v': v, '--ring-fill': dark ? 'var(--color-bone)' : undefined, '--ring-track': dark ? 'var(--color-slate)' : undefined }}
       className={`match-ring grid shrink-0 place-items-center rounded-full ${s.outer} ${className}`}
     >
       <span className={`grid place-items-center rounded-full font-extrabold tracking-[-0.03em] ${s.inner} ${dark ? 'bg-navy text-white' : 'bg-white text-ink'}`}>

@@ -1,27 +1,29 @@
 import { Link } from 'react-router';
 import { Logo } from '../ui/Logo.jsx';
 
-/* Only links to pages that exist; Rights & licensing, UNIO Trust and Contact arrive in later phases. */
+/* Only links to pages that exist (Contact has no page yet). */
 const COLUMNS = [
   {
     title: 'Brands',
     links: [
       { to: '/creators', label: 'Discover creators' },
-      { to: '/register', label: 'Post a brief' },
+      { to: '/register?role=brand', label: 'Post a brief' },
+      { to: '/how-it-works#rights', label: 'Rights & licensing' },
     ],
   },
   {
     title: 'Creators',
     links: [
-      { to: '/register', label: 'Join as creator' },
+      { to: '/register?role=creator', label: 'Join as creator' },
+      { to: '/how-it-works#trust', label: 'UNIO Trust' },
       { to: '/campaigns', label: 'Open campaigns' },
     ],
   },
   {
     title: 'Company',
     links: [
-      { to: '/about', label: 'About' },
-      { to: '/about#demo-content', label: 'About demo content' },
+      { to: '/how-it-works', label: 'About' },
+      { to: '/how-it-works#demo-content', label: 'About demo content' },
     ],
   },
 ];

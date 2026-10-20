@@ -10,7 +10,7 @@ import { Logo } from '../ui/Logo.jsx';
 const NAV = [
   { to: '/creators', label: 'Discover' },
   { to: '/campaigns', label: 'Campaigns' },
-  { to: '/about', label: 'How it works' },
+  { to: '/how-it-works', label: 'How it works' },
 ];
 
 function AccountMenu({ user, onLogout, dark }) {

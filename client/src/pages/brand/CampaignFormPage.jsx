@@ -129,6 +129,23 @@ export default function CampaignFormPage() {
     if (existing.data) reset(toForm(existing.data));
   }, [existing.data, reset]);
 
+  // "I want something like this" (P3W): start a draft from a portfolio piece. The full AI prefill is Phase 5.
+  const fromId = !isEdit ? params.get('from') : null;
+  const source = useQuery({ queryKey: ['pub', 'piece', fromId], queryFn: () => endpoints.portfolio.get(fromId), enabled: !!fromId, retry: false });
+  useEffect(() => {
+    if (!source.data) return;
+    const { piece, creator } = source.data;
+    const tools = [...new Set([...(piece.workflow ?? []).map((s) => s.tool), ...(piece.tools ?? [])])];
+    reset({
+      ...EMPTY,
+      title: `Something like “${piece.title}”`,
+      brief: `We’d like a piece in the spirit of “${piece.title}” by ${creator.displayName}${piece.format ? ` (${piece.format})` : ''} — adapted for our brand. Not a copy of the original.\n\nWhat we’re launching:\nWho it’s for:\nMust avoid:`,
+      requiredTools: tools,
+      deliverables: [{ title: piece.mediaType === 'video' ? 'Video' : 'Image', description: piece.format ?? '', quantity: 1 }],
+      status: 'draft',
+    });
+  }, [source.data, reset]);
+
   const save = useMutation({
     mutationFn: (v) => (isEdit ? endpoints.brand.updateCampaign(id, toBody(v)) : endpoints.brand.createCampaign(toBody(v))),
     onSuccess: (data) => {
@@ -157,6 +174,13 @@ export default function CampaignFormPage() {
           Publish this campaign as <strong>Open</strong> and you’ll be taken back to the creator to send your invitation.
         </Alert>
       )}
+      {source.data && (
+        <Alert tone="ai" title="Started from a portfolio piece">
+          “{source.data.piece.title}” by {source.data.creator.displayName}. Tools and a starting description are filled in as a draft — edit
+          everything before you save.
+        </Alert>
+      )}
+      {source.error && <Alert tone="warning">That portfolio piece isn’t available any more, so the brief starts empty.</Alert>}
       {!isEdit && <AiBriefBuilder onApply={applyDraft} onUndo={undoDraft} canUndo={!!beforeDraft} />}
       <form onSubmit={handleSubmit((v) => save.mutate(v))} noValidate className="space-y-6">
         <section className="grid gap-5 rounded-lg border border-line/70 bg-white p-6">

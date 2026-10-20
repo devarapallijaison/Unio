@@ -71,6 +71,9 @@ export const endpoints = {
     list: (params) => api.get('/creators', params),
     get: (id) => api.get(`/creators/${id}`),
   },
+  portfolio: {
+    get: (id) => api.get(`/portfolio/${id}`),
+  },
   campaigns: {
     list: (params) => api.get('/campaigns', params),
     categories: () => api.get('/campaigns/categories'),

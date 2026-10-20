@@ -72,6 +72,7 @@ export const router = createBrowserRouter([
           { index: true, element: <HomePage />, handle: { darkHeader: true } },
           { path: 'creators', element: <CreatorsPage /> },
           { path: 'creators/:id', element: <CreatorDetailPage /> },
+          { path: 'creators/:id/work/:itemId', lazy: page(() => import('../pages/public/PortfolioPiecePage.jsx')) },
           { path: 'campaigns', element: <CampaignsPage /> },
           { path: 'campaigns/:id', element: <CampaignDetailPage /> },
           { path: 'how-it-works', element: <HowItWorksPage /> },

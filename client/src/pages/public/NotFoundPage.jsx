@@ -6,7 +6,7 @@ export default function NotFoundPage({ what }) {
   useDocumentTitle('Not found');
   const heading = what ? `This ${what} isn’t available.` : 'This page wasn’t made on UNIO.';
   const body = what
-    ? `It may have been removed, or it isn’t public yet. Try browsing ${what === 'creator' ? 'other creators' : 'open campaigns'} instead.`
+    ? `It may have been removed, or it isn’t public yet. Try browsing ${what === 'campaign' ? 'open campaigns' : 'other creators'} instead.`
     : 'The link may be old, or the page may have been removed.';
   return (
     <div className="container-page flex min-h-[60vh] flex-col justify-center py-20">

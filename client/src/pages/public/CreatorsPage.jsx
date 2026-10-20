@@ -11,12 +11,16 @@ import { ChipGroup, SearchField } from '../../components/ui/SearchField.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { useUrlFilters } from '../../hooks/useUrlFilters.js';
 import { pluralize } from '../../lib/format.js';
-import { CATEGORIES, SKILLS, TOOLS } from '../../lib/taxonomy.js';
+import { useTaxonomy } from '../../hooks/useTaxonomy.js';
 import { endpoints } from '../../services/api.js';
 
 const KEYS = ['search', 'skill', 'tool', 'specialty', 'availability', 'minPrice', 'maxPrice', 'sort', 'page'];
 
+/** Interim (until the Phase 4 Discover rebuild): skill/specialty filters use taxonomy ids. */
+const asOptions = (list = [], n) => list.slice(0, n).map((o) => ({ value: o.id, label: o.label }));
+
 function Filters({ values, set }) {
+  const { data: taxonomy } = useTaxonomy();
   return (
     <div className="space-y-8">
       <ChipGroup
@@ -29,9 +33,9 @@ function Filters({ values, set }) {
           { value: 'busy', label: 'Limited' },
         ]}
       />
-      <ChipGroup label="Skill" value={values.skill} onChange={(v) => set({ skill: v })} options={SKILLS.slice(0, 10)} />
-      <ChipGroup label="AI tool" value={values.tool} onChange={(v) => set({ tool: v })} options={TOOLS.slice(0, 12)} />
-      <ChipGroup label="Specialty" value={values.specialty} onChange={(v) => set({ specialty: v })} options={CATEGORIES.slice(0, 8)} />
+      <ChipGroup label="Skill" value={values.skill} onChange={(v) => set({ skill: v })} options={asOptions(taxonomy?.skills, 10)} />
+      <ChipGroup label="AI tool" value={values.tool} onChange={(v) => set({ tool: v })} options={asOptions(taxonomy?.tools, 12)} />
+      <ChipGroup label="Specialty" value={values.specialty} onChange={(v) => set({ specialty: v })} options={asOptions(taxonomy?.specializations, 8)} />
       <fieldset>
         <legend className="eyebrow mb-3">Starting price (₹)</legend>
         <div className="grid grid-cols-2 gap-2">

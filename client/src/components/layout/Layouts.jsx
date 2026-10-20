@@ -164,6 +164,14 @@ function SideLink({ item, active, onNavigate }) {
 }
 
 const WORKSPACE_SUB = { brand: 'Brand workspace', creator: 'Creator', reviewer: 'UNIO Trust reviewer' };
+const TRUST_NAMES = ['Self-reported', 'Pending review', 'Certified', 'Verified', '★ Made on UNIO'];
+
+/** "Creator · Verified" — the level is the server-computed trustLevel on the session profile. */
+function workspaceSub(role, profile) {
+  if (role === 'creator' && profile?.trustLevel > 1) return `Creator · ${TRUST_NAMES[profile.trustLevel - 1]}`;
+  if (role === 'brand' && profile?.accountType === 'agency') return 'Agency workspace';
+  return WORKSPACE_SUB[role];
+}
 
 function workspaceName(user, profile) {
   return profile?.companyName || profile?.displayName || user?.name || '';
@@ -179,7 +187,7 @@ function SidebarContent({ role, nav, pathname, onNavigate, onLogout }) {
           <Avatar name={name} size="sm" />
           <div className="min-w-0">
             <b className="block truncate text-[14.5px] text-white">{name}</b>
-            <small className="block text-[12px] text-mist">{WORKSPACE_SUB[role]}</small>
+            <small className="block text-[12px] text-mist">{workspaceSub(role, profile)}</small>
           </div>
         </div>
       </div>
@@ -227,8 +235,8 @@ export function DashboardLayout({ role: roleProp }) {
 
   useEffect(() => setMenuOpen(false), [pathname]);
 
-  const all = [...nav.workspace, ...nav.account];
-  const current = all.find((item) => isActive(item, pathname));
+  const current = nav.workspace.find((item) => isActive(item, pathname)) ?? nav.account.find((item) => isActive(item, pathname));
+  const crumbRoot = nav.account.includes(current) ? 'Account' : 'Workspace';
   const handleLogout = async () => {
     await logout.mutateAsync().catch(() => {});
     navigate('/');
@@ -249,7 +257,13 @@ export function DashboardLayout({ role: roleProp }) {
             <Logo className="h-6" />
           </Link>
           <p className="hidden min-w-0 flex-1 truncate text-[14px] text-steel sm:block">
-            Workspace{current && <> / <b className="font-semibold text-ink">{current.label}</b></>}
+            {crumbRoot}
+            {current && (
+              <>
+                {' '}
+                / <b className="font-semibold text-ink">{current.label}</b>
+              </>
+            )}
           </p>
           <span className="flex-1 sm:hidden" />
           {/* Notifications arrive with /me/unread (Phase 6); until then the bell has no dot or number. */}

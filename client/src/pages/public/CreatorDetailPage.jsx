@@ -1,86 +1,221 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, BadgeCheck, ImageOff, MapPin, Send, Star } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowRight, Check, ImageOff, Paperclip, Pencil, Send, Star } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
-import { AvailabilityLabel } from '../../components/creators/CreatorCard.jsx';
+import { AvailabilityDot, categoryLabel, formatDuration } from '../../components/creators/CreatorCard.jsx';
 import { InviteDialog } from '../../components/invitations/InviteDialog.jsx';
-import { PortfolioGrid } from '../../components/portfolio/PortfolioGrid.jsx';
-import { ToolTag, VERIFICATION_LEGEND, VerificationBadge } from '../../components/verification/VerificationBadge.jsx';
 import { Avatar } from '../../components/ui/Avatar.jsx';
-import { DemoBadge, StatusPill, Tag } from '../../components/ui/Badge.jsx';
+import { DemoBadge, StatusPill } from '../../components/ui/Badge.jsx';
 import { Button, ButtonLink } from '../../components/ui/Button.jsx';
+import { Card } from '../../components/ui/Card.jsx';
 import { Alert, EmptyState, ErrorState, PageLoader } from '../../components/ui/Feedback.jsx';
+import { Segmented } from '../../components/ui/Form.jsx';
+import { MediaFrame } from '../../components/ui/MediaFrame.jsx';
+import { MadeOnUnio, ToolChain, ToolChip, TrustLadder, toolState } from '../../components/ui/Trust.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
+import { labelOf, useTaxonomy } from '../../hooks/useTaxonomy.js';
 import { formatDate, formatINR, pluralize } from '../../lib/format.js';
 import { authLink } from '../../lib/returnTo.js';
 import { endpoints } from '../../services/api.js';
 import NotFoundPage from './NotFoundPage.jsx';
 
-function TagBlock({ label, items }) {
-  if (!items?.length) return null;
-  return (
-    <div>
-      <p className="eyebrow mb-2.5">{label}</p>
-      <div className="flex flex-wrap gap-1.5">
-        {items.map((s) => (
-          <Tag key={s}>{s}</Tag>
-        ))}
-      </div>
-    </div>
-  );
+/* v9 P3 — creator profile. Every number here comes from real records (pieces, completed projects, feedback). */
+
+const LEVEL_NAMES = ['Self-reported', 'Pending review', 'Certified', 'Verified', '★ Made on UNIO'];
+
+const pieceHref = (creatorId, pieceId) => `/creators/${creatorId}/work/${pieceId}`;
+
+function pieceMeta(p) {
+  return [
+    p.generations ? `${p.generations} generations` : null,
+    p.versionsCount ? pluralize(p.versionsCount, 'version') : null,
+    p.madeOnUnio ? '★ Made on UNIO' : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }
 
-/** Track record from real platform data only. Renders nothing when there is nothing to show. */
-function TrackRecord({ signals, name }) {
-  const { completedProjects = 0, feedback = [], workflows = [] } = signals ?? {};
-  if (!completedProjects && !feedback.length && !workflows.length) return null;
+function FeaturedWork({ creator, portfolio }) {
+  const [filter, setFilter] = useState('all');
+  const items = portfolio.filter((p) => filter === 'all' || (filter === 'video' ? p.mediaType === 'video' : p.mediaType !== 'video'));
+  const verified = (tool) => creator.verifiedTools.some((t) => t.toLowerCase() === tool.toLowerCase());
   return (
-    <section className="container-page grid gap-10 pb-16 lg:grid-cols-12">
-      {workflows.length > 0 && (
-        <div className="lg:col-span-6">
-          <p className="eyebrow">Process</p>
-          <h2 className="mt-2 text-3xl">How {name.split(' ')[0]} works</h2>
-          <ul className="mt-6 space-y-4">
-            {workflows.map((w) => (
-              <li key={w.subject} className="border-t border-line/80 pt-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-semibold">{w.subject}</p>
-                  <VerificationBadge status={w.status} />
+    <section id="work" className="scroll-mt-24">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-[20px]">Featured work</h2>
+        <Segmented
+          label="Filter work"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'all', label: 'All' },
+            { value: 'video', label: 'Video' },
+            { value: 'stills', label: 'Stills' },
+          ]}
+        />
+      </div>
+      {items.length === 0 ? (
+        <EmptyState icon={ImageOff} title={portfolio.length ? 'Nothing in this filter' : 'No portfolio pieces yet'}>
+          {portfolio.length ? 'Try another filter.' : `${creator.displayName} hasn’t published work samples yet.`}
+        </EmptyState>
+      ) : (
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr]">
+          {items.map((p, i) => {
+            const big = i === 0;
+            const steps = (p.workflow ?? []).map((s) => ({ name: s.tool, verified: verified(s.tool) }));
+            const meta = pieceMeta(p);
+            return (
+              <Link
+                key={p._id}
+                to={pieceHref(creator._id, p._id)}
+                className={`group flex flex-col overflow-hidden rounded-lg border border-line bg-white transition-shadow hover:shadow-card ${big ? 'sm:col-span-2 lg:col-span-1 lg:row-span-2' : ''}`}
+              >
+                <div className="relative flex-1">
+                  <MediaFrame
+                    item={p}
+                    aspect={big ? 'aspect-[4/5] lg:aspect-auto lg:h-full lg:min-h-[360px]' : 'aspect-[16/10]'}
+                    className="rounded-none"
+                    showLabel={false}
+                  />
+                  {p.mediaType === 'video' && formatDuration(p.durationSec) && (
+                    <span className="absolute bottom-2.5 left-2.5 rounded-full bg-ink/60 px-2 py-0.5 font-mono text-[11px] text-white">▶ {formatDuration(p.durationSec)}</span>
+                  )}
                 </div>
-                <p className="mt-1.5 text-[15px] leading-relaxed text-steel">{w.description}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {(completedProjects > 0 || feedback.length > 0) && (
-        <div className={workflows.length ? 'lg:col-span-5 lg:col-start-8' : 'lg:col-span-8'}>
-          <p className="eyebrow">Track record on UNIO</p>
-          <h2 className="mt-2 text-3xl">{pluralize(completedProjects, 'completed project')}</h2>
-          {feedback.length > 0 ? (
-            <ul className="mt-6 space-y-5">
-              {feedback.map((f, i) => (
-                <li key={i} className="border-t border-line/80 pt-4">
-                  <div className="flex items-center gap-0.5 text-navy" aria-label={`${f.rating} out of 5`}>
-                    {Array.from({ length: 5 }).map((_, n) => (
-                      <Star key={n} className={`size-3.5 ${n < f.rating ? 'fill-navy' : 'text-steel'}`} strokeWidth={1.5} />
-                    ))}
-                  </div>
-                  {f.comment && <p className="mt-2 font-extrabold tracking-[-0.03em] text-lg leading-snug">“{f.comment}”</p>}
-                  <p className="mt-1.5 text-[13px] text-steel">
-                    {f.brandName}
-                    {f.campaignTitle ? ` · ${f.campaignTitle}` : ''} · {formatDate(f.createdAt, { month: 'short', year: 'numeric' })}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 text-[15px] text-steel">No written client feedback yet.</p>
-          )}
+                <div className="flex flex-col gap-1.5 px-3.5 py-3">
+                  <b className="text-[14px] group-hover:underline">{p.title}</b>
+                  {big && steps.length > 0 ? (
+                    <ToolChain steps={steps} />
+                  ) : steps.length > 0 ? (
+                    <span className="text-[12.5px] text-steel">{steps.map((s) => s.name).join(' → ')}</span>
+                  ) : p.tools?.length ? (
+                    <span className="text-[12.5px] text-steel">{p.tools.join(' · ')}</span>
+                  ) : null}
+                  {meta && <span className="text-[12.5px] text-steel">{meta}</span>}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </section>
+  );
+}
+
+/** Proof line for a tool (Phase 8 adds challenge codes and expiry). */
+function proofLine(t) {
+  if (t.status === 'VERIFIED') return `Verified by a UNIO reviewer${t.reviewedAt ? ` · ${formatDate(t.reviewedAt)}` : ''}`;
+  if (t.status === 'PENDING') return 'Evidence sent · review pending';
+  return 'Self-reported';
+}
+
+function ToolsCard({ tools }) {
+  return (
+    <Card pad id="tools" className="scroll-mt-24">
+      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-[17px]">Tools</h3>
+        <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-steel">
+          <span className="grid h-5 w-6 place-items-center rounded-[6px] bg-navy text-ok-ln">
+            <Check className="size-3" strokeWidth={2.4} />
+          </span>
+          Verified
+          <span className="grid h-5 w-6 place-items-center rounded-[6px] border border-navy text-navy">
+            <Paperclip className="size-3" />
+          </span>
+          Certificate
+          <span className="grid h-5 w-6 place-items-center rounded-[6px] border border-line2">·</span>
+          Self-reported
+        </div>
+      </div>
+      {tools.length ? (
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {tools.map((t) => (
+            <div key={t.name} className="flex flex-wrap items-center gap-2.5 rounded-md border border-[#edf0ef] bg-soft px-3 py-2.5">
+              <ToolChip name={t.name} state={toolState(t.status)} />
+              <span className="text-[12.5px] text-steel">{proofLine(t)}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[13px] text-steel">No tools listed yet.</p>
+      )}
+    </Card>
+  );
+}
+
+function SkillsCard({ creator, taxonomy }) {
+  return (
+    <Card pad>
+      <h3 className="mb-3 text-[17px]">Skills, backed by work</h3>
+      {creator.backedSkills.length ? (
+        creator.backedSkills.map((s) => (
+          <div key={s.id} className="flex items-center justify-between border-b border-[#edf0ef] py-2.5 last:border-0">
+            <span>{labelOf(taxonomy, 'skills', s.id)}</span>
+            <a href="#work" className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-navy">
+              {pluralize(s.pieces, 'piece')} <ArrowRight className="size-3" />
+            </a>
+          </div>
+        ))
+      ) : (
+        <p className="text-[13px] text-steel">No skills are backed by a portfolio piece yet. Skills show here once a piece proves them.</p>
+      )}
+    </Card>
+  );
+}
+
+function TrustCard({ creator }) {
+  const facts = [
+    creator.madeOnUnioCount ? `${pluralize(creator.madeOnUnioCount, 'project')} delivered here.` : 'No projects completed on UNIO yet.',
+    creator.verifiedTools.length
+      ? `${pluralize(creator.verifiedTools.length, 'tool')} verified by a UNIO reviewer.`
+      : 'No tools verified yet.',
+    creator.pendingTools.length ? `${pluralize(creator.pendingTools.length, 'tool')} waiting for review.` : null,
+  ].filter(Boolean);
+  return (
+    <Card dark pad>
+      <span className="eyebrow text-mist">UNIO Trust</span>
+      <h3 className="mb-3 mt-1.5 text-[22px] text-white">{LEVEL_NAMES[(creator.trustLevel ?? 1) - 1]}</h3>
+      <p className="text-[12.5px] text-bone">{facts.join(' ')}</p>
+      <TrustLadder level={creator.trustLevel ?? 1} dark className="mt-3.5" />
+    </Card>
+  );
+}
+
+function Reviews({ feedback, creator }) {
+  return (
+    <Card pad id="reviews" className="scroll-mt-24">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[17px]">Reviews</h3>
+        {creator.ratingCount > 0 && (
+          <b className="tabular-nums">
+            {creator.ratingAvg}★ · {creator.ratingCount}
+          </b>
+        )}
+      </div>
+      {feedback.length ? (
+        feedback.map((f, i) => (
+          <div key={i} className="mt-3.5 flex gap-3 rounded-md bg-soft p-3.5">
+            <Avatar name={f.brandName} size="sm" />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-1.5">
+                <b>{f.brandName}</b>
+                <span className="text-[12.5px] text-steel">
+                  {f.campaignTitle ? `· ${f.campaignTitle} ` : ''}· {formatDate(f.createdAt, { month: 'short', year: 'numeric' })}
+                </span>
+                <span className="ml-1 inline-flex text-navy" aria-label={`${f.rating} out of 5`}>
+                  {Array.from({ length: 5 }).map((_, n) => (
+                    <Star key={n} className={`size-3 ${n < f.rating ? 'fill-current' : 'text-line2'}`} />
+                  ))}
+                </span>
+              </div>
+              {f.comment && <p className="mt-1.5 text-slate">“{f.comment}”</p>}
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="mt-2 text-[13px] text-steel">No reviews yet. Reviews come only from brands on completed UNIO projects.</p>
+      )}
+    </Card>
   );
 }
 
@@ -89,8 +224,10 @@ export default function CreatorDetailPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { data: taxonomy } = useTaxonomy();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [roleNotice, setRoleNotice] = useState(false);
+  const [tab, setTab] = useState('work');
 
   const query = useQuery({ queryKey: ['pub', 'creator', id, user?._id ?? 'guest'], queryFn: () => endpoints.creators.get(id) });
   const creator = query.data?.creator;
@@ -106,6 +243,8 @@ export default function CreatorDetailPage() {
       return p;
     }, { replace: true });
   }, [params, creator, user, setParams]);
+
+  const banner = useMemo(() => (query.data?.portfolio ?? []).find((p) => p.mediaType !== 'video') ?? query.data?.portfolio?.[0], [query.data]);
 
   const onInvite = () => {
     if (!user) return navigate(authLink('login', `/creators/${id}?intent=invite`));
@@ -126,126 +265,151 @@ export default function CreatorDetailPage() {
   const { portfolio, viewer, signals } = query.data;
   const invitations = viewer?.invitations ?? [];
   const activeInvites = invitations.filter((i) => ['pending', 'accepted'].includes(i.status));
+  const feedback = signals?.feedback ?? [];
+  const type = categoryLabel(taxonomy, creator.category);
+  const facts = [
+    ['Starting at', creator.startingPrice != null ? `${formatINR(creator.startingPrice)} / piece` : 'On request'],
+    ['Turnaround', creator.turnaroundDays ? pluralize(creator.turnaroundDays, 'day') : null],
+    ['Languages', creator.languages.length ? creator.languages.join(', ') : null],
+    ['Revisions', creator.revisionsIncluded != null ? `${creator.revisionsIncluded} included` : null],
+  ].filter(([, v]) => v);
+  const tabs = [
+    ['work', `Work · ${portfolio.length}`],
+    creator.howIWork.length ? ['how', 'How I work'] : null,
+    ['tools', 'Tools & trust'],
+    ['reviews', `Reviews · ${feedback.length}`],
+  ].filter(Boolean);
 
   return (
     <article>
-      <div className="container-page pt-8">
-        <Link to="/creators" className="inline-flex items-center gap-1.5 text-sm text-steel hover:text-ink">
-          <ArrowLeft className="size-4" /> All creators
-        </Link>
+      <div className="relative h-[180px] overflow-hidden bg-navy md:h-[240px]">
+        {banner && <MediaFrame item={banner} aspect="aspect-auto" className="absolute inset-0 h-full rounded-none opacity-90" showLabel={false} hover={false} />}
+        <span aria-hidden className="absolute inset-0 bg-[linear-gradient(180deg,transparent_30%,rgba(6,20,27,.55))]" />
       </div>
 
-      <header className="container-page grid gap-10 pb-14 pt-8 lg:grid-cols-12 lg:gap-12">
-        <div className="lg:col-span-8">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-            <Avatar name={creator.displayName} src={creator.photoUrl} size="xl" />
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                {creator.isDemo && <DemoBadge />}
-                <AvailabilityLabel value={creator.availability} />
-                {signals?.verifiedCount > 0 && (
-                  <span className="inline-flex items-center gap-1 text-[13px] font-semibold text-navy" title={VERIFICATION_LEGEND.VERIFIED}>
-                    <BadgeCheck className="size-4" strokeWidth={2} /> {signals.verifiedCount} verified {signals.verifiedCount === 1 ? 'claim' : 'claims'}
-                  </span>
-                )}
-              </div>
-              <h1 className="mt-3 text-5xl leading-[1] sm:text-6xl">{creator.displayName}</h1>
-              {creator.location && (
-                <p className="mt-3 inline-flex items-center gap-1.5 text-steel">
-                  <MapPin className="size-4" strokeWidth={1.75} /> {creator.location}
-                </p>
-              )}
-            </div>
-          </div>
-          {creator.bio && <p className="mt-8 max-w-2xl text-[16px] font-medium leading-relaxed text-ink sm:text-[17px]">{creator.bio}</p>}
-          {creator.isDemo && (
-            <p className="mt-5 max-w-2xl text-[13px] text-steel">
-              This is a fictional demo profile. Its portfolio pieces illustrate the format and are not real client work.
+      <div className="container-page grid gap-8 pb-16 lg:grid-cols-[330px_minmax(0,1fr)]">
+        <aside className="relative z-10 -mt-[90px] flex flex-col gap-4 self-start rounded-lg border border-line bg-white p-[22px] shadow-card lg:sticky lg:top-[84px]">
+          <Avatar name={creator.displayName} src={creator.photoUrl} size="xl" className="-mt-[70px]" />
+          <div>
+            <h1 className="text-[30px]">{creator.displayName}</h1>
+            <p className="mt-0.5 flex flex-wrap items-center gap-1 text-steel">
+              {[type, creator.location].filter(Boolean).join(' · ')}
+              {(type || creator.location) && ' ·'}
+              <AvailabilityDot value={creator.availability} />
             </p>
+          </div>
+          {(creator.madeOnUnioCount > 0 || creator.isDemo) && (
+            <div className="flex flex-wrap gap-1.5">
+              {creator.madeOnUnioCount > 0 && <MadeOnUnio count={creator.madeOnUnioCount} />}
+              {creator.isDemo && <DemoBadge />}
+            </div>
           )}
-        </div>
-
-        <aside className="lg:col-span-4">
-          <div className="rounded-lg border border-line/80 bg-white p-6 lg:sticky lg:top-24">
-            <p className="eyebrow">Starting from</p>
-            <p className="mt-1 font-extrabold tracking-[-0.03em] text-4xl">{creator.startingPrice != null ? formatINR(creator.startingPrice) : 'On request'}</p>
-            <div className="mt-6 space-y-5 border-t border-line/60 pt-6">
-              <TagBlock label="Skills" items={creator.skills} />
-              {signals?.tools?.length > 0 && (
-                <div>
-                  <p className="eyebrow mb-2.5">Tools</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {signals.tools.map((t) => (
-                      <ToolTag key={t.name} name={t.name} status={t.status} />
-                    ))}
-                  </div>
-                  <p className="mt-2 text-[12px] leading-snug text-steel">
-                    <BadgeCheck className="mr-1 inline size-3.5 text-navy" strokeWidth={2} />
-                    confirmed by a UNIO reviewer. Others are self-reported.
-                  </p>
-                </div>
-              )}
-              <TagBlock label="Specialties" items={creator.specialties} />
+          <TrustLadder level={creator.trustLevel ?? 1} />
+          <div className="grid grid-cols-3 rounded-md border border-line text-center">
+            <div className="flex flex-col items-center p-2.5">
+              <b className="text-[18px]">{creator.ratingCount > 0 ? `${creator.ratingAvg}★` : '—'}</b>
+              <span className="text-[11.5px] text-steel">{creator.ratingCount > 0 ? pluralize(creator.ratingCount, 'review') : 'no reviews yet'}</span>
             </div>
-
-            {viewer?.isSelf ? (
-              <ButtonLink to="/creator/profile/edit" variant="secondary" className="mt-6 w-full">
-                Edit your profile
-              </ButtonLink>
-            ) : (
-              <Button className="mt-6 w-full" size="lg" onClick={onInvite} disabled={creator.availability === 'unavailable'}>
-                <Send className="size-4" /> Invite to campaign
-              </Button>
-            )}
-            {creator.availability === 'unavailable' && !viewer?.isSelf && (
-              <p className="mt-2 text-center text-[13px] text-steel">This creator isn’t taking new work right now.</p>
-            )}
-            {!user && <p className="mt-2 text-center text-[13px] text-steel">You’ll be asked to sign in with a brand account.</p>}
-            {roleNotice && user?.role === 'creator' && !viewer?.isSelf && (
-              <Alert tone="info" className="mt-4">
-                Invitations are sent by brand accounts. You’re signed in as a creator — browse{' '}
-                <Link to="/campaigns" className="underline">open campaigns</Link> to apply instead.
-              </Alert>
-            )}
-            {activeInvites.length > 0 && (
-              <div className="mt-5 space-y-2 border-t border-line/60 pt-4">
-                <p className="eyebrow">Your invitations</p>
-                {activeInvites.map((i) => (
-                  <div key={i._id} className="flex items-center justify-between gap-3 text-[13px]">
-                    <span className="truncate text-steel">{i.campaignTitle}</span>
-                    <StatusPill status={i.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </aside>
-      </header>
-
-      <section className="border-t border-line/80 bg-line/40">
-        <div className="container-page py-16">
-          <div className="mb-10 flex items-end justify-between">
-            <div>
-              <p className="eyebrow">Portfolio</p>
-              <h2 className="mt-2 text-4xl">Selected work</h2>
+            <div className="flex flex-col items-center border-l border-line p-2.5">
+              <b className="text-[18px]">{creator.madeOnUnioCount}</b>
+              <span className="text-[11.5px] text-steel">projects</span>
             </div>
-            <p className="eyebrow">{portfolio.length} pieces</p>
+            <div className="flex flex-col items-center border-l border-line p-2.5">
+              <b className="text-[18px]">{portfolio.length}</b>
+              <span className="text-[11.5px] text-steel">pieces</span>
+            </div>
           </div>
-          {portfolio.length ? (
-            <PortfolioGrid items={portfolio} statusById={signals?.portfolio} />
+          {viewer?.isSelf ? (
+            <ButtonLink to="/creator/profile/edit" className="w-full">
+              <Pencil className="size-4" /> Edit your profile
+            </ButtonLink>
           ) : (
-            <EmptyState icon={ImageOff} title="No portfolio pieces yet">
-              {creator.displayName} hasn’t published work samples. You can still invite them and discuss references directly.
-            </EmptyState>
+            <div className="flex flex-col gap-2">
+              <Button className="w-full" onClick={onInvite} disabled={creator.availability === 'unavailable'}>
+                <Send className="size-4" /> Invite to a brief
+              </Button>
+              {creator.availability === 'unavailable' && <p className="text-center text-[12.5px] text-steel">Not taking new work right now.</p>}
+              {!user && <p className="text-center text-[12.5px] text-steel">You’ll be asked to sign in with a brand account.</p>}
+            </div>
           )}
-        </div>
-      </section>
+          {roleNotice && user?.role === 'creator' && !viewer?.isSelf && (
+            <Alert tone="info">
+              Invitations are sent by brand accounts. You’re signed in as a creator — browse{' '}
+              <Link to="/campaigns" className="underline">open campaigns</Link> to apply instead.
+            </Alert>
+          )}
+          {activeInvites.length > 0 && (
+            <div className="space-y-2">
+              <p className="eyebrow">Your invitations</p>
+              {activeInvites.map((i) => (
+                <div key={i._id} className="flex items-center justify-between gap-3 text-[12.5px]">
+                  <span className="truncate text-steel">{i.campaignTitle}</span>
+                  <StatusPill status={i.status} />
+                </div>
+              ))}
+            </div>
+          )}
+          <hr className="border-line" />
+          <dl className="flex flex-col gap-2 text-[12.5px]">
+            {facts.map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-3">
+                <dt className="text-steel">{k}</dt>
+                <dd className="text-right font-bold tabular-nums">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        </aside>
 
-      {signals && (signals.completedProjects > 0 || signals.feedback?.length > 0 || signals.workflows?.length > 0) && (
-        <div className="border-t border-line/80 pt-16">
-          <TrackRecord signals={signals} name={creator.displayName} />
+        <div className="flex min-w-0 flex-col gap-6">
+          <nav aria-label="Profile sections" className="flex gap-[26px] overflow-x-auto border-b border-line pt-[22px] font-semibold text-steel">
+            {tabs.map(([key, label]) => (
+              <a
+                key={key}
+                href={`#${key}`}
+                onClick={() => setTab(key)}
+                aria-current={tab === key ? 'true' : undefined}
+                className={`whitespace-nowrap pb-3 ${tab === key ? 'text-ink shadow-[inset_0_-2px_0_var(--color-ink)]' : 'hover:text-ink'}`}
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+
+          {(creator.bio || creator.headline) && (
+            <div>
+              <p className="max-w-[760px] text-[17px] leading-[1.55] tracking-[-0.01em] text-slate md:text-[19px]">{creator.bio || creator.headline}</p>
+              {creator.isDemo && (
+                <p className="mt-2 text-[12.5px] text-steel">Fictional demo profile — its pieces illustrate the format and are not real client work.</p>
+              )}
+            </div>
+          )}
+
+          <ToolsCard tools={signals?.tools ?? []} />
+          <FeaturedWork creator={creator} portfolio={portfolio} />
+
+          {creator.howIWork.length > 0 && (
+            <Card pad id="how" className="scroll-mt-24">
+              <h3 className="mb-4 text-[17px]">How I work</h3>
+              <ol className="grid grid-cols-2 gap-2.5 lg:grid-cols-5">
+                {creator.howIWork.map((s, i) => (
+                  <li key={s.title} className="flex flex-col gap-1 rounded-md border border-[#edf0ef] bg-soft p-3.5">
+                    <span className="mb-1.5 grid size-[26px] place-items-center rounded-full bg-navy text-[12px] font-bold text-white">{i + 1}</span>
+                    <b>{s.title}</b>
+                    {s.detail && <small className="text-[12px] leading-snug text-steel">{s.detail}</small>}
+                  </li>
+                ))}
+              </ol>
+            </Card>
+          )}
+
+          <div className="grid gap-[18px] md:grid-cols-2">
+            <SkillsCard creator={creator} taxonomy={taxonomy} />
+            <TrustCard creator={creator} />
+          </div>
+
+          <Reviews feedback={feedback} creator={creator} />
         </div>
-      )}
+      </div>
 
       {user?.role === 'brand' && (
         <InviteDialog open={inviteOpen} onClose={() => setInviteOpen(false)} creator={creator} existingInvitations={invitations} />

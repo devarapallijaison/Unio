@@ -468,9 +468,11 @@ function buildUserMessage(idea, { brand, piece, answers }) {
 
 let clientOverride = null;
 let fetchOverride = null;
-/** Test hook: replace fetch for the OpenRouter provider. */
-export function __setFetchForTests(fake) {
+let fetchProvider = 'openrouter';
+/** Test hook: replace fetch for a chat-completions provider ('openrouter', 'gemini' or 'deepseek'). */
+export function __setFetchForTests(fake, provider = 'openrouter') {
   fetchOverride = fake;
+  fetchProvider = provider;
 }
 /** Test hook: inject a fake client exposing beta.messages.parse. */
 export function __setClientForTests(fake) {
@@ -483,10 +485,13 @@ function getClient() {
   return new Anthropic({ apiKey: env.anthropicApiKey, timeout: 45_000, maxRetries: 1 });
 }
 
-/** Which provider handles AI drafts: Anthropic direct first, then OpenRouter, else none (template). */
+/** Which provider handles AI drafts: Anthropic direct, then Gemini, DeepSeek, OpenRouter, else none (template). */
 export function activeProvider() {
   if (clientOverride || env.anthropicApiKey) return 'anthropic';
-  if (fetchOverride || env.openRouterApiKey) return 'openrouter';
+  if (fetchOverride) return fetchProvider;
+  if (env.geminiApiKey) return 'gemini';
+  if (env.deepseekApiKey) return 'deepseek';
+  if (env.openRouterApiKey) return 'openrouter';
   return null;
 }
 
@@ -541,11 +546,67 @@ async function callClaude(userMessage) {
 }
 
 /* ------------------------------------------------------------------ */
-/* OpenRouter (OpenAI-compatible chat completions, JSON-schema output)  */
+/* OpenAI-compatible chat completions: OpenRouter, Gemini and DeepSeek  */
 /* ------------------------------------------------------------------ */
 
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DRAFT_JSON_SCHEMA = z.toJSONSchema(AiDraftSchema);
+
+/** Example of the draft's shape (field names with their types), from the JSON schema. */
+function shapeOf(schema) {
+  if (schema.type === 'object') return Object.fromEntries(Object.entries(schema.properties).map(([k, v]) => [k, shapeOf(v)]));
+  if (schema.type === 'array') return [shapeOf(schema.items)];
+  return schema.type;
+}
+
+// JSON mode: for models without JSON-schema support the expected shape goes in the prompt
+// (a plain example, which smaller models echo less than a formal schema); normalizeDraft still
+// validates every field afterwards.
+const JSON_MODE = {
+  system: `${SYSTEM_PROMPT}\n\nReply with one JSON object only: the filled-in brief with exactly these fields (types shown in place of values):\n${JSON.stringify(shapeOf(DRAFT_JSON_SCHEMA))}`,
+  extra: { response_format: { type: 'json_object' } },
+};
+
+const CHAT_PROVIDERS = {
+  // JSON-schema output, routed only to providers that honour it. Models without schema support
+  // (common for free models) are retried once in JSON mode.
+  openrouter: () => ({
+    label: 'OpenRouter',
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    apiKey: env.openRouterApiKey,
+    model: env.openRouterModel,
+    headers: { 'X-Title': 'UNIO Brief Builder' },
+    system: SYSTEM_PROMPT,
+    extra: {
+      response_format: { type: 'json_schema', json_schema: { name: 'campaign_brief', strict: true, schema: DRAFT_JSON_SCHEMA } },
+      provider: { require_parameters: true },
+    },
+    // Low reasoning effort: free reasoning models can otherwise spend the whole token budget thinking.
+    fallback: { ...JSON_MODE, extra: { ...JSON_MODE.extra, reasoning: { effort: 'low' } } },
+  }),
+  // Gemini's OpenAI-compatible endpoint, in JSON mode (its schema support rejects some JSON-schema
+  // keywords). Low reasoning effort keeps thinking tokens from using up the output budget.
+  gemini: () => ({
+    label: 'Gemini',
+    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    apiKey: env.geminiApiKey,
+    model: env.geminiModel,
+    headers: {},
+    system: JSON_MODE.system,
+    extra: { ...JSON_MODE.extra, reasoning_effort: 'low' },
+  }),
+  // DeepSeek supports JSON mode but not JSON schemas.
+  deepseek: () => ({
+    label: 'DeepSeek',
+    url: 'https://api.deepseek.com/chat/completions',
+    apiKey: env.deepseekApiKey,
+    model: env.deepseekModel,
+    headers: {},
+    ...JSON_MODE,
+  }),
+};
+
+/** OpenRouter's reply when no endpoint for the model supports the requested parameters. */
+const UNSUPPORTED_PARAMS = /no endpoints found that can handle the requested parameters/i;
 
 /** Pull the first JSON object out of a model reply, tolerating code fences or stray text. */
 export function extractJson(text) {
@@ -562,51 +623,18 @@ export function extractJson(text) {
   }
 }
 
-async function callOpenRouter(userMessage) {
-  const doFetch = fetchOverride ?? fetch;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 45_000);
-  let res;
-  try {
-    res = await doFetch(OPENROUTER_URL, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${env.openRouterApiKey}`,
-        'Content-Type': 'application/json',
-        'X-Title': 'UNIO Brief Builder',
-      },
-      body: JSON.stringify({
-        model: env.openRouterModel,
-        max_tokens: 4000,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userMessage },
-        ],
-        response_format: { type: 'json_schema', json_schema: { name: 'campaign_brief', strict: true, schema: DRAFT_JSON_SCHEMA } },
-        // Only route to providers that honour the JSON schema.
-        provider: { require_parameters: true },
-      }),
-    });
-  } catch (err) {
-    if (err?.name === 'AbortError') {
-      throw new ApiError(504, 'AI_TIMEOUT', 'The AI service took too long to respond. Try again, or use the template.');
-    }
-    throw new ApiError(502, 'AI_UNAVAILABLE', 'Could not reach the AI service. Try again, or use the template.');
-  } finally {
-    clearTimeout(timer);
+async function callChatCompletions(provider, userMessage) {
+  const cfg = CHAT_PROVIDERS[provider]();
+  let { res, body } = await sendChat(cfg, userMessage);
+  if (cfg.fallback && res.status === 404 && UNSUPPORTED_PARAMS.test(body?.error?.message ?? '')) {
+    ({ res, body } = await sendChat({ ...cfg, ...cfg.fallback }, userMessage));
   }
 
-  let body = null;
-  try {
-    body = await res.json();
-  } catch {
-    // handled below
-  }
-
-  const status = res.ok ? body?.error?.code ?? 200 : res.status;
+  if (Array.isArray(body)) body = body[0];
+  let status = res.ok ? body?.error?.code ?? 200 : res.status;
+  if (status === 400 && /api key/i.test(body?.error?.message ?? '')) status = 401;
   if (!res.ok || body?.error) {
-    console.error('[brief-builder] OpenRouter error:', status, body?.error?.message ?? '');
+    console.error(`[brief-builder] ${cfg.label} error:`, status, body?.error?.message ?? '');
     if (status === 429) throw new ApiError(429, 'AI_RATE_LIMITED', 'The AI service is busy right now. Try again in a minute, or use the template instead.');
     if (status === 401 || status === 403) throw new ApiError(502, 'AI_MISCONFIGURED', 'The AI service is not configured correctly. Use the template instead.');
     if (status === 402) throw new ApiError(502, 'AI_NO_CREDITS', 'The AI account is out of credits. Use the template instead.');
@@ -622,10 +650,54 @@ async function callOpenRouter(userMessage) {
     throw new ApiError(502, 'AI_BAD_RESPONSE', 'The AI response was incomplete. Try again, or use the template.');
   }
   const raw = extractJson(choice?.message?.content);
-  if (!raw || typeof raw !== 'object') {
+  // A reply with none of the brief's fields (e.g. the schema echoed back) is not a draft.
+  if (!raw || typeof raw !== 'object' || !['title', 'objective', 'deliverables'].some((k) => k in raw)) {
     throw new ApiError(502, 'AI_BAD_RESPONSE', 'The AI response could not be read. Try again, or use the template.');
   }
-  return { raw, model: body.model ?? env.openRouterModel };
+  return { raw, model: body.model ?? cfg.model };
+}
+
+/** POST one chat-completions request; returns the response and its parsed body (null if unreadable). */
+async function sendChat(cfg, userMessage) {
+  const doFetch = fetchOverride ?? fetch;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45_000);
+  let res;
+  try {
+    res = await doFetch(cfg.url, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${cfg.apiKey}`,
+        'Content-Type': 'application/json',
+        ...cfg.headers,
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        max_tokens: 4000,
+        messages: [
+          { role: 'system', content: cfg.system },
+          { role: 'user', content: userMessage },
+        ],
+        ...cfg.extra,
+      }),
+    });
+  } catch (err) {
+    if (err?.name === 'AbortError') {
+      throw new ApiError(504, 'AI_TIMEOUT', 'The AI service took too long to respond. Try again, or use the template.');
+    }
+    throw new ApiError(502, 'AI_UNAVAILABLE', 'Could not reach the AI service. Try again, or use the template.');
+  } finally {
+    clearTimeout(timer);
+  }
+
+  let body = null;
+  try {
+    body = await res.json();
+  } catch {
+    // handled by the caller
+  }
+  return { res, body };
 }
 
 /**
@@ -648,7 +720,8 @@ export async function generateDraft({ idea, mode = 'auto', answers = [], brand =
     };
   }
   const userMessage = buildUserMessage(idea, { brand, piece, answers });
-  const { raw, model } = activeProvider() === 'anthropic' ? await callClaude(userMessage) : await callOpenRouter(userMessage);
+  const provider = activeProvider();
+  const { raw, model } = provider === 'anthropic' ? await callClaude(userMessage) : await callChatCompletions(provider, userMessage);
   const { fields, questions, warnings } = normalizeDraft(raw, context);
   return { source: 'ai', model, fields: { ...fields, ...fromPiece }, questions, warnings };
 }

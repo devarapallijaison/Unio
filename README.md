@@ -172,7 +172,11 @@ Backend environment variables belong in `server/.env`, unless the deployment con
 | `DNS_SERVERS` | Optional DNS resolver override if MongoDB SRV lookup fails in the local environment. |
 | `ANTHROPIC_API_KEY` | Optional server-side key for Anthropic-powered brief generation. |
 | `BRIEF_AI_MODEL` | Optional model identifier for the Anthropic provider. |
-| `OPENROUTER_API_KEY` | Optional alternative provider key. |
+| `GEMINI_API_KEY` | Optional Google Gemini key; used when `ANTHROPIC_API_KEY` is empty. |
+| `GEMINI_MODEL` | Gemini model identifier (default `gemini-2.5-flash`). |
+| `DEEPSEEK_API_KEY` | Optional DeepSeek key; used when the keys above are empty. |
+| `DEEPSEEK_MODEL` | DeepSeek model identifier (default `deepseek-chat`). |
+| `OPENROUTER_API_KEY` | Optional alternative provider key; used when neither key above is set. |
 | `OPENROUTER_MODEL` | Model identifier used with OpenRouter, if enabled. |
 | `CLOUDINARY_*` | Optional media-hosting settings, if the current upload integration uses them. |
 

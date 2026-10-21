@@ -25,7 +25,13 @@ export const env = {
   // AI Brief Builder. Optional: without a key the endpoint returns a labelled template draft.
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   briefModel: process.env.BRIEF_AI_MODEL || 'claude-opus-5-5',
-  // Alternative provider: used only when ANTHROPIC_API_KEY is not set.
+  // Google Gemini (OpenAI-compatible endpoint): used when ANTHROPIC_API_KEY is not set.
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  // DeepSeek (OpenAI-compatible API): used when neither ANTHROPIC_API_KEY nor GEMINI_API_KEY is set.
+  deepseekApiKey: process.env.DEEPSEEK_API_KEY || '',
+  deepseekModel: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+  // Alternative provider: used only when neither ANTHROPIC_API_KEY nor DEEPSEEK_API_KEY is set.
   openRouterApiKey: process.env.OPENROUTER_API_KEY || '',
   openRouterModel: process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-5.5',
   // Azure Blob Storage for uploads (Phase 10). Optional until uploads are enabled.

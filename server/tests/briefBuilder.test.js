@@ -317,6 +317,34 @@ describe('OpenRouter provider', () => {
     assert.match(calls[0].init.headers.Authorization, /^Bearer /);
   });
 
+  test('models without JSON-schema support are retried once in JSON mode', async () => {
+    const calls = [];
+    __setFetchForTests(async (url, init) => {
+      calls.push(JSON.parse(init.body));
+      if (calls.length === 1) return reply(404, { error: { code: 404, message: 'No endpoints found that can handle the requested parameters.' } })();
+      return reply(200, completion(JSON.stringify(GOOD_DRAFT)))();
+    });
+    const { agent } = await signUp(app, 'brand');
+    const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.source, 'ai');
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].response_format.type, 'json_schema');
+    assert.deepEqual(calls[1].response_format, { type: 'json_object' });
+    assert.equal(calls[1].provider, undefined);
+    assert.deepEqual(calls[1].reasoning, { effort: 'low' });
+    assert.match(calls[1].messages[0].content, /exactly these fields/);
+  });
+
+  test('other 404s are not retried', async () => {
+    let n = 0;
+    __setFetchForTests(async () => { n++; return reply(404, { error: { code: 404, message: 'Model not found' } })(); });
+    const { agent } = await signUp(app, 'brand');
+    const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
+    assert.equal(res.body.error.code, 'AI_UNAVAILABLE');
+    assert.equal(n, 1);
+  });
+
   test('Anthropic is preferred when both providers are configured', async () => {
     __setFetchForTests(async () => assert.fail('OpenRouter should not be called'));
     __setClientForTests({ beta: { messages: { parse: async () => ({ stop_reason: 'end_turn', model: 'claude-opus-5-5', parsed_output: GOOD_DRAFT }) } } });
@@ -341,6 +369,134 @@ describe('OpenRouter provider', () => {
     ];
     for (const [impl, status, code] of cases) {
       __setFetchForTests(impl);
+      const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
+      assert.equal(res.status, status, code);
+      assert.equal(res.body.error.code, code);
+    }
+  });
+});
+
+describe('DeepSeek provider', () => {
+  let app;
+  before(async () => {
+    app = await startDb();
+  });
+  after(stopDb);
+  beforeEach(resetDb);
+  afterEach(() => {
+    __setClientForTests(null);
+    __setFetchForTests(null);
+  });
+
+  const IDEA = { idea: 'Short vertical ads for our summer SPF gel, fresh and honest, budget around 15k' };
+  const reply = (status, body) => async () => ({ ok: status >= 200 && status < 300, status, json: async () => body });
+  const completion = (content, finish = 'stop') => ({
+    model: 'deepseek-chat',
+    choices: [{ finish_reason: finish, message: { role: 'assistant', content } }],
+  });
+
+  test('sends a JSON-mode request with the schema in the prompt and normalizes the reply', async () => {
+    const calls = [];
+    __setFetchForTests(async (url, init) => {
+      calls.push({ url, init });
+      return reply(200, completion(JSON.stringify(GOOD_DRAFT)))();
+    }, 'deepseek');
+    const { agent } = await signUp(app, 'brand');
+    const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.source, 'ai');
+    assert.equal(res.body.data.model, 'deepseek-chat');
+    assert.equal(res.body.data.fields.category, 'beauty');
+    const sent = JSON.parse(calls[0].init.body);
+    assert.match(calls[0].url, /api\.deepseek\.com\/chat\/completions/);
+    assert.equal(sent.model, 'deepseek-chat');
+    assert.deepEqual(sent.response_format, { type: 'json_object' });
+    assert.equal(sent.provider, undefined, 'no OpenRouter-only fields');
+    assert.match(sent.messages[0].content, /exactly these fields/);
+    assert.match(sent.messages[0].content, /"deliverables"/);
+    assert.match(sent.messages[1].content, /<idea>[\s\S]*SPF gel[\s\S]*<\/idea>/);
+    assert.match(calls[0].init.headers.Authorization, /^Bearer /);
+  });
+
+  test('Anthropic is preferred over DeepSeek when both are configured', async () => {
+    __setFetchForTests(async () => assert.fail('DeepSeek should not be called'), 'deepseek');
+    __setClientForTests({ beta: { messages: { parse: async () => ({ stop_reason: 'end_turn', model: 'claude-opus-5-5', parsed_output: GOOD_DRAFT }) } } });
+    const { agent } = await signUp(app, 'brand');
+    const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
+    assert.equal(res.body.data.model, 'claude-opus-5-5');
+  });
+
+  test('maps DeepSeek failures to clear errors', async () => {
+    const { agent } = await signUp(app, 'brand');
+    const cases = [
+      [reply(429, { error: { message: 'rate limit reached' } }), 429, 'AI_RATE_LIMITED'],
+      [reply(402, { error: { message: 'Insufficient Balance' } }), 502, 'AI_NO_CREDITS'],
+      [reply(401, { error: { message: 'Authentication Fails' } }), 502, 'AI_MISCONFIGURED'],
+      [reply(503, { error: { message: 'Server Overloaded' } }), 502, 'AI_UNAVAILABLE'],
+      [reply(200, completion('')), 502, 'AI_BAD_RESPONSE'],
+      [reply(200, completion('{"type":"object","properties":{"foo":"string"}}')), 502, 'AI_BAD_RESPONSE'],
+      [reply(200, completion('{"title": "cut off', 'length')), 502, 'AI_BAD_RESPONSE'],
+      [reply(200, completion('', 'content_filter')), 422, 'AI_REFUSED'],
+    ];
+    for (const [impl, status, code] of cases) {
+      __setFetchForTests(impl, 'deepseek');
+      const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
+      assert.equal(res.status, status, code);
+      assert.equal(res.body.error.code, code);
+    }
+  });
+});
+
+describe('Gemini provider', () => {
+  let app;
+  before(async () => {
+    app = await startDb();
+  });
+  after(stopDb);
+  beforeEach(resetDb);
+  afterEach(() => {
+    __setClientForTests(null);
+    __setFetchForTests(null);
+  });
+
+  const IDEA = { idea: 'Short vertical ads for our summer SPF gel, fresh and honest, budget around 15k' };
+  const reply = (status, body) => async () => ({ ok: status >= 200 && status < 300, status, json: async () => body });
+  const completion = (content, finish = 'stop') => ({
+    model: 'gemini-2.5-flash',
+    choices: [{ finish_reason: finish, message: { role: 'assistant', content } }],
+  });
+
+  test('sends a JSON-mode request to the OpenAI-compatible endpoint and normalizes the reply', async () => {
+    const calls = [];
+    __setFetchForTests(async (url, init) => {
+      calls.push({ url, init });
+      return reply(200, completion(JSON.stringify(GOOD_DRAFT)))();
+    }, 'gemini');
+    const { agent } = await signUp(app, 'brand');
+    const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data.source, 'ai');
+    assert.equal(res.body.data.model, 'gemini-2.5-flash');
+    assert.equal(res.body.data.fields.category, 'beauty');
+    const sent = JSON.parse(calls[0].init.body);
+    assert.match(calls[0].url, /generativelanguage\.googleapis\.com\/v1beta\/openai\/chat\/completions/);
+    assert.deepEqual(sent.response_format, { type: 'json_object' });
+    assert.equal(sent.reasoning_effort, 'low');
+    assert.equal(sent.provider, undefined, 'no OpenRouter-only fields');
+    assert.match(sent.messages[0].content, /exactly these fields/);
+    assert.match(calls[0].init.headers.Authorization, /^Bearer /);
+  });
+
+  test('maps Gemini failures, including array-wrapped errors, to clear errors', async () => {
+    const { agent } = await signUp(app, 'brand');
+    const cases = [
+      [reply(400, [{ error: { code: 400, message: 'API key not valid. Please pass a valid API key.', status: 'INVALID_ARGUMENT' } }]), 502, 'AI_MISCONFIGURED'],
+      [reply(429, [{ error: { code: 429, message: 'Resource has been exhausted', status: 'RESOURCE_EXHAUSTED' } }]), 429, 'AI_RATE_LIMITED'],
+      [reply(503, [{ error: { code: 503, message: 'The model is overloaded.' } }]), 502, 'AI_UNAVAILABLE'],
+      [reply(200, completion('{"title": "cut off', 'length')), 502, 'AI_BAD_RESPONSE'],
+    ];
+    for (const [impl, status, code] of cases) {
+      __setFetchForTests(impl, 'gemini');
       const res = await agent.post('/api/brand/briefs/draft').send(IDEA);
       assert.equal(res.status, status, code);
       assert.equal(res.body.error.code, code);

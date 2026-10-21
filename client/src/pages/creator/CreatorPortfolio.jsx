@@ -17,7 +17,9 @@ import { useToast } from '../../components/ui/Toast.jsx';
 import { MadeOnUnio } from '../../components/ui/Trust.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { useTaxonomy } from '../../hooks/useTaxonomy.js';
-import { endpoints } from '../../services/api.js';
+import { UploadButton, useUploadConfig } from '../../components/ui/Upload.jsx';
+import { captureVideoFrame } from '../../lib/media.js';
+import { endpoints, uploadFile } from '../../services/api.js';
 
 /* v9 C3 — portfolio grid + "Add a piece" panel with "How it was made" steps. Media are links (uploads: Phase 10). */
 
@@ -122,7 +124,10 @@ function PiecePanel({ item, onDone, taxonomy }) {
   const toast = useToast();
   const ref = useRef(null);
   const form = useForm({ resolver: zodResolver(schema), defaultValues: toForm(item) });
-  const { register, handleSubmit, control, formState, setError, watch } = form;
+  const { register, handleSubmit, control, formState, setError, watch, setValue, getValues } = form;
+  const uploadsOn = useUploadConfig().data?.enabled;
+  // The file this form uploaded (and its hash). Sent only while the media link is still that file.
+  const uploaded = useRef({ url: '', hash: null });
   const steps = useFieldArray({ control, name: 'workflow' });
   const err = (k) => formState.errors[k]?.message;
 
@@ -131,7 +136,10 @@ function PiecePanel({ item, onDone, taxonomy }) {
   }, []);
 
   const save = useMutation({
-    mutationFn: (values) => (item ? endpoints.creator.updatePortfolio(item._id, toBody(values)) : endpoints.creator.addPortfolio(toBody(values))),
+    mutationFn: (values) => {
+      const body = { ...toBody(values), ...(uploaded.current.hash && uploaded.current.url === values.mediaUrl ? { contentHash: uploaded.current.hash } : {}) };
+      return item ? endpoints.creator.updatePortfolio(item._id, body) : endpoints.creator.addPortfolio(body);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['mine'] });
       qc.invalidateQueries({ queryKey: ['pub'] });
@@ -142,6 +150,22 @@ function PiecePanel({ item, onDone, taxonomy }) {
   });
 
   const isVideo = watch('mediaType') === 'video';
+
+  const onMedia = async ({ url, file, hash }) => {
+    uploaded.current = { url, hash };
+    setValue('mediaUrl', url, { shouldValidate: true, shouldDirty: true });
+    const video = file.type.startsWith('video/');
+    setValue('mediaType', video ? 'video' : 'image');
+    // Videos get a still from the first second as their thumbnail, unless one is already set.
+    if (video && !getValues('thumbnailUrl')) {
+      try {
+        const frame = await captureVideoFrame(file);
+        if (frame) setValue('thumbnailUrl', await uploadFile(frame, 'thumbnail'), { shouldDirty: true });
+      } catch {
+        /* the thumbnail is optional */
+      }
+    }
+  };
   const isClient = watch('client') === 'client';
 
   return (
@@ -159,8 +183,11 @@ function PiecePanel({ item, onDone, taxonomy }) {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col items-center gap-1.5 rounded-lg border-[1.5px] border-dashed border-line2 bg-soft p-5 text-center text-slate">
             <Link2 className="size-5" />
-            <b>Paste a link to your work</b>
-            <span className="text-[12.5px] text-steel">YouTube, Vimeo, Drive or an image/video URL · media stays as links</span>
+            <b>{uploadsOn ? 'Upload your work, or paste a link' : 'Paste a link to your work'}</b>
+            <span className="text-[12.5px] text-steel">
+              {uploadsOn ? 'Images up to 10 MB, videos up to 200 MB · or a YouTube, Vimeo or Drive link for longer films' : 'YouTube, Vimeo, Drive or an image/video URL · media stays as links'}
+            </span>
+            {uploadsOn && <UploadButton purpose="portfolio" hash label={isVideo ? 'Upload a video' : 'Upload an image'} onUploaded={onMedia} className="mt-1" />}
             <div className="mt-2 flex w-full flex-col gap-2 text-left">
               <Input aria-label={isVideo ? 'Video link' : 'Image link'} placeholder="https://" error={err('mediaUrl')} {...register('mediaUrl')} />
               <Input
@@ -169,6 +196,7 @@ function PiecePanel({ item, onDone, taxonomy }) {
                 error={err('thumbnailUrl')}
                 {...register('thumbnailUrl')}
               />
+              {uploadsOn && <UploadButton purpose="thumbnail" label="Upload a thumbnail" onUploaded={({ url }) => setValue('thumbnailUrl', url, { shouldDirty: true })} />}
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

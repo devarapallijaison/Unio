@@ -5,10 +5,11 @@ import * as brand from '../controllers/brand.controller.js';
 import * as creator from '../controllers/creator.controller.js';
 import * as project from '../controllers/project.controller.js';
 import * as pub from '../controllers/public.controller.js';
+import * as upload from '../controllers/upload.controller.js';
 import * as verify from '../controllers/verification.controller.js';
 import { dbState } from '../config/db.js';
 import { optionalAuth, requireAuth, requireRole } from '../middleware/auth.js';
-import { authLimiter, briefDraftLimiter, messageLimiter, verifySubmitLimiter } from '../middleware/rateLimit.js';
+import { authLimiter, briefDraftLimiter, messageLimiter, uploadLimiter, verifySubmitLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 import {
   APPLICATION_STATUS,
@@ -29,6 +30,10 @@ router.get('/taxonomy', (_req, res) => {
   res.set('Cache-Control', 'public, max-age=3600');
   ok(res, TAXONOMY);
 });
+
+/* ---------- Uploads (Azure Blob; the file itself never touches this server) ---------- */
+router.get('/uploads/config', upload.config);
+router.post('/uploads/sas', requireAuth, uploadLimiter, validate({ body: v.uploadSasBody }), upload.sas);
 
 /* ---------- Auth ---------- */
 router.post('/auth/register', authLimiter, validate({ body: v.registerBody }), authCtrl.register);

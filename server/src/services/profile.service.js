@@ -61,10 +61,19 @@ function withWorkflowTools(data) {
   return { ...data, tools };
 }
 
+/** The same uploaded file on another creator's portfolio is refused (guide F5). Link-only pieces cannot be hashed. */
+async function rejectDuplicateFile(profile, contentHash) {
+  if (!contentHash) return;
+  if (await PortfolioItem.exists({ contentHash, creatorId: { $ne: profile._id } })) {
+    throw ApiError.conflict('This exact file is already on another creator’s portfolio. Upload your own work.', 'DUPLICATE_FILE');
+  }
+}
+
 export async function addPortfolioItem(user, data) {
   const profile = await requireCreatorProfile(user);
   const count = await PortfolioItem.countDocuments({ creatorId: profile._id });
   if (count >= 60) throw ApiError.conflict('Portfolio limit reached (60 items)');
+  await rejectDuplicateFile(profile, data.contentHash);
   const item = await PortfolioItem.create({ ...withWorkflowTools(data), creatorId: profile._id });
   return item.toObject();
 }
@@ -74,7 +83,10 @@ export async function updatePortfolioItem(user, id, data) {
   const before = await PortfolioItem.findOne({ _id: id, creatorId: profile._id }, 'mediaUrl').lean();
   if (!before) throw ApiError.notFound('Portfolio item not found');
   data = withWorkflowTools(data);
-  const item = await PortfolioItem.findOneAndUpdate({ _id: id, creatorId: profile._id }, { $set: data }, {
+  await rejectDuplicateFile(profile, data.contentHash);
+  // A new link without a new hash means the stored hash no longer describes the file.
+  const staleHash = data.mediaUrl && data.mediaUrl !== before.mediaUrl && !data.contentHash;
+  const item = await PortfolioItem.findOneAndUpdate({ _id: id, creatorId: profile._id }, { $set: data, ...(staleHash ? { $unset: { contentHash: 1 } } : {}) }, {
     returnDocument: 'after',
     runValidators: true,
   }).lean();

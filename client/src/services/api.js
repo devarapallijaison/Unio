@@ -117,6 +117,10 @@ export const endpoints = {
     projects: (params) => api.get('/brand/projects', params),
     draftBrief: (body) => api.post('/brand/briefs/draft', body),
   },
+  uploads: {
+    config: () => api.get('/uploads/config'),
+    sas: (body) => api.post('/uploads/sas', body),
+  },
   review: {
     list: (params) => api.get('/review/verifications', params),
     decide: (id, body) => api.patch(`/review/verifications/${id}`, body),
@@ -137,3 +141,29 @@ export const endpoints = {
     unread: () => api.get('/me/unread'),
   },
 };
+
+/**
+ * Upload a file straight to Azure Blob Storage with a 15-minute URL from the API (the file never passes through
+ * our server). XMLHttpRequest because fetch cannot report upload progress. Resolves with the saved file URL.
+ */
+export async function uploadFile(file, purpose, { onProgress, signal } = {}) {
+  const { uploadUrl, blobUrl } = await endpoints.uploads.sas({ purpose, fileName: file.name, contentType: file.type, size: file.size });
+  await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', uploadUrl);
+    xhr.setRequestHeader('x-ms-blob-type', 'BlockBlob');
+    xhr.setRequestHeader('Content-Type', file.type);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress?.(e.loaded / e.total);
+    };
+    xhr.onload = () =>
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve()
+        : reject(new ApiError(xhr.status, 'UPLOAD_FAILED', 'The upload did not finish. Try again, or paste a link instead.'));
+    xhr.onerror = () => reject(new ApiError(0, 'NETWORK_ERROR', 'The upload did not finish. Check your connection, or paste a link instead.'));
+    xhr.onabort = () => reject(new ApiError(0, 'ABORTED', 'Upload cancelled.'));
+    signal?.addEventListener('abort', () => xhr.abort(), { once: true });
+    xhr.send(file);
+  });
+  return blobUrl;
+}

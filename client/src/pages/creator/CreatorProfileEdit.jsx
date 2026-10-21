@@ -16,6 +16,7 @@ import { ToolChip } from '../../components/ui/Trust.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { useTaxonomy } from '../../hooks/useTaxonomy.js';
+import { UploadButton } from '../../components/ui/Upload.jsx';
 import { endpoints } from '../../services/api.js';
 
 /* v9 C2 — edit profile with a live preview of the real card. Trust states are read-only (server-computed). */
@@ -201,7 +202,10 @@ export default function CreatorProfileEdit() {
               <Input label="City" autoComplete="address-level2" error={err('location')} {...register('location')} />
               <Input className="sm:col-span-2" label="Headline" placeholder="e.g. AI product ads for beauty & D2C · 9:16 first" error={err('headline')} {...register('headline')} />
               <Textarea className="sm:col-span-2" label="About" rows={3} error={err('bio')} {...register('bio')} />
-              <Input className="sm:col-span-2" label="Photo URL" note="Optional · initials show until you add one" placeholder="https://" error={err('photoUrl')} {...register('photoUrl')} />
+              <div className="space-y-2 sm:col-span-2">
+                <Input label="Photo URL" note="Optional · initials show until you add one" placeholder="https://" error={err('photoUrl')} {...register('photoUrl')} />
+                <UploadButton purpose="avatar" label="Upload a photo" onUploaded={({ url }) => setValue('photoUrl', url, { shouldValidate: true, shouldDirty: true })} />
+              </div>
             </div>
           </SectionCard>
 

@@ -25,6 +25,7 @@ import {
   TEAM_SIZE_IDS,
   TOOL_NAMES,
 } from '../models/taxonomy.js';
+import { PURPOSE_IDS } from '../services/uploads.service.js';
 import { httpUrl, money, objectId, optionalUrl, pageQuery, qNumber, qText, tagList, text } from './common.js';
 
 /* ---------- Auth ---------- */
@@ -217,8 +218,10 @@ const workflowStepBody = z.object({
   note: text(200).optional(),
 });
 
-/** madeOnUnio, projectId and contentHash are server-controlled and not accepted here. */
+/** madeOnUnio and projectId are server-controlled and not accepted here. */
 export const portfolioBody = z.object({
+  // sha256 of an uploaded file, computed in the browser (duplicate check, guide F5). Links cannot be hashed.
+  contentHash: z.string().regex(/^[a-f0-9]{64}$/i, 'Invalid file hash').transform((h) => h.toLowerCase()).optional(),
   title: text(160, 2),
   description: text(1000).optional(),
   mediaType: z.enum(MEDIA_TYPES).default('image'),
@@ -255,6 +258,16 @@ export const portfolioBody = z.object({
     .max(10)
     .optional(),
 });
+
+/* ---------- Uploads (Azure Blob) ---------- */
+export const uploadSasBody = z
+  .object({
+    purpose: z.enum(PURPOSE_IDS),
+    fileName: text(200, 1),
+    contentType: text(100, 3),
+    size: z.coerce.number().int().min(1, 'The file is empty'),
+  })
+  .strict();
 
 /* ---------- Brand profile & campaigns ---------- */
 const HEX = /^#[0-9a-f]{6}$/i;

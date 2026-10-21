@@ -17,7 +17,9 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { useTaxonomy } from '../../hooks/useTaxonomy.js';
 import { formatDate, relativeDeadline } from '../../lib/format.js';
 import { rightsRows } from '../../lib/rights.js';
-import { endpoints } from '../../services/api.js';
+import { UploadButton } from '../../components/ui/Upload.jsx';
+import { captureVideoFrame } from '../../lib/media.js';
+import { endpoints, uploadFile } from '../../services/api.js';
 import NotFoundPage from '../public/NotFoundPage.jsx';
 
 /* v9 S1 (brand) / S2 (creator) project page and S3 final delivery with the rights card (F6, F7). */
@@ -223,6 +225,7 @@ function SubmitVersionForm({ project, deliverables, initialId, tools }) {
   const options = deliverables.filter((d) => d.status !== 'approved' && latestOf(d)?.status !== 'submitted');
   const [id, setId] = useState(initialId ?? options[0]?._id);
   const [mediaUrl, setMediaUrl] = useState('');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [changeNote, setChangeNote] = useState('');
   const [used, setUsed] = useState([]);
   const [errors, setErrors] = useState({});
@@ -234,6 +237,7 @@ function SubmitVersionForm({ project, deliverables, initialId, tools }) {
   const feedback = [...(d?.versions ?? [])].reverse().find((v) => v.status === 'changes_requested');
   const submit = useProjectMutation(project._id, (body) => endpoints.projects.submitVersion(project._id, d._id, body), (_data, toast) => {
     setMediaUrl('');
+    setThumbnailUrl('');
     setChangeNote('');
     setUsed([]);
     toast.success(`v${next} sent to the brand.`);
@@ -247,7 +251,18 @@ function SubmitVersionForm({ project, deliverables, initialId, tools }) {
     if (next > 1 && !changeNote.trim()) errs.changeNote = 'Say what changed since the last version';
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    submit.mutate({ mediaUrl: mediaUrl.trim(), changeNote: changeNote.trim() || undefined, toolsUsed: used });
+    submit.mutate({ mediaUrl: mediaUrl.trim(), ...(thumbnailUrl ? { thumbnailUrl } : {}), changeNote: changeNote.trim() || undefined, toolsUsed: used });
+  };
+  const onFile = async ({ url, file }) => {
+    setMediaUrl(url);
+    setThumbnailUrl('');
+    if (!file.type.startsWith('video/')) return;
+    try {
+      const frame = await captureVideoFrame(file);
+      if (frame) setThumbnailUrl(await uploadFile(frame, 'thumbnail'));
+    } catch {
+      /* the thumbnail is optional */
+    }
   };
   return (
     <Card>
@@ -277,7 +292,20 @@ function SubmitVersionForm({ project, deliverables, initialId, tools }) {
           </label>
           <Input label="Version" value={`v${next}`} readOnly />
         </div>
-        <Input label="Link to file" required placeholder="https://drive.google.com/file/d/…/v.mp4" value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} error={errors.mediaUrl} />
+        <div className="space-y-2">
+          <Input
+            label="Link to file"
+            required
+            placeholder="https://drive.google.com/file/d/…/v.mp4"
+            value={mediaUrl}
+            onChange={(e) => {
+              setMediaUrl(e.target.value);
+              setThumbnailUrl('');
+            }}
+            error={errors.mediaUrl}
+          />
+          <UploadButton purpose="version" label="Upload the file instead" onUploaded={onFile} />
+        </div>
         <Textarea
           label="What changed"
           required={next > 1}

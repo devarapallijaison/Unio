@@ -15,6 +15,7 @@ import { useToast } from '../../components/ui/Toast.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { useTaxonomy } from '../../hooks/useTaxonomy.js';
+import { UploadButton } from '../../components/ui/Upload.jsx';
 import { endpoints } from '../../services/api.js';
 
 /* v9 B8 — brand profile + brand kit. The kit is sent to the brief builder as context; creators see the colours on briefs. */
@@ -134,6 +135,9 @@ function AssetUrls({ value, onChange }) {
               <Plus className="size-4" />
             </Button>
           </div>
+        )}
+        {value.length < 12 && (
+          <UploadButton purpose="brandkit" label="Upload an asset" onUploaded={({ url }) => !value.includes(url) && value.length < 12 && onChange([...value, url])} />
         )}
       </div>
       {error && <p className="mt-1.5 text-[12.5px] font-medium text-att">{error}</p>}

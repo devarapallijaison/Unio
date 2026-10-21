@@ -137,14 +137,13 @@ describe('skills backed by work', () => {
 describe('portfolio "how it was made" (§5.5)', () => {
   test('stores workflow steps, adds workflow tools to the piece, ignores server-only fields', async () => {
     const { agent } = await creatorWithProfile();
-    const res = await agent.post('/api/creator/portfolio').send({ ...PIECE, madeOnUnio: true, contentHash: 'abc', projectId: '507f1f77bcf86cd799439011' });
+    const res = await agent.post('/api/creator/portfolio').send({ ...PIECE, madeOnUnio: true, projectId: '507f1f77bcf86cd799439011' });
     assert.equal(res.status, 201, JSON.stringify(res.body));
     const item = await PortfolioItem.findById(res.body.data._id).lean();
     assert.equal(item.workflow.length, 2);
     assert.equal(item.workflow[1].generations, 24);
     assert.deepEqual(item.tools, ['Midjourney', 'Kling']);
     assert.equal(item.madeOnUnio, false);
-    assert.equal(item.contentHash, undefined);
     assert.equal(item.projectId, undefined);
     assert.equal(item.licence.licensedTo, 'Verdant Skin Co.');
 

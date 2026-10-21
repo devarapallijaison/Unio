@@ -15,6 +15,7 @@ import { Input, Select, Textarea, applyServerErrors } from '../../components/ui/
 import { isPlaceholderUrl } from '../../components/ui/MediaFrame.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { ToolChip, TrustLadder } from '../../components/ui/Trust.jsx';
+import { UploadButton } from '../../components/ui/Upload.jsx';
 import { PreChecks } from '../../components/verification/PreChecks.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { formatDate } from '../../lib/format.js';
@@ -461,14 +462,27 @@ function VerifyTool({ entries, profileTools, tool, setTool }) {
               <li>Add the recording link and at least 2 screenshots below</li>
             </ol>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Input label="Recording link" required placeholder="https://drive.google.com/…" value={recording} onChange={(e) => setRecording(e.target.value)} />
+              <div className="space-y-2">
+                <Input label="Recording link" required placeholder="https://drive.google.com/…" value={recording} onChange={(e) => setRecording(e.target.value)} />
+                <UploadButton purpose="evidence" label="Upload the recording" onUploaded={({ url }) => setRecording(url)} />
+              </div>
               <div className="space-y-2">
                 {shots.map((s, i) => (
                   <Input key={i} label={i === 0 ? 'Screenshot links' : undefined} aria-label={`Screenshot link ${i + 1}`} placeholder="https://" value={s} onChange={(e) => setShots(shots.map((x, j) => (j === i ? e.target.value : x)))} />
                 ))}
+                <UploadButton
+                  purpose="evidence"
+                  label="Upload a screenshot"
+                  onUploaded={({ url }) =>
+                    setShots((prev) => {
+                      const free = prev.findIndex((x) => !x.trim());
+                      return free >= 0 ? prev.map((x, j) => (j === free ? url : x)) : [...prev, url].slice(0, 5);
+                    })
+                  }
+                />
                 {shots.length < 4 && (
                   <Button variant="ghost" size="sm" onClick={() => setShots([...shots, ''])}>
-                    <Plus className="size-3.5" /> Add a screenshot
+                    <Plus className="size-3.5" /> Add a screenshot link
                   </Button>
                 )}
               </div>
@@ -597,7 +611,10 @@ function CertificateForm({ entry, profileTools, onDone }) {
         <Input label="Certificate title" value={v.title} onChange={set('title')} placeholder="e.g. Midjourney for designers" />
       </div>
       <Input label="Verify link" required hint="The issuer's page where anyone can confirm this certificate. A reviewer opens it." value={v.verifyUrl} onChange={set('verifyUrl')} placeholder="https://" />
-      <Input label="Certificate file link (optional)" value={v.fileUrl} onChange={set('fileUrl')} placeholder="https://" />
+      <div className="space-y-2">
+        <Input label="Certificate file link (optional)" value={v.fileUrl} onChange={set('fileUrl')} placeholder="https://" />
+        <UploadButton purpose="certificate" label="Upload the certificate" onUploaded={({ url }) => setV((cur) => ({ ...cur, fileUrl: url }))} />
+      </div>
       {error && <Alert tone="error">{error}</Alert>}
       {save.error && <Alert tone="error">{save.error.message}</Alert>}
       <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-between">

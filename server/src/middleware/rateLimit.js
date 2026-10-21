@@ -42,6 +42,20 @@ export const messageLimiter = rateLimit({
     }),
 });
 
+/** Upload URLs: 30 per 10 minutes per user (guide §8). */
+export const uploadLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: env.isTest ? 1000 : 30,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  keyGenerator: (req) => (req.user ? `upload:${req.user._id}` : ipKeyGenerator(req.ip)),
+  handler: (_req, res) =>
+    res.status(429).json({
+      success: false,
+      error: { code: 'RATE_LIMITED', message: 'You have started many uploads in a short time. Wait a few minutes and try again.', details: [] },
+    }),
+});
+
 /** Trust submissions make the server fetch the creator's links (pre-checks): 30 per hour per creator. */
 export const verifySubmitLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

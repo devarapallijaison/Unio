@@ -13,6 +13,8 @@ import { EmptyState, ErrorState, PageLoader, Skeleton } from '../../components/u
 import { Pagination } from '../../components/ui/Pagination.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { formatBudget, relativeDeadline } from '../../lib/format.js';
+import { useTaxonomy } from '../../hooks/useTaxonomy.js';
+import { categoryName } from '../../lib/rights.js';
 import { endpoints } from '../../services/api.js';
 import { CampaignStatusButton } from './BrandCampaigns.jsx';
 
@@ -103,6 +105,7 @@ export default function CampaignApplicants() {
     queryFn: () => endpoints.brand.campaignApplications(id, { status, page, limit: 10 }),
   });
   const campaign = query.data?.campaign;
+  const { data: taxonomy } = useTaxonomy();
   useDocumentTitle(campaign ? `Applicants · ${campaign.title}` : 'Applicants');
 
   if (query.isLoading) return <PageLoader label="Loading applicants" />;
@@ -114,7 +117,7 @@ export default function CampaignApplicants() {
         <ArrowLeft className="size-4" /> Campaigns
       </Link>
       <PageHeader
-        eyebrow={`${campaign.category} · ${formatBudget(campaign.budgetMin, campaign.budgetMax)} · ${relativeDeadline(campaign.deadline)}`}
+        eyebrow={`${categoryName(taxonomy, campaign.category)} · ${formatBudget(campaign.budgetMin, campaign.budgetMax)} · ${relativeDeadline(campaign.deadline)}`}
         title={campaign.title}
         actions={
           <>

@@ -7,7 +7,7 @@ export function formatINR(value) {
 
 export function formatBudget(min, max) {
   if (min == null && max == null) return 'Budget on request';
-  if (min != null && max != null) return min === max ? formatINR(min) : `${formatINR(min)} – ${formatINR(max)}`;
+  if (min != null && max != null) return min === max ? formatINR(min) : `${formatINR(min)}–${formatINR(max)}`;
   return min != null ? `From ${formatINR(min)}` : `Up to ${formatINR(max)}`;
 }
 

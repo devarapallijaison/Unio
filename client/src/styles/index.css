@@ -124,21 +124,6 @@
   .match-ring {
     background: conic-gradient(var(--ring-fill, var(--color-navy)) calc(var(--v) * 1%), var(--ring-track, var(--color-line)) 0);
   }
-
-  /* Rights ticket notches + perforation (v9 .ticket). */
-  .ticket-notch::before,
-  .ticket-notch::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: var(--notch-bg, var(--color-page));
-    transform: translateY(-50%);
-  }
-  .ticket-notch::before { left: -11px; }
-  .ticket-notch::after { right: -11px; }
 }
 
 /* ---------- Home (v9 P1) pieces that need real CSS ---------- */

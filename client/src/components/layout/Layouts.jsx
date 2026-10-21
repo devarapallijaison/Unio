@@ -219,6 +219,12 @@ function SidebarContent({ role, nav, pathname, onNavigate, onLogout }) {
   );
 }
 
+/** Sub-pages below a nav item get their own breadcrumb leaf. */
+const SUB_CRUMBS = [
+  [/\/campaigns\/new$/, 'New brief'],
+  [/\/campaigns\/[^/]+\/edit$/, 'Edit brief'],
+];
+
 /**
  * Signed-in app shell (guide §3.5): 262px navy sidebar, white 68px top bar,
  * and on phones a navy bottom tab bar with the first five items.
@@ -236,7 +242,10 @@ export function DashboardLayout({ role: roleProp }) {
   useEffect(() => setMenuOpen(false), [pathname]);
 
   const current = nav.workspace.find((item) => isActive(item, pathname)) ?? nav.account.find((item) => isActive(item, pathname));
-  const crumbRoot = nav.account.includes(current) ? 'Account' : 'Workspace';
+  const sub = SUB_CRUMBS.find(([re]) => re.test(pathname))?.[1];
+  // "Campaigns / New brief" on sub-pages; "Workspace / Campaigns" on section pages (v9).
+  const crumbRoot = sub && current ? current.label : nav.account.includes(current) ? 'Account' : 'Workspace';
+  const crumbLeaf = sub ?? current?.label;
   const handleLogout = async () => {
     await logout.mutateAsync().catch(() => {});
     navigate('/');
@@ -258,10 +267,10 @@ export function DashboardLayout({ role: roleProp }) {
           </Link>
           <p className="hidden min-w-0 flex-1 truncate text-[14px] text-steel sm:block">
             {crumbRoot}
-            {current && (
+            {crumbLeaf && (
               <>
                 {' '}
-                / <b className="font-semibold text-ink">{current.label}</b>
+                / <b className="font-semibold text-ink">{crumbLeaf}</b>
               </>
             )}
           </p>

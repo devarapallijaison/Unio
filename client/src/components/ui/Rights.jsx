@@ -31,7 +31,7 @@ export function RightsTicket({
   return (
     <div
       style={{ '--notch-bg': notchBg }}
-      className={`ticket-notch relative overflow-hidden rounded-lg bg-[linear-gradient(135deg,var(--color-ink),var(--color-navy)_60%,var(--color-slate))] px-6 py-[22px] text-[#e1e6e9] ${className}`}
+      className={`relative overflow-hidden rounded-lg bg-[linear-gradient(135deg,var(--color-ink),var(--color-navy)_60%,var(--color-slate))] px-6 py-[22px] text-[#e1e6e9] ${className}`}
     >
       <span
         aria-hidden
@@ -44,7 +44,11 @@ export function RightsTicket({
         {title && <h3 className="mt-1 text-lg text-white">{title}</h3>}
         {number && <p className="mt-1 font-mono text-[12px] text-bone">{number}</p>}
       </div>
-      <div aria-hidden className="my-5 border-t border-dashed border-mist/35" />
+      {/* Perforation with side notches cut at the divider (v9 .ticket). */}
+      <div aria-hidden className="relative my-5 border-t border-dashed border-mist/35">
+        <span className="absolute -left-[35px] top-0 size-[22px] -translate-y-1/2 rounded-full" style={{ background: 'var(--notch-bg)' }} />
+        <span className="absolute -right-[35px] top-0 size-[22px] -translate-y-1/2 rounded-full" style={{ background: 'var(--notch-bg)' }} />
+      </div>
       <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-[13px] sm:grid-cols-[130px_1fr]">
         {rows.map(({ label, value }) => (
           <div key={label} className="contents">

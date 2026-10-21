@@ -28,6 +28,7 @@ import {
 import { hashPassword } from '../src/services/auth.service.js';
 import { createProjectFromSource, decideVersion, postMessage, submitVersion } from '../src/services/projects.service.js';
 import { recomputeCreatorTrust } from '../src/services/trust.service.js';
+import { createApprovalLink } from '../src/services/approvals.service.js';
 import { runChallengeChecks } from '../src/services/precheck.service.js';
 import { decide, newChallengeCode } from '../src/services/verification.service.js';
 import { demoCreators, team } from './seed-creators.js';
@@ -221,6 +222,78 @@ async function seedBrand(b, passwordHash) {
   return { user, campaigns };
 }
 
+/* ------------------------------------------------------------------ */
+/* Demo agency (F2): Pixel & Pine Studio and its four clients           */
+/* ------------------------------------------------------------------ */
+const agency = {
+  name: 'Pixel & Pine Studio', email: 'studio@pixelpine.unio.example',
+  clients: [
+    { name: 'Verdant Skin Co.', industry: 'beauty', initials: 'VS', color: 'green', approverName: 'Vidya Sharma', approverEmail: 'vidya.sharma@verdant-skin.example' },
+    { name: 'Brewhaus Coffee', industry: 'food', initials: 'BH', color: 'sand', approverName: 'Arnav Shah', approverEmail: 'arnav.shah@brewhaus.example' },
+    { name: 'Kinetic Shoes', industry: 'fashion', initials: 'KS', color: 'blue', approverName: 'Neha Iyer', approverEmail: 'neha.iyer@kinetic-shoes.example' },
+    { name: 'Nimbu Drinks', industry: 'food', initials: 'ND', color: 'olive' },
+  ],
+  campaigns: [
+    {
+      client: 'Verdant Skin Co.', title: 'Monsoon glow serum — vertical ads', category: 'beauty', status: 'open', budgetMin: 10000, budgetMax: 24000, deadline: inDays(26),
+      brief: 'A dewy, lightweight serum for the monsoon months. Short vertical ads that show the glow on real skin tones without heavy filters or exaggerated claims.',
+      requiredSkills: ['prompt', 'edit'], requiredTools: ['Kling', 'Runway'], contentType: 'ad', formats: ['9:16'], lengthNote: '15 s', style: 'Soft daylight, dewy, honest texture.', languages: ['Hindi', 'English'],
+      rights: rights(['paid_ads', 'organic_social'], 'india', 6, false), deliverables: [{ title: 'Vertical ad', description: '9:16 · 15 s · Hindi VO', quantity: 1 }],
+    },
+    {
+      client: 'Verdant Skin Co.', title: 'Vitamin C ritual — explainer series', category: 'beauty', status: 'open', budgetMin: 14000, budgetMax: 30000, deadline: inDays(40),
+      brief: 'A calm, educational three-part series on a morning vitamin C routine. Clear steps, soft animation, no before/after shots.',
+      requiredSkills: ['story', 'edit'], requiredTools: ['Runway', 'CapCut'], contentType: 'short', formats: ['9:16'], lengthNote: '30–45 s each', style: 'Calm, clear, light animation.', languages: ['English'],
+      rights: rights(['organic_social', 'website'], 'india', 12, false), deliverables: [{ title: 'Explainer episode', description: '9:16 · 30–45 s · English VO', quantity: 1 }],
+    },
+    {
+      client: 'Brewhaus Coffee', title: 'Cold brew launch teaser', category: 'food', status: 'open', budgetMin: 9000, budgetMax: 18000, deadline: inDays(21),
+      brief: 'A moody teaser for a new cold brew can. Condensation, ice, slow pours. Ends on the can and a launch date card.',
+      requiredSkills: ['prompt', 'grade'], requiredTools: ['Veo', 'CapCut'], contentType: 'ad', formats: ['9:16', '16:9'], lengthNote: '10 s', style: 'Dark, cold, glossy highlights.', languages: ['English'],
+      rights: rights(['paid_ads', 'organic_social'], 'india', 3, true), deliverables: [{ title: 'Teaser film', description: '9:16 + 16:9 · 10 s', quantity: 1 }],
+    },
+    {
+      client: 'Kinetic Shoes', title: 'Spring drop lookbook', category: 'fashion', status: 'closed', budgetMin: 12000, budgetMax: 26000, deadline: inDays(-12),
+      brief: 'A styled lookbook for the spring sneaker drop: eight stills with consistent character, light and colour.',
+      requiredSkills: ['consist', 'prompt'], requiredTools: ['Midjourney', 'Photoshop'], contentType: 'static', formats: ['4:5'], lengthNote: '8 stills', style: 'Street, bright, saturated.', languages: [],
+      rights: rights(['organic_social', 'website'], 'worldwide', 12, false), deliverables: [{ title: 'Lookbook stills', description: '4:5 · 8 images', quantity: 1 }],
+    },
+    {
+      client: 'Kinetic Shoes', title: 'Trail runner launch film', category: 'fashion', status: 'open', budgetMin: 20000, budgetMax: 45000, deadline: inDays(50),
+      brief: 'A 20-second launch film for a trail running shoe. Mud, speed, a mountain dawn. Must feel physical, not CGI-clean.',
+      requiredSkills: ['story', 'comp'], requiredTools: ['Kling', 'Runway', 'After Effects'], contentType: 'ad', formats: ['16:9', '9:16'], lengthNote: '20 s', style: 'Gritty, cinematic, natural light.', languages: ['English'],
+      rights: rights(['paid_ads', 'tv_ott'], 'india', 12, false), deliverables: [{ title: 'Launch film', description: '16:9 + 9:16 · 20 s', quantity: 1 }],
+    },
+  ],
+};
+
+async function seedAgency(a, passwordHash) {
+  const user = await upsertUser({ name: a.name, email: a.email, role: 'brand' }, passwordHash);
+  // Clients are subdocuments with ids, so they are only written when the profile is first created.
+  const profile = await BrandProfile.findOneAndUpdate(
+    { userId: user._id },
+    {
+      $set: {
+        companyName: a.name, accountType: 'agency', contactName: 'Demo agency lead', jobTitle: 'Founder', teamSize: '2-10',
+        websiteUrl: 'https://pixelpine.unio.example', description: 'Demo agency. A small creative studio that runs AI-made campaigns for four clients.', isDemo: true,
+      },
+      $setOnInsert: { clients: a.clients },
+    },
+    { upsert: true, returnDocument: 'after', runValidators: true },
+  ).lean();
+  const clientOf = (name) => profile.clients.find((c) => c.name === name);
+  const campaigns = {};
+  for (const { client, ...c } of a.campaigns) {
+    const cl = clientOf(client);
+    campaigns[c.title] = await Campaign.findOneAndUpdate(
+      { brandId: user._id, title: c.title },
+      { $set: { ...c, brandId: user._id, clientId: cl._id, clientName: cl.name } },
+      { upsert: true, returnDocument: 'after', runValidators: true },
+    ).lean();
+  }
+  return { user, campaigns };
+}
+
 async function upsertApplication(campaign, creator, proposal, proposedPrice, status) {
   return Application.findOneAndUpdate(
     { campaignId: campaign._id, creatorId: creator._id },
@@ -307,6 +380,53 @@ async function main() {
     await postMessage(northwind, p2._id, { body: 'These feel exactly like real home studios. Approving now — thank you!' });
     await decideVersion(northwind, p2._id, images._id, 1, { decision: 'approve' });
   }
+
+  // Agency demo (F2): four clients, five briefs, four projects at different stages, two approval links.
+  // Everything goes through the same service calls the app uses, and only on untouched projects.
+  const ag = await seedAgency(agency, passwordHash);
+  const agencyUser = ag.user;
+  const hire = async (campaignTitle, creatorName, proposal, price) => {
+    const campaign = ag.campaigns[campaignTitle];
+    const creator = creators[creatorName];
+    const application = await upsertApplication(campaign, creator, proposal, price, 'accepted');
+    const project = await createProjectFromSource({ campaign, creatorId: creator._id, sourceType: 'application', sourceId: application._id });
+    return { project, creatorUser: await User.findById(creator.userId).lean() };
+  };
+  const untouched = (p) => p.status === 'not_started' && !p.deliverables[0].currentVersion;
+  const sentLinks = [];
+
+  const glow = await hire('Monsoon glow serum — vertical ads', 'Meera Kulkarni', 'I would open on a macro of the serum catching window light, then a quick routine on real skin. Hindi VO, 15 seconds, captions for Reels.', 18000);
+  if (untouched(glow.project)) {
+    const d = glow.project.deliverables[0]._id;
+    const id = glow.project._id;
+    await submitVersion(glow.creatorUser, id, d, { mediaUrl: media('pixelpine-glow-v1', 'mp4'), changeNote: 'First version', toolsUsed: ['Kling', 'CapCut'] });
+    await decideVersion(agencyUser, id, d, 1, { decision: 'changes', note: 'Show the serum in the first 2 seconds, then the routine.' });
+    await submitVersion(glow.creatorUser, id, d, { mediaUrl: media('pixelpine-glow-v2', 'mp4'), changeNote: 'Serum now lands at 1.2 s; routine shortened', toolsUsed: ['Kling', 'Runway', 'CapCut'] });
+    sentLinks.push(['Verdant', await createApprovalLink(agencyUser, id, { deliverableId: String(d) })]);
+  }
+
+  const ritual = await hire('Vitamin C ritual — explainer series', 'Zoya Siddiqui', 'Calm, clean motion graphics with a soft voice-over. Three episodes with one idea each, so the routine is easy to follow.', 24000);
+  if (untouched(ritual.project)) {
+    const d = ritual.project.deliverables[0]._id;
+    await submitVersion(ritual.creatorUser, ritual.project._id, d, { mediaUrl: media('pixelpine-ritual-v1', 'mp4'), changeNote: 'First version', toolsUsed: ['Runway', 'CapCut'] });
+    await decideVersion(agencyUser, ritual.project._id, d, 1, { decision: 'changes', note: 'Slow the pacing a little and show the dropper at 0:12.' });
+  }
+
+  const coldBrew = await hire('Cold brew launch teaser', 'Vihaan Shah', 'Dark, glossy and slow: ice cracking, a long pour, then the can. I would grade it cold with warm highlights on the label.', 15000);
+  if (untouched(coldBrew.project)) {
+    const d = coldBrew.project.deliverables[0]._id;
+    await submitVersion(coldBrew.creatorUser, coldBrew.project._id, d, { mediaUrl: media('pixelpine-coldbrew-v1', 'mp4'), changeNote: 'First version', toolsUsed: ['Veo', 'CapCut'] });
+    sentLinks.push(['Brewhaus', await createApprovalLink(agencyUser, coldBrew.project._id, { deliverableId: String(d) })]);
+  }
+
+  const lookbook = await hire('Spring drop lookbook', 'Sana Qureshi', 'Eight stills with one consistent character and a warm street palette. I will lock the character first, then vary the poses.', 22000);
+  if (untouched(lookbook.project)) {
+    const d = lookbook.project.deliverables[0]._id;
+    await submitVersion(lookbook.creatorUser, lookbook.project._id, d, { mediaUrl: media('pixelpine-lookbook-v1', 'jpg'), changeNote: 'First version', toolsUsed: ['Midjourney', 'Photoshop'] });
+    await decideVersion(agencyUser, lookbook.project._id, d, 1, { decision: 'approve' });
+  }
+  // Links are shown once, so print the demo ones when they are created (nothing is stored but their hash).
+  for (const [client, link] of sentLinks) console.log(`Demo approval link for ${client} (shown once): ${link.url}`);
 
   // Reviewer account (operator-provisioned role; cannot be chosen at sign-up).
   const reviewer = await upsertUser({ name: 'UNIO Reviewer', email: 'reviewer@unio.example', role: 'reviewer' }, passwordHash);

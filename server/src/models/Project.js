@@ -71,6 +71,27 @@ const rightsCardSchema = new mongoose.Schema(
   { _id: false },
 );
 
+/**
+ * Agency approval link (F2): the agency shares a URL, the client approves or asks for changes without logging in.
+ * Only a sha256 of the token is stored; the URL is shown once, when it is created.
+ */
+const approvalLinkSchema = new mongoose.Schema(
+  {
+    tokenHash: { type: String, required: true },
+    deliverableId: { type: mongoose.Schema.Types.ObjectId, required: true },
+    versionNumber: { type: Number, required: true },
+    approverName: { type: String, trim: true, maxlength: 120 },
+    approverEmail: { type: String, lowercase: true, trim: true, maxlength: 254 },
+    createdAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, required: true },
+    openedAt: Date,
+    usedAt: Date,
+    decision: { type: String, enum: ['approved', 'changes'] },
+    note: { type: String, trim: true, maxlength: 2000 },
+  },
+  { _id: true },
+);
+
 const projectSchema = new mongoose.Schema(
   {
     campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', required: true },
@@ -88,11 +109,16 @@ const projectSchema = new mongoose.Schema(
     rightsCard: { type: rightsCardSchema, default: undefined },
     completedAt: Date,
     lastMessageAt: Date,
+    // Agency projects (F2)
+    clientId: { type: mongoose.Schema.Types.ObjectId, index: true },
+    clientName: { type: String, trim: true, maxlength: 120 },
+    approvalLinks: { type: [approvalLinkSchema], default: undefined },
   },
   schemaOptions,
 );
 
 projectSchema.index({ campaignId: 1, creatorId: 1 }, { unique: true });
 projectSchema.index({ 'rightsCard.number': 1 }, { unique: true, sparse: true });
+projectSchema.index({ 'approvalLinks.tokenHash': 1 }, { sparse: true });
 
 export const Project = mongoose.model('Project', projectSchema, 'projects');

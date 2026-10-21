@@ -17,6 +17,7 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { useTaxonomy } from '../../hooks/useTaxonomy.js';
 import { formatDate, relativeDeadline } from '../../lib/format.js';
 import { rightsRows } from '../../lib/rights.js';
+import { ApprovalLinkDialog, useApprovalLink } from '../../components/agency/ApprovalLinkDialog.jsx';
 import { UploadButton } from '../../components/ui/Upload.jsx';
 import { captureVideoFrame } from '../../lib/media.js';
 import { endpoints, uploadFile } from '../../services/api.js';
@@ -170,6 +171,59 @@ function useProjectMutation(id, fn, onDone) {
   });
 }
 
+/**
+ * Agency projects: share the version with the client through a no-login link. Their answer is advice;
+ * the agency still approves or sends changes below, so the creator only ever hears from the agency.
+ */
+function ClientApproval({ project, deliverable, version, onUseNote }) {
+  const { create, created, clear } = useApprovalLink(project._id);
+  const link = (project.approvalLinks ?? [])
+    .filter((l) => String(l.deliverableId) === String(deliverable._id) && l.versionNumber === version.number)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+  const state = !link ? 'none' : link.usedAt ? 'used' : new Date(link.expiresAt) <= new Date() ? 'expired' : 'open';
+  const who = link?.approverName ?? project.clientName ?? 'the client';
+  return (
+    <div className="space-y-2.5 rounded-md border border-line bg-white p-4">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <b className="text-[14px]">Client approval · {project.clientName}</b>
+        {state === 'open' && <Pill tone="wait">{link.openedAt ? 'Opened, no answer yet' : 'Sent, not opened'}</Pill>}
+        {state === 'used' && <Pill tone={link.decision === 'approved' ? 'ok' : 'att'}>{link.decision === 'approved' ? 'Client approved' : 'Changes asked'}</Pill>}
+        {state === 'expired' && <Pill>Link expired</Pill>}
+      </div>
+      {state === 'used' ? (
+        <div className="space-y-2 text-[13.5px]">
+          <p>
+            {who} {link.decision === 'approved' ? 'approved this version' : 'asked for changes'} {short(link.usedAt)}. Their answer is advice: you decide below.
+          </p>
+          {link.note && (
+            <p className="rounded-md bg-soft px-3 py-2 italic">“{link.note}”</p>
+          )}
+          {link.decision === 'changes' && link.note && (
+            <Button size="sm" variant="secondary" onClick={() => onUseNote(link.note)}>
+              Use their note as my changes
+            </Button>
+          )}
+        </div>
+      ) : (
+        <p className="text-[13px] text-steel">
+          {state === 'none'
+            ? 'Share this version with your client. They approve or ask for changes without logging in. UNIO does not email them: you send the link.'
+            : state === 'open'
+              ? `Link for ${who}, sent ${short(link.createdAt)}, works once until ${short(link.expiresAt)}.`
+              : `The link for ${who} ran out on ${short(link.expiresAt)}.`}
+        </p>
+      )}
+      {state !== 'used' && (
+        <Button size="sm" variant={state === 'none' ? 'secondary' : 'ghost'} onClick={() => create.mutate(deliverable._id)} loading={create.isPending}>
+          {state === 'none' ? 'Send to client' : 'Make a new link'}
+        </Button>
+      )}
+      {create.error && <p className="text-[13px] text-att">{create.error.message}</p>}
+      <ApprovalLinkDialog link={created} onClose={clear} />
+    </div>
+  );
+}
+
 function DecisionBox({ project, deliverable }) {
   const v = latestOf(deliverable);
   const [note, setNote] = useState('');
@@ -181,6 +235,7 @@ function DecisionBox({ project, deliverable }) {
   const left = (project.revisionsIncluded ?? 2) - (project.revisionsUsed ?? 0);
   return (
     <div className="space-y-3">
+      {project.clientId && <ClientApproval project={project} deliverable={deliverable} version={v} onUseNote={setNote} />}
       <div className="space-y-3 rounded-md border border-line bg-soft/60 p-4">
         <div className="flex items-center gap-3">
           <Button variant="success" onClick={() => decide.mutate({ decision: 'approve' })} loading={decide.isPending && decide.variables?.decision === 'approve'}>

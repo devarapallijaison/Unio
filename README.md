@@ -178,6 +178,9 @@ Backend environment variables belong in `server/.env`, unless the deployment con
 | `DEEPSEEK_MODEL` | DeepSeek model identifier (default `deepseek-chat`). |
 | `OPENROUTER_API_KEY` | Optional alternative provider key; used when neither key above is set. |
 | `OPENROUTER_MODEL` | Model identifier used with OpenRouter, if enabled. |
+| `AZURE_STORAGE_ACCOUNT`, `AZURE_STORAGE_KEY`, `AZURE_STORAGE_CONTAINER` | Azure Blob Storage for direct file uploads. Uploads stay hidden in the app until all three are set; link fields always work. The storage account needs a CORS rule allowing `PUT` (header `x-ms-blob-type`) from the site origin. |
+| `AZURE_STORAGE_PUBLIC_BASE` | Optional CDN or custom domain in front of the container, used for the saved file URLs. |
+| `PUBLIC_SITE_URL` | Public address of the site, used to build agency approval links (`/approve/<token>`). Defaults to the first `CLIENT_ORIGIN`. |
 | `CLOUDINARY_*` | Optional media-hosting settings, if the current upload integration uses them. |
 
 The frontend may also use `VITE_API_URL` as described in `client/.env.example`. **Never put secrets in `VITE_*` variables**, because client-side values can be exposed in the browser bundle.

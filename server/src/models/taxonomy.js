@@ -136,7 +136,23 @@ export const LIKENESS = list([
   ['real_with_consent', 'Real people, with consent'],
 ]);
 
+/**
+ * Agency client tags (guide §5.4): eight fixed bg/fg pairs. The first four are the v9 client colours;
+ * the rest are muted variants in the same family so an agency can tell up to eight clients apart.
+ */
+export const CLIENT_COLORS = [
+  { id: 'green', bg: '#d3e6da', fg: '#1f4a33' },
+  { id: 'sand', bg: '#ecdcc6', fg: '#5a3a14' },
+  { id: 'blue', bg: '#d3dbe8', fg: '#1d2f55' },
+  { id: 'olive', bg: '#e9e6bf', fg: '#4f4a10' },
+  { id: 'rose', bg: '#ecd6da', fg: '#5a2430' },
+  { id: 'stone', bg: '#dfe3e2', fg: '#2a3a45' },
+  { id: 'violet', bg: '#dcdbea', fg: '#33305c' },
+  { id: 'teal', bg: '#cfe4e3', fg: '#1d4a49' },
+];
+
 const ids = (items) => items.map((i) => i.id);
+export const CLIENT_COLOR_IDS = ids(CLIENT_COLORS);
 export const CATEGORY_IDS = ids(CATEGORIES);
 export const CONTENT_TYPE_IDS = ids(CONTENT_TYPES);
 export const SPECIALIZATION_IDS = ids(SPECIALIZATIONS);
@@ -163,6 +179,7 @@ export const TAXONOMY = Object.freeze({
   formats: FORMATS,
   languages: LANGUAGES,
   teamSizes: TEAM_SIZES,
+  clientColors: CLIENT_COLORS,
   rights: {
     usage: RIGHTS_USAGE,
     regions: RIGHTS_REGIONS,

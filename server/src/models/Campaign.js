@@ -52,6 +52,10 @@ const campaignSchema = new mongoose.Schema(
     sourcePortfolioItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'PortfolioItem' },
     aiFilledFields: { type: [String], default: [] },
     rights: { type: rightsSchema, default: () => ({}) },
+
+    /* Agency (F2): the client this brief is for. clientName is copied so public pages need no lookup. */
+    clientId: { type: mongoose.Schema.Types.ObjectId },
+    clientName: { type: String, trim: true, maxlength: 120 },
   },
   schemaOptions,
 );
@@ -65,5 +69,6 @@ campaignSchema.pre('validate', function checkBudget() {
 campaignSchema.index({ requiredSkills: 1 });
 campaignSchema.index({ createdAt: -1 });
 campaignSchema.index({ status: 1, contentType: 1 });
+campaignSchema.index({ brandId: 1, clientId: 1 });
 
 export const Campaign = mongoose.model('Campaign', campaignSchema, 'campaigns');

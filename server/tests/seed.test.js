@@ -54,7 +54,7 @@ test('seed is idempotent and references are valid', async () => {
   for (const name of ['Fawaz Ahmed', 'Sai Charitha', 'Roha Nawaz', 'Shameer', 'Jaison']) {
     assert.ok(await db.collection('creatorProfiles').findOne({ displayName: name }), `${name} missing`);
   }
-  assert.equal(first.projects, 2);
+  assert.equal(first.projects, 6);
 
   // Every reference resolves.
   const ids = async (coll) => new Set((await db.collection(coll).find({}, { projection: { _id: 1 } }).toArray()).map((d) => String(d._id)));
@@ -101,6 +101,22 @@ test('seed is idempotent and references are valid', async () => {
   assert.ok((await db.collection('messages').countDocuments({ projectId: withHistory._id, kind: 'user' })) >= 2);
   const done = await db.collection('projects').findOne({ status: 'completed' });
   assert.match(done.rightsCard.number, /^UN-\d{4}-\d{4}$/);
+  // F2 demo: Pixel & Pine Studio, four clients, briefs and projects tagged by client, two approval links waiting.
+  const agency = await db.collection('brandProfiles').findOne({ accountType: 'agency' });
+  assert.equal(agency.companyName, 'Pixel & Pine Studio');
+  assert.deepEqual(agency.clients.map((c) => c.name), ['Verdant Skin Co.', 'Brewhaus Coffee', 'Kinetic Shoes', 'Nimbu Drinks']);
+  assert.equal(new Set(agency.clients.map((c) => c.color)).size, 4, 'each client has its own colour');
+  const agencyCampaigns = await db.collection('campaigns').find({ brandId: agency.userId }).toArray();
+  assert.equal(agencyCampaigns.length, 5);
+  assert.ok(agencyCampaigns.every((c) => agency.clients.some((cl) => String(cl._id) === String(c.clientId) && cl.name === c.clientName)), 'every agency brief has a real client');
+  const agencyProjects = await db.collection('projects').find({ brandId: agency.userId }).toArray();
+  assert.equal(agencyProjects.length, 4);
+  assert.ok(agencyProjects.every((p) => p.clientId && p.clientName));
+  const links = agencyProjects.flatMap((p) => p.approvalLinks ?? []);
+  assert.equal(links.length, 2);
+  assert.ok(links.every((l) => /^[a-f0-9]{64}$/.test(l.tokenHash) && !l.usedAt && !l.openedAt), 'links are stored as hashes and nothing is faked as opened or answered');
+  assert.equal(agencyProjects.filter((p) => p.status === 'completed').length, 1);
+
   // Re-seeding must not overwrite media a creator replaced.
   await db.collection('portfolioItems').updateOne({}, { $set: { mediaUrl: 'https://real.cdn.test/x.jpg' } });
   await seed();

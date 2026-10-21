@@ -83,6 +83,8 @@ export const router = createBrowserRouter([
       // Split-screen auth pages carry their own logo (v9 P7/P8), so no public header/footer.
       { path: 'login', element: <GuestOnly><LoginPage /></GuestOnly> },
       { path: 'register', element: <GuestOnly><RegisterPage /></GuestOnly> },
+      // A3: the agency's client approves without an account. Its own minimal page, no site chrome.
+      { path: 'approve/:token', lazy: page(() => import('../pages/public/ClientApprovalPage.jsx')) },
       {
         element: <ProtectedRoute />,
         errorElement: <RouteError />,
@@ -112,6 +114,8 @@ export const router = createBrowserRouter([
         { path: 'applications', lazy: page(() => import('../pages/brand/BrandApplications.jsx')) },
         { path: 'recommended', lazy: page(() => import('../pages/brand/RecommendedCreators.jsx')) },
         { path: 'invitations', lazy: page(() => import('../pages/brand/BrandInvitations.jsx')) },
+        { path: 'clients', lazy: page(() => import('../pages/brand/AgencyClients.jsx')) },
+        { path: 'approvals', lazy: page(() => import('../pages/brand/AgencyApprovals.jsx')) },
         { path: 'projects', lazy: page(() => import('../pages/shared/ProjectsList.jsx'), { role: 'brand' }) },
         { path: 'profile', lazy: page(() => import('../pages/brand/BrandProfile.jsx')) },
       ]),

@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { BrandProfile, CreatorProfile, User } from '../models/index.js';
+import { CLIENT_COLOR_IDS } from '../models/taxonomy.js';
 import { ApiError } from '../utils/ApiError.js';
 import { publicUser } from './serializers.js';
 
@@ -43,7 +44,7 @@ function profileFor(userId, body) {
   };
   if (body.accountType === 'agency') {
     doc.teamSize = body.teamSize;
-    if (body.firstClientName) doc.clients = [{ name: body.firstClientName, initials: initialsOf(body.firstClientName) }];
+    if (body.firstClientName) doc.clients = [{ name: body.firstClientName, initials: initialsOf(body.firstClientName), color: CLIENT_COLOR_IDS[0] }];
   } else {
     doc.industry = body.industry;
   }

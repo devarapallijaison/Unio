@@ -44,6 +44,7 @@ export async function createProjectFromSource({ campaign, creatorId, sourceType,
           deliverables: deliverablesFromCampaign(campaign),
           revisionsIncluded: campaign.revisionsIncluded ?? 2,
           revisionsUsed: 0,
+          ...(campaign.clientId ? { clientId: campaign.clientId, clientName: campaign.clientName } : {}),
           ...(campaign.rights ? { rightsSnapshot: JSON.parse(JSON.stringify(campaign.rights)) } : {}),
         },
       },
@@ -62,7 +63,8 @@ async function hydrate(projects) {
     mapBy(CreatorProfile, projects.map((p) => p.creatorId)),
     mapBy(BrandProfile, projects.map((p) => p.brandId), { key: 'userId' }),
   ]);
-  return projects.map((p) => ({
+  // The approval links (tokens' hashes, approver contact details) are the agency's: getProject adds them back for the brand.
+  return projects.map(({ approvalLinks: _links, ...p }) => ({
     ...p,
     rightsSummary: rightsSummary(p.rightsSnapshot),
     campaign: campaignSummary(campaigns.get(String(p.campaignId))),
@@ -73,6 +75,7 @@ async function hydrate(projects) {
 
 export async function listProjects(filter, q, user) {
   if (q.status) filter.status = q.status;
+  if (q.clientId) filter.clientId = q.clientId;
   const pg = paginate(q);
   const [docs, total] = await Promise.all([
     Project.find(filter).sort({ updatedAt: -1 }).skip(pg.skip).limit(pg.limit).lean(),
@@ -96,7 +99,7 @@ async function participantRole(project, user) {
   throw ApiError.notFound('Project not found');
 }
 
-async function loadForParticipant(user, id, { lean = false } = {}) {
+export async function loadForParticipant(user, id, { lean = false } = {}) {
   const query = Project.findById(id);
   const project = lean ? await query.lean() : await query;
   if (!project) throw ApiError.notFound('Project not found');
@@ -109,15 +112,17 @@ export async function getProject(user, id) {
   const [hydrated] = await hydrate([project]);
   const campaign = await Campaign.findById(project.campaignId, 'brief deliverables requiredSkills requiredTools style formats languages contentType').lean();
   const unread = await unreadByProject(user, [project._id]);
+  // Approval links belong to the agency (brand side): never sent to the creator, and never with their token hash.
+  const approvalLinks = role === 'brand' ? (project.approvalLinks ?? []).map(({ tokenHash: _h, ...link }) => link) : undefined;
   return {
-    project: { ...hydrated, campaign: { ...hydrated.campaign, ...campaign }, unreadCount: unread[String(project._id)] ?? 0 },
+    project: { ...hydrated, ...(approvalLinks ? { approvalLinks } : {}), campaign: { ...hydrated.campaign, ...campaign }, unreadCount: unread[String(project._id)] ?? 0 },
     viewerRole: role,
   };
 }
 
 /* ---------- System messages ---------- */
 
-async function systemMessage(projectId, body, about) {
+export async function systemMessage(projectId, body, about) {
   const now = new Date();
   await Message.create({ projectId, senderRole: 'system', kind: 'system', body, ...(about ? { about } : {}) });
   await Project.updateOne({ _id: projectId }, { $set: { lastMessageAt: now } });
@@ -161,6 +166,7 @@ async function rightsCardFor(project) {
     toolsUsed: [...tools],
     creatorName: creator?.displayName ?? 'Creator',
     brandName: brand?.companyName ?? 'Brand',
+    ...(project.clientName ? { clientName: project.clientName } : {}),
     createdAt: new Date(),
   };
 }

@@ -42,6 +42,19 @@ export const messageLimiter = rateLimit({
     }),
 });
 
+/** Public approval links: per-IP, since the client has no account. */
+export const approvalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: env.isTest ? 1000 : 60,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  handler: (_req, res) =>
+    res.status(429).json({
+      success: false,
+      error: { code: 'RATE_LIMITED', message: 'Too many requests. Please wait a few minutes and try again.', details: [] },
+    }),
+});
+
 /** Upload URLs: 30 per 10 minutes per user (guide §8). */
 export const uploadLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,

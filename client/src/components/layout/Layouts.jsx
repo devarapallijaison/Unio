@@ -6,6 +6,7 @@ import {
   Home,
   Image,
   Inbox,
+  LayoutGrid,
   LogOut,
   Mail,
   Menu,
@@ -13,12 +14,14 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Timer,
   UserRound,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useClientScope, withClient } from '../../lib/clientScope.js';
 import { endpoints } from '../../services/api.js';
 import { Avatar } from '../ui/Avatar.jsx';
 import { ButtonLink, IconButton } from '../ui/Button.jsx';
@@ -75,29 +78,56 @@ export function RootLayout() {
 const ACTIVE_PROJECT_STATUSES = ['not_started', 'in_progress', 'submitted', 'revision_requested'];
 
 /** Real counts from existing list endpoints (their `total`). No badge when the count is unknown or zero. */
-function useNavCounts(role) {
+function useNavCounts(role, clientId = '', agency = false) {
   const applicants = useQuery({
-    queryKey: ['mine', 'applications', 'nav-count'],
-    queryFn: () => endpoints.brand.applications({ status: 'pending', limit: 1 }),
+    queryKey: ['mine', 'applications', 'nav-count', clientId],
+    queryFn: () => endpoints.brand.applications({ status: 'pending', limit: 1, clientId }),
     enabled: role === 'brand',
     staleTime: 60_000,
     select: (d) => d.total,
   });
   const projects = useQuery({
-    queryKey: ['mine', 'projects', 'nav-count', role],
+    queryKey: ['mine', 'projects', 'nav-count', role, clientId],
     queryFn: async () => {
       const list = role === 'brand' ? endpoints.brand.projects : endpoints.creator.projects;
-      const pages = await Promise.all(ACTIVE_PROJECT_STATUSES.map((status) => list({ status, limit: 1 })));
+      const pages = await Promise.all(ACTIVE_PROJECT_STATUSES.map((status) => list({ status, limit: 1, ...(role === 'brand' ? { clientId } : {}) })));
       return pages.reduce((sum, p) => sum + (p.total ?? 0), 0);
     },
     enabled: role === 'brand' || role === 'creator',
     staleTime: 60_000,
   });
-  return { applicants: applicants.data, projects: projects.data };
+  // Agencies: approval links still waiting on the client, plus answers the agency has not acted on yet.
+  const approvals = useQuery({
+    queryKey: ['mine', 'approvals', 'nav-count', clientId],
+    queryFn: () => endpoints.brand.approvals({ clientId }),
+    enabled: agency,
+    staleTime: 60_000,
+    select: (d) => d.counts.awaiting + d.counts.answered,
+  });
+  return { applicants: applicants.data, projects: projects.data, approvals: approvals.data };
 }
 
 /** Only pages that exist today; later phases add Trust rules, Clients… */
-function navFor(role, counts) {
+function navFor(role, counts, agency = false) {
+  if (role === 'brand' && agency) {
+    // Agency workspace (A1/A2): same pages as a brand, scoped by the client switcher, plus clients and approvals.
+    return {
+      workspace: [
+        { to: '/brand/dashboard', label: 'Overview', icon: Home, scoped: true },
+        { to: '/brand/campaigns', label: 'Campaigns', icon: Briefcase, match: ['/brand/campaigns'], scoped: true },
+        { to: '/brand/applications', label: 'Applicants', icon: UserRound, count: counts.applicants, scoped: true },
+        { to: '/brand/recommended', label: 'Recommended', icon: Sparkles, scoped: true },
+        { to: '/brand/projects', label: 'Projects', icon: FolderKanban, count: counts.projects, match: ['/projects/'], scoped: true },
+        { to: '/brand/approvals', label: 'Client approvals', icon: Timer, count: counts.approvals, scoped: true },
+        { to: '/brand/invitations', label: 'Invitations', icon: Mail, scoped: true },
+      ],
+      account: [
+        { to: '/brand/clients', label: 'Clients', icon: LayoutGrid },
+        { to: '/brand/profile', label: 'Agency profile', icon: UserRound },
+      ],
+      cta: { to: '/brand/campaigns/new', label: 'New brief for…', icon: Sparkles, scoped: true },
+    };
+  }
   if (role === 'brand') {
     return {
       workspace: [
@@ -141,11 +171,11 @@ function isActive(item, pathname) {
   return pathname === item.to || pathname.startsWith(`${item.to}/`) || (item.match ?? []).some((m) => pathname.startsWith(m));
 }
 
-function SideLink({ item, active, onNavigate }) {
+function SideLink({ item, active, onNavigate, clientId }) {
   const { to, label, icon: Icon, count } = item;
   return (
     <Link
-      to={to}
+      to={item.scoped ? withClient(to, clientId) : to}
       onClick={onNavigate}
       aria-current={active ? 'page' : undefined}
       className={`flex items-center gap-[11px] rounded-[9px] px-3 py-[9px] text-[14px] transition-colors ${
@@ -178,9 +208,10 @@ function workspaceName(user, profile) {
   return profile?.companyName || profile?.displayName || user?.name || '';
 }
 
-function SidebarContent({ role, nav, pathname, onNavigate, onLogout }) {
+function SidebarContent({ role, nav, pathname, onNavigate, onLogout, agency }) {
   const { user, profile } = useAuth();
   const name = workspaceName(user, profile);
+  const clientId = agency?.clientId ?? '';
   return (
     <>
       <div className="flex flex-col gap-2.5 rounded-xl border border-slate p-3">
@@ -188,14 +219,31 @@ function SidebarContent({ role, nav, pathname, onNavigate, onLogout }) {
           <Avatar name={name} size="sm" />
           <div className="min-w-0">
             <b className="block truncate text-[14.5px] text-white">{name}</b>
-            <small className="block text-[12px] text-mist">{workspaceSub(role, profile)}</small>
+            <small className="block text-[12px] text-mist">
+              {agency ? `Agency · ${agency.clients.length} ${agency.clients.length === 1 ? 'client' : 'clients'}` : workspaceSub(role, profile)}
+            </small>
           </div>
         </div>
+        {agency && (
+          <select
+            aria-label="Client"
+            value={clientId}
+            onChange={(e) => agency.setClient(e.target.value)}
+            className="h-9 w-full rounded-[8px] border border-slate bg-ink px-2.5 text-[13.5px] font-semibold text-white outline-none focus:border-bone"
+          >
+            <option value="">All clients</option>
+            {agency.clients.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
       <p className="px-2.5 pt-1.5 font-mono text-[10px] tracking-[0.2em] text-steel">WORKSPACE</p>
       <nav aria-label="Workspace" className="flex flex-col gap-0.5">
         {nav.workspace.map((item) => (
-          <SideLink key={item.to} item={item} active={isActive(item, pathname)} onNavigate={onNavigate} />
+          <SideLink key={item.to} item={item} active={isActive(item, pathname)} onNavigate={onNavigate} clientId={clientId} />
         ))}
       </nav>
       {nav.account.length > 0 && (
@@ -203,7 +251,7 @@ function SidebarContent({ role, nav, pathname, onNavigate, onLogout }) {
           <p className="px-2.5 pt-1.5 font-mono text-[10px] tracking-[0.2em] text-steel">ACCOUNT</p>
           <nav aria-label="Account" className="flex flex-col gap-0.5">
             {nav.account.map((item) => (
-              <SideLink key={item.to} item={item} active={isActive(item, pathname)} onNavigate={onNavigate} />
+              <SideLink key={item.to} item={item} active={isActive(item, pathname)} onNavigate={onNavigate} clientId={clientId} />
             ))}
           </nav>
         </>
@@ -261,12 +309,20 @@ const SUB_CRUMBS = [
  * `role` defaults to the session role (used by shared pages such as /projects/:id).
  */
 export function DashboardLayout({ role: roleProp }) {
-  const { user, logout } = useAuth();
+  const { user, logout, profile } = useAuth();
   const role = roleProp ?? user?.role;
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const counts = useNavCounts(role);
-  const nav = navFor(role, counts);
+  const isAgency = role === 'brand' && profile?.accountType === 'agency';
+  const { clientId, setClient } = useClientScope();
+  const clientsQuery = useQuery({ queryKey: ['mine', 'clients'], queryFn: endpoints.brand.clients, enabled: isAgency, staleTime: 60_000 });
+  const clients = clientsQuery.data ?? [];
+  // A stale ?client= (archived or unknown) is treated as "All clients".
+  const activeClient = clients.find((c) => c._id === clientId);
+  const scopeId = isAgency && (clientsQuery.isLoading || activeClient) ? clientId : '';
+  const agency = isAgency ? { clients, clientId: scopeId, setClient } : null;
+  const counts = useNavCounts(role, scopeId, isAgency);
+  const nav = navFor(role, counts, isAgency);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -275,7 +331,7 @@ export function DashboardLayout({ role: roleProp }) {
   const sub = SUB_CRUMBS.find(([re]) => re.test(pathname))?.[1];
   // "Campaigns / New brief" on sub-pages; "Workspace / Campaigns" on section pages (v9).
   const crumbRoot = sub && current ? current.label : nav.account.includes(current) ? 'Account' : 'Workspace';
-  const crumbLeaf = sub ?? current?.label;
+  const crumbLeaf = [sub ?? current?.label, activeClient && isAgency && !sub ? `· ${activeClient.name}` : null].filter(Boolean).join(' ');
   const handleLogout = async () => {
     await logout.mutateAsync().catch(() => {});
     navigate('/');
@@ -287,7 +343,7 @@ export function DashboardLayout({ role: roleProp }) {
         <Link to="/" aria-label="UNIO home" className="px-1">
           <Logo onDark className="h-[30px]" />
         </Link>
-        <SidebarContent role={role} nav={nav} pathname={pathname} onLogout={handleLogout} />
+        <SidebarContent role={role} nav={nav} pathname={pathname} onLogout={handleLogout} agency={agency} />
       </aside>
 
       <div className="flex min-w-0 flex-col">
@@ -307,7 +363,7 @@ export function DashboardLayout({ role: roleProp }) {
           <span className="flex-1 sm:hidden" />
           <UnreadBell role={role} />
           {nav.cta && (
-            <ButtonLink to={nav.cta.to} size="sm">
+            <ButtonLink to={nav.cta.scoped ? withClient(nav.cta.to, scopeId) : nav.cta.to} size="sm">
               <nav.cta.icon className="size-4" strokeWidth={1.8} aria-hidden /> {nav.cta.label}
             </ButtonLink>
           )}
@@ -319,11 +375,11 @@ export function DashboardLayout({ role: roleProp }) {
         {menuOpen && (
           <div id="app-menu" className="flex flex-col gap-3.5 bg-navy px-4 py-5 text-bone lg:hidden">
             {nav.cta && (
-              <ButtonLink to={nav.cta.to} variant="light" className="w-full">
+              <ButtonLink to={nav.cta.scoped ? withClient(nav.cta.to, scopeId) : nav.cta.to} variant="light" className="w-full">
                 <nav.cta.icon className="size-4" aria-hidden /> {nav.cta.label}
               </ButtonLink>
             )}
-            <SidebarContent role={role} nav={nav} pathname={pathname} onNavigate={() => setMenuOpen(false)} onLogout={handleLogout} />
+            <SidebarContent role={role} nav={nav} pathname={pathname} onNavigate={() => setMenuOpen(false)} onLogout={handleLogout} agency={agency} />
           </div>
         )}
 
@@ -338,7 +394,7 @@ export function DashboardLayout({ role: roleProp }) {
             return (
               <Link
                 key={item.to}
-                to={item.to}
+                to={item.scoped ? withClient(item.to, scopeId) : item.to}
                 aria-current={active ? 'page' : undefined}
                 className={`flex min-w-0 flex-col items-center gap-[3px] rounded-lg px-2 py-1 ${active ? 'bg-bone text-ink' : ''}`}
               >

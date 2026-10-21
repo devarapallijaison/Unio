@@ -9,6 +9,8 @@ import { ButtonLink } from '../../components/ui/Button.jsx';
 import { EmptyState, ErrorState, Skeleton } from '../../components/ui/Feedback.jsx';
 import { Segmented } from '../../components/ui/Form.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
+import { ClientTag } from '../../components/agency/ClientBadge.jsx';
+import { useClientScope } from '../../lib/clientScope.js';
 import { formatDate } from '../../lib/format.js';
 import { endpoints } from '../../services/api.js';
 
@@ -78,6 +80,7 @@ function KanbanCard({ p }) {
         <b className="text-[15px] leading-snug">{p.campaign?.title}</b>
         <Unread n={p.unreadCount} />
       </div>
+      {p.clientName && <ClientTag name={p.clientName} />}
       <div className="flex items-center gap-2 text-[13.5px]">
         <Avatar name={p.creator?.displayName ?? ''} src={p.creator?.photoUrl} size="sm" /> {p.creator?.displayName}
       </div>
@@ -143,9 +146,10 @@ export default function ProjectsList({ role }) {
   useDocumentTitle('Projects');
   const [tab, setTab] = useState('active');
   const fetcher = role === 'brand' ? endpoints.brand.projects : endpoints.creator.projects;
+  const { clientId } = useClientScope();
   const query = useQuery({
-    queryKey: ['mine', 'projects', role, 'all'],
-    queryFn: () => fetcher({ limit: 50 }),
+    queryKey: ['mine', 'projects', role, 'all', role === 'brand' ? clientId : ''],
+    queryFn: () => fetcher({ limit: 50, ...(role === 'brand' ? { clientId } : {}) }),
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
   });

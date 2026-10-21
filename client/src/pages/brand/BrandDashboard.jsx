@@ -11,8 +11,14 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { relativeDeadline } from '../../lib/format.js';
 import { endpoints } from '../../services/api.js';
+import AgencyOverview from './AgencyOverview.jsx';
 
 export default function BrandDashboard() {
+  const { profile } = useAuth();
+  return profile?.accountType === 'agency' ? <AgencyOverview /> : <BrandOverview />;
+}
+
+function BrandOverview() {
   useDocumentTitle('Brand dashboard');
   const { profile } = useAuth();
   const campaigns = useQuery({ queryKey: ['mine', 'brand-campaigns', { limit: 6 }], queryFn: () => endpoints.brand.campaigns({ limit: 6 }) });

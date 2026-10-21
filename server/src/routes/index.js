@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import * as agency from '../controllers/agency.controller.js';
 import * as authCtrl from '../controllers/auth.controller.js';
 import * as brand from '../controllers/brand.controller.js';
 import * as creator from '../controllers/creator.controller.js';
@@ -9,7 +10,7 @@ import * as upload from '../controllers/upload.controller.js';
 import * as verify from '../controllers/verification.controller.js';
 import { dbState } from '../config/db.js';
 import { optionalAuth, requireAuth, requireRole } from '../middleware/auth.js';
-import { authLimiter, briefDraftLimiter, messageLimiter, uploadLimiter, verifySubmitLimiter } from '../middleware/rateLimit.js';
+import { approvalLimiter, authLimiter, briefDraftLimiter, messageLimiter, uploadLimiter, verifySubmitLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 import {
   APPLICATION_STATUS,
@@ -103,7 +104,7 @@ router.post(
   validate({ params: z.object({ campaignId: objectId }), body: v.invitationBody }),
   brand.invite,
 );
-router.get('/brand/applications', asBrand, validate({ query: v.statusListQuery(APPLICATION_STATUS) }), brand.listApplications);
+router.get('/brand/applications', asBrand, validate({ query: v.brandScopedListQuery(APPLICATION_STATUS) }), brand.listApplications);
 router.patch(
   '/brand/applications/:id/status',
   asBrand,
@@ -112,7 +113,28 @@ router.patch(
 );
 router.get('/brand/invitations', asBrand, validate({ query: v.statusListQuery(INVITATION_STATUS) }), brand.listInvitations);
 router.patch('/brand/invitations/:id/cancel', asBrand, validate({ params: idParams }), brand.cancelInvitation);
-router.get('/brand/projects', asBrand, validate({ query: v.statusListQuery(PROJECT_STATUS) }), brand.listProjects);
+router.get('/brand/projects', asBrand, validate({ query: v.brandScopedListQuery(PROJECT_STATUS) }), brand.listProjects);
+
+/* ---------- Agency: clients and approval links (agencies are brand accounts; the services check) ---------- */
+router.get('/brand/clients', asBrand, agency.listClients);
+router.post('/brand/clients', asBrand, validate({ body: v.clientBody }), agency.createClient);
+router.put('/brand/clients/:clientId', asBrand, validate({ params: v.clientParams, body: v.clientBody }), agency.updateClient);
+router.delete('/brand/clients/:clientId', asBrand, validate({ params: v.clientParams }), agency.archiveClient);
+router.get('/brand/approvals', asBrand, validate({ query: v.approvalsQuery }), agency.listApprovals);
+router.post(
+  '/projects/:id/approval-links',
+  requireAuth,
+  requireRole('brand'),
+  validate({ params: idParams, body: v.approvalLinkBody }),
+  agency.createApprovalLink,
+);
+// No login: the long random token is the credential (rate-limited, never cached, never leaked as a referrer).
+const privateResponse = (_req, res, next) => {
+  res.set({ 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
+  next();
+};
+router.get('/approve/:token', approvalLimiter, privateResponse, validate({ params: v.approvalTokenParams }), agency.getApproval);
+router.post('/approve/:token', approvalLimiter, privateResponse, validate({ params: v.approvalTokenParams, body: v.approvalDecisionBody }), agency.decideApproval);
 
 /* ---------- Verification ---------- */
 router.get('/creator/verifications', asCreator, verify.listOwn);

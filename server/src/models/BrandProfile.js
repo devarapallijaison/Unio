@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { schemaOptions, urlField } from './enums.js';
-import { SPECIALIZATION_IDS, TEAM_SIZE_IDS } from './taxonomy.js';
+import { CLIENT_COLOR_IDS, SPECIALIZATION_IDS, TEAM_SIZE_IDS } from './taxonomy.js';
 
 export const ACCOUNT_TYPES = ['brand', 'agency'];
 
@@ -10,7 +10,7 @@ const clientSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, maxlength: 120 },
     industry: { type: String, enum: SPECIALIZATION_IDS },
     initials: { type: String, trim: true, maxlength: 3 },
-    color: { type: String, trim: true, maxlength: 20 },
+    color: { type: String, enum: CLIENT_COLOR_IDS },
     approverName: { type: String, trim: true, maxlength: 120 },
     approverEmail: { type: String, lowercase: true, trim: true, maxlength: 254 },
     archived: { type: Boolean, default: false },

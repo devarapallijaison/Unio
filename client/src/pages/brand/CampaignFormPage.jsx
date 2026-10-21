@@ -12,6 +12,7 @@ import { Card } from '../../components/ui/Card.jsx';
 import { Alert, ErrorState, PageLoader } from '../../components/ui/Feedback.jsx';
 import { ChipSelect, applyServerErrors } from '../../components/ui/Form.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { useTaxonomy } from '../../hooks/useTaxonomy.js';
 import { BRIEF_FIELDS, filledCount } from '../../lib/brief.js';
@@ -31,6 +32,7 @@ const schema = z
   .object({
     title: z.string().trim().min(4, 'Use at least 4 characters').max(160),
     category: z.string().min(1, 'Choose an industry'),
+    clientId: z.string(),
     brief: z.string().trim().min(20, 'Describe the brief in at least 20 characters').max(5000),
     contentType: z.string(),
     formats: z.array(z.string()),
@@ -70,6 +72,7 @@ const EMPTY_RIGHTS = {
 const EMPTY = {
   title: '',
   category: '',
+  clientId: '',
   brief: '',
   contentType: '',
   formats: [],
@@ -95,6 +98,7 @@ function toForm(c) {
     ...EMPTY,
     title: c.title ?? '',
     category: c.category ?? '',
+    clientId: c.clientId ?? '',
     brief: c.brief ?? '',
     contentType: c.contentType ?? '',
     formats: c.formats ?? [],
@@ -119,6 +123,7 @@ function toBody(v, aiFields) {
   return {
     title: v.title,
     category: v.category,
+    clientId: v.clientId || undefined,
     brief: v.brief,
     contentType: v.contentType || null,
     formats: v.formats,
@@ -350,6 +355,12 @@ export default function CampaignFormPage() {
 
   const existing = useQuery({ queryKey: ['mine', 'brand-campaign', id], queryFn: () => endpoints.brand.campaign(id), enabled: isEdit });
   const brandProfile = useQuery({ queryKey: ['mine', 'brand-profile'], queryFn: endpoints.brand.profile });
+  // Agencies tag every brief with a client ("New brief for…").
+  const { profile: account } = useAuth();
+  const isAgency = account?.accountType === 'agency';
+  const clientsQ = useQuery({ queryKey: ['mine', 'clients'], queryFn: endpoints.brand.clients, enabled: isAgency });
+  const clientList = clientsQ.data ?? [];
+  const urlClient = params.get('client');
   const kit = brandProfile.data?.brandKit;
   const hasKit = !!(kit && (kit.colors?.length || kit.tone?.length || kit.headingFont || kit.neverDo || kit.assetUrls?.length));
 
@@ -380,6 +391,11 @@ export default function CampaignFormPage() {
     setValue(name, value, { shouldDirty: true, shouldValidate: formState.isSubmitted });
     edited(aiKey);
   };
+
+  useEffect(() => {
+    if (isEdit || !isAgency || !urlClient || getValues('clientId')) return;
+    if (clientList.some((c) => c._id === urlClient)) setValue('clientId', urlClient);
+  }, [isEdit, isAgency, urlClient, clientList, getValues, setValue]);
 
   useEffect(() => {
     if (!existing.data) return;
@@ -470,6 +486,10 @@ export default function CampaignFormPage() {
   const submit = (status) => {
     if (status === 'open' && rightsMissing(getValues('rights')).length) setRightsError(true);
     return handleSubmit((v) => {
+      if (isAgency && !v.clientId) {
+        setError('clientId', { message: 'Choose which client this brief is for' });
+        return;
+      }
       if (status === 'open' && rightsMissing(v.rights).length) {
         setRightsError(true);
         rightsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -496,7 +516,7 @@ export default function CampaignFormPage() {
   return (
     <>
       <PageHeader
-        eyebrow={isEdit ? 'Edit brief' : 'AI brief builder'}
+        eyebrow={isEdit ? 'Edit brief' : isAgency ? `New brief for ${clientList.find((c) => c._id === values.clientId)?.name ?? '…'}` : 'AI brief builder'}
         title={
           <>
             Say it in one line. <span className="font-medium text-slate">We’ll write the brief.</span>
@@ -768,6 +788,18 @@ export default function CampaignFormPage() {
                   ))}
                 </select>
               </Tile>
+              {isAgency && (
+                <Tile label="Client" error={errors.clientId?.message} htmlFor={`${uid}-client`}>
+                  <select id={`${uid}-client`} className={bare} {...register('clientId')}>
+                    <option value="">Choose a client…</option>
+                    {clientList.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </Tile>
+              )}
               <Tile label="Industry" ai={ai('category')} error={errors.category?.message} htmlFor={`${uid}-cat`} onEdit={() => edited('category')}>
                 <select id={`${uid}-cat`} className={bare} {...register('category')}>
                   <option value="">Choose…</option>

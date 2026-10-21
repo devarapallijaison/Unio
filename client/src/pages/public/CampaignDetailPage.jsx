@@ -206,7 +206,8 @@ export default function CampaignDetailPage() {
                 <h1 className="text-[26px] leading-tight sm:text-[34px]">{campaign.title}</h1>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-steel">
                   <span>
-                    For <b className="font-bold text-ink">{brand?.companyName}</b>
+                    For <b className="font-bold text-ink">{campaign.clientName ?? brand?.companyName}</b>
+                    {campaign.clientName ? ` · via ${brand?.companyName}` : ''}
                     {campaign.category ? ` · ${labelOf(taxonomy, 'specializations', campaign.category)}` : ''}
                   </span>
                   {brand?.accountType === 'agency' && <Pill dot={false}>Agency</Pill>}

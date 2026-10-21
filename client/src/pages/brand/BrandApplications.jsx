@@ -7,15 +7,17 @@ import { PageHeader } from '../../components/layout/Layouts.jsx';
 import { EmptyState, ErrorState, Skeleton } from '../../components/ui/Feedback.jsx';
 import { Pagination } from '../../components/ui/Pagination.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
+import { useClientScope } from '../../lib/clientScope.js';
 import { endpoints } from '../../services/api.js';
 
 export default function BrandApplications() {
   useDocumentTitle('Applications');
   const [status, setStatus] = useState('pending');
   const [page, setPage] = useState(1);
+  const { clientId } = useClientScope();
   const query = useQuery({
-    queryKey: ['mine', 'brand-applications', { status, page }],
-    queryFn: () => endpoints.brand.applications({ status, page, limit: 10 }),
+    queryKey: ['mine', 'brand-applications', { status, page, client: clientId }],
+    queryFn: () => endpoints.brand.applications({ status, page, limit: 10, clientId }),
   });
 
   return (

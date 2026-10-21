@@ -15,6 +15,7 @@ import { useToast } from '../../components/ui/Toast.jsx';
 import { PreChecks, passSummary } from '../../components/verification/PreChecks.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { formatDate } from '../../lib/format.js';
+import { embedUrl, isVideoFile } from '../../lib/embed.js';
 import { statusLabel } from '../../lib/status.js';
 import { endpoints } from '../../services/api.js';
 
@@ -28,25 +29,11 @@ function ago(value) {
   return hours < 48 ? `${hours} h` : `${Math.round(hours / 24)} d`;
 }
 
-const VIDEO_FILE = /\.(mp4|webm|mov)(\?|$)/i;
-function embedUrl(raw) {
-  try {
-    const u = new URL(raw);
-    const host = u.hostname.replace(/^www\./, '');
-    if (host === 'youtu.be') return `https://www.youtube-nocookie.com/embed/${u.pathname.slice(1)}`;
-    if (host === 'youtube.com' && u.searchParams.get('v')) return `https://www.youtube-nocookie.com/embed/${u.searchParams.get('v')}`;
-    if (host === 'vimeo.com' && /^\/\d+/.test(u.pathname)) return `https://player.vimeo.com/video/${u.pathname.split('/')[1]}`;
-  } catch {
-    /* fall through to a plain link */
-  }
-  return null;
-}
-
 /** The recording: played here when the host allows it, otherwise opened in a new tab. The code is shown beside it for comparison. */
 function Recording({ url, code }) {
   const placeholder = isPlaceholderUrl(url);
   const embed = !placeholder && embedUrl(url);
-  const video = !placeholder && VIDEO_FILE.test(url);
+  const video = !placeholder && isVideoFile(url);
   return (
     <div className="relative overflow-hidden rounded-lg bg-ink">
       {embed ? (

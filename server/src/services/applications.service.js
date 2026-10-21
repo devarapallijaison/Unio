@@ -99,7 +99,7 @@ export async function listCampaignApplications(user, campaignId, q) {
 
 /** Every application across the brand's own campaigns (dashboard inbox). */
 export async function listBrandApplications(user, q) {
-  const campaignIds = await Campaign.find({ brandId: user._id }).distinct('_id');
+  const campaignIds = await Campaign.find({ brandId: user._id, ...(q.clientId ? { clientId: q.clientId } : {}) }).distinct('_id');
   const filter = { campaignId: { $in: campaignIds } };
   if (q.status) filter.status = q.status;
   const pg = paginate(q);

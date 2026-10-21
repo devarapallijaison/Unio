@@ -11,6 +11,7 @@ import {
 } from '../models/enums.js';
 import {
   CATEGORY_IDS,
+  CLIENT_COLOR_IDS,
   CONTENT_TYPE_IDS,
   DURATION_MONTHS,
   FORMAT_IDS,
@@ -259,6 +260,29 @@ export const portfolioBody = z.object({
     .optional(),
 });
 
+/* ---------- Agency clients and approval links (F2) ---------- */
+const approverEmail = z.union([z.literal(''), z.email('Enter a valid email address').max(254)]);
+
+export const clientBody = z
+  .object({
+    name: text(120, 2),
+    industry: z.enum(SPECIALIZATION_IDS).optional().nullable(),
+    color: z.enum(CLIENT_COLOR_IDS).optional(),
+    approverName: text(120).optional(),
+    approverEmail: approverEmail.optional(),
+  })
+  .strict();
+export const clientParams = z.object({ clientId: objectId });
+
+export const approvalLinkBody = z
+  .object({ deliverableId: objectId, approverName: text(120).optional(), approverEmail: approverEmail.optional() })
+  .strict();
+export const approvalTokenParams = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/, 'Invalid link') });
+export const approvalDecisionBody = z
+  .object({ decision: z.enum(['approve', 'changes']), note: text(2000).optional(), approverName: text(120).optional() })
+  .strict();
+export const approvalsQuery = z.object({ clientId: objectId.optional() });
+
 /* ---------- Uploads (Azure Blob) ---------- */
 export const uploadSasBody = z
   .object({
@@ -318,6 +342,7 @@ export const campaignBody = z
     title: text(160, 4),
     brief: text(5000, 20),
     category: z.enum(SPECIALIZATION_IDS, 'Choose an industry'),
+    clientId: objectId.optional(), // agencies only; checked in the service
     budgetMin: money.optional().nullable(),
     budgetMax: money.optional().nullable(),
     deadline: z.coerce.date().optional().nullable(),
@@ -344,6 +369,7 @@ export const campaignStatusBody = z.object({ status: z.enum(CAMPAIGN_STATUS) });
 
 export const brandListQuery = z.object({
   status: z.enum(CAMPAIGN_STATUS).optional(),
+  clientId: objectId.optional(),
   ...pageQuery,
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
@@ -355,6 +381,9 @@ export const statusListQuery = (statuses) =>
     ...pageQuery,
     limit: z.coerce.number().int().min(1).max(50).default(20),
   });
+
+/** Brand-side lists an agency can scope to one client (?client= in the app). */
+export const brandScopedListQuery = (statuses) => statusListQuery(statuses).extend({ clientId: objectId.optional() });
 
 /* ---------- Applications & invitations ---------- */
 export const applicationBody = z.object({

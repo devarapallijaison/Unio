@@ -9,6 +9,7 @@ import { EmptyState, ErrorState, Skeleton } from '../../components/ui/Feedback.j
 import { Segmented } from '../../components/ui/Form.jsx';
 import { Pagination } from '../../components/ui/Pagination.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
+import { useClientScope } from '../../lib/clientScope.js';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { useTaxonomy } from '../../hooks/useTaxonomy.js';
 import { BRIEF_FIELDS, aiFilledCount, filledCount } from '../../lib/brief.js';
@@ -48,7 +49,7 @@ function CampaignCell({ c, taxonomy }) {
     const ai = aiFilledCount(c);
     meta = ai ? `Draft · AI filled ${ai} of ${BRIEF_FIELDS.length} fields` : `Draft · ${filledCount(c)} of ${BRIEF_FIELDS.length} fields filled`;
   } else {
-    meta = [categoryName(taxonomy, c.category), c.status === 'open' ? relativeDeadline(c.deadline) : 'Closed'].filter(Boolean).join(' · ');
+    meta = [c.clientName, categoryName(taxonomy, c.category), c.status === 'open' ? relativeDeadline(c.deadline) : 'Closed'].filter(Boolean).join(' · ');
   }
   return (
     <>
@@ -65,9 +66,10 @@ export default function BrandCampaigns() {
   const { data: taxonomy } = useTaxonomy();
   const [status, setStatus] = useState('open');
   const [page, setPage] = useState(1);
+  const { clientId } = useClientScope();
   const query = useQuery({
-    queryKey: ['mine', 'brand-campaigns', { status, page }],
-    queryFn: () => endpoints.brand.campaigns({ status, page, limit: 10 }),
+    queryKey: ['mine', 'brand-campaigns', { status, page, client: clientId }],
+    queryFn: () => endpoints.brand.campaigns({ status, page, limit: 10, clientId }),
     placeholderData: keepPreviousData,
   });
   const counts = query.data?.statusCounts;

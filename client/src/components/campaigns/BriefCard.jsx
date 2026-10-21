@@ -36,7 +36,7 @@ export function BriefCard({ campaign, match, preview = false }) {
         <div className="min-w-0 flex-1">
           <b className="block text-[17px] tracking-[-0.02em]">{campaign.title}</b>
           <span className="text-[12.5px] text-steel">
-            {campaign.brand?.companyName}
+            {campaign.clientName ? `For ${campaign.clientName} · via ${campaign.brand?.companyName}` : campaign.brand?.companyName}
             {campaign.category ? ` · ${categoryName(taxonomy, campaign.category)}` : ''}
           </span>
         </div>

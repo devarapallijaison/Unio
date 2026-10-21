@@ -116,6 +116,16 @@ export const endpoints = {
     cancelInvitation: (id) => api.patch(`/brand/invitations/${id}/cancel`),
     projects: (params) => api.get('/brand/projects', params),
     draftBrief: (body) => api.post('/brand/briefs/draft', body),
+    clients: () => api.get('/brand/clients'),
+    createClient: (body) => api.post('/brand/clients', body),
+    updateClient: (id, body) => api.put(`/brand/clients/${id}`, body),
+    archiveClient: (id) => api.delete(`/brand/clients/${id}`),
+    approvals: (params) => api.get('/brand/approvals', params),
+  },
+  // Public, no login: the client's approval link (A3).
+  approval: {
+    get: (token) => api.get(`/approve/${token}`),
+    decide: (token, body) => api.post(`/approve/${token}`, body),
   },
   uploads: {
     config: () => api.get('/uploads/config'),
@@ -128,6 +138,7 @@ export const endpoints = {
   projects: {
     get: (id) => api.get(`/projects/${id}`),
     setStatus: (id, status) => api.patch(`/projects/${id}/status`, { status }),
+    createApprovalLink: (id, body) => api.post(`/projects/${id}/approval-links`, body),
     updateDeliverable: (id, deliverableId, body) => api.patch(`/projects/${id}/deliverables/${deliverableId}`, body),
     feedback: (id, body) => api.post(`/projects/${id}/feedback`, body),
     submitVersion: (id, deliverableId, body) => api.post(`/projects/${id}/deliverables/${deliverableId}/versions`, body),

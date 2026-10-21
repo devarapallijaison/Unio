@@ -1,4 +1,5 @@
-import { Application, BrandProfile, Campaign } from '../models/index.js';
+import mongoose from 'mongoose';
+import { Application, BrandProfile, Campaign, Project } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 import { mapBy } from '../utils/db.js';
 import { ciExact, escapeRegex, pageResult, paginate } from '../utils/http.js';
@@ -89,11 +90,12 @@ export async function requireOwnCampaign(user, id, { lean = true } = {}) {
 export async function listOwnCampaigns(user, q) {
   const filter = { brandId: user._id };
   if (q.status) filter.status = q.status;
+  if (q.clientId) filter.clientId = q.clientId;
   const pg = paginate(q);
   const [docs, total, statusRows] = await Promise.all([
     Campaign.find(filter).sort({ createdAt: -1 }).skip(pg.skip).limit(pg.limit).lean(),
     Campaign.countDocuments(filter),
-    Campaign.aggregate([{ $match: { brandId: user._id } }, { $group: { _id: '$status', n: { $sum: 1 } } }]),
+    Campaign.aggregate([{ $match: { brandId: user._id, ...(q.clientId ? { clientId: new mongoose.Types.ObjectId(q.clientId) } : {}) } }, { $group: { _id: '$status', n: { $sum: 1 } } }]),
   ]);
 
   const counts = await Application.aggregate([
@@ -133,16 +135,45 @@ function assertRightsForOpen(campaign) {
   }
 }
 
+/**
+ * Agencies tag every brief with a client (F2). Brands cannot. The client must be one of this agency's own,
+ * active clients: anything else is "not found", never a hint that another agency's client exists.
+ */
+async function resolveClient(user, clientId, { required }) {
+  const profile = await BrandProfile.findOne({ userId: user._id }, 'accountType clients').lean();
+  if (profile?.accountType !== 'agency') {
+    if (clientId) throw ApiError.badRequest('Clients are for agency accounts', [{ location: 'body', field: 'clientId', message: 'Only agencies can tag a brief with a client' }]);
+    return null;
+  }
+  if (!clientId) {
+    if (!required) return null;
+    throw new ApiError(400, 'CLIENT_REQUIRED', 'Choose which client this brief is for', [{ location: 'body', field: 'clientId', message: 'Choose a client' }]);
+  }
+  const client = (profile.clients ?? []).find((c) => String(c._id) === String(clientId) && !c.archived);
+  if (!client) throw ApiError.notFound('Client not found');
+  return { clientId: client._id, clientName: client.name };
+}
+
 export async function createCampaign(user, data) {
   if (data.status === 'open') assertRightsForOpen(data);
+  const { clientId, ...rest } = data;
+  const client = await resolveClient(user, clientId, { required: true });
   // brandId always comes from the session, never from the request body.
-  const campaign = await Campaign.create({ ...data, brandId: user._id });
+  const campaign = await Campaign.create({ ...rest, ...(client ?? {}), brandId: user._id });
   return withRights(campaign.toObject());
 }
 
 export async function updateCampaign(user, id, data) {
   const campaign = await requireOwnCampaign(user, id, { lean: false });
-  campaign.set(data);
+  const { clientId, ...rest } = data;
+  if (clientId && String(clientId) !== String(campaign.clientId ?? '')) {
+    // Moving a brief to another client is fine until work has started; after that the project keeps its client.
+    if (await Project.exists({ campaignId: campaign._id })) {
+      throw ApiError.conflict('This brief already has a project, so its client can no longer change.', 'CLIENT_LOCKED');
+    }
+    campaign.set(await resolveClient(user, clientId, { required: true }));
+  }
+  campaign.set(rest);
   if (campaign.status === 'open') assertRightsForOpen(campaign.toObject());
   await campaign.save();
   return withRights(campaign.toObject());

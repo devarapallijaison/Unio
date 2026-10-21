@@ -9,6 +9,7 @@ import { Button, ButtonLink } from '../../components/ui/Button.jsx';
 import { Card, SectionHead } from '../../components/ui/Card.jsx';
 import { Alert, ErrorState, PageLoader } from '../../components/ui/Feedback.jsx';
 import { RightsStrip, RightsTicket } from '../../components/ui/Rights.jsx';
+import { MatchRing, Reasons } from '../../components/ui/Match.jsx';
 import { ToolChip } from '../../components/ui/Trust.jsx';
 import { toolStateFor } from '../../components/creators/CreatorCard.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -20,7 +21,36 @@ import { authLink } from '../../lib/returnTo.js';
 import { endpoints } from '../../services/api.js';
 import NotFoundPage from './NotFoundPage.jsx';
 
-/* v9 P5 — campaign detail + apply. The match ring and "here's why" reasons arrive with Phase 7 (F4). */
+/* v9 P5 — campaign detail + apply. Signed-in creators see their match ring and the reasons (F4). */
+
+function matchHeading(score) {
+  if (score >= 80) return 'You’re a strong match';
+  if (score >= 60) return 'You’re a good match';
+  return 'A partial match';
+}
+
+function CreatorMatch({ match, name }) {
+  if (!match) return null;
+  return (
+    <div className="mb-5 border-b border-line pb-5">
+      <div className="flex items-center gap-4">
+        <MatchRing score={match.score} size="lg" />
+        <div>
+          <h2 className="text-[19px]">{matchHeading(match.score)}</h2>
+          <p className="text-[13.5px] text-steel">{name ? `${name}, here’s why` : 'Here’s why'}</p>
+        </div>
+      </div>
+      <Reasons items={match.reasons} className="mt-4 text-[13.5px]" />
+      {match.warnings.length > 0 && (
+        <ul className="mt-2 space-y-1 text-[12.5px] text-wait">
+          {match.warnings.map((w) => (
+            <li key={w}>· {w}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 const STILL_RE = /still|image|photo|frame|poster|banner|carousel|thumbnail/i;
 const IMAGE_TYPES = ['photo', 'static', 'poster', 'thumb'];
@@ -68,6 +98,7 @@ function SidePanel({ campaign, viewer, user, applyFocus, roleNotice, onSignIn })
   if (user?.role === 'creator') {
     return (
       <>
+        <CreatorMatch match={campaign.match} name={user.name?.split(' ')[0]} />
         <h2 className="mb-1 text-[19px]">Apply to this brief</h2>
         <p className="mb-5 text-[13.5px] text-steel">Budget {formatBudget(campaign.budgetMin, campaign.budgetMax)}</p>
         <ApplyForm campaign={campaign} autoFocus={applyFocus} />
@@ -269,7 +300,9 @@ export default function CampaignDetailPage() {
             <p className="text-[13px] leading-relaxed text-steel">
               {viewer?.isOwner
                 ? 'Creators see this page as written. Rights shown here are what they agree to when they apply.'
-                : 'Only creators can apply. The brand sees your price, pitch, chosen work and that you accepted these rights.'}
+                : campaign.match
+                  ? 'Only you see this match. Brands reviewing applicants see the same score and reasons.'
+                  : 'Only creators can apply. The brand sees your price, pitch, chosen work and that you accepted these rights.'}
             </p>
           </Card>
         </aside>

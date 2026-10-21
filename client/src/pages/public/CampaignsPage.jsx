@@ -5,11 +5,12 @@ import { Button } from '../../components/ui/Button.jsx';
 import { EmptyState, ErrorState, Skeleton } from '../../components/ui/Feedback.jsx';
 import { ChipSelect, Segmented } from '../../components/ui/Form.jsx';
 import { Pagination } from '../../components/ui/Pagination.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { useUrlFilters } from '../../hooks/useUrlFilters.js';
 import { endpoints } from '../../services/api.js';
 
-/* v9 P4 — open campaigns. Filters live in the URL. "Best match" sorting and match rings arrive with Phase 7 (F4). */
+/* v9 P4 — open campaigns. Filters live in the URL. Signed-in creators get match rings and "Best match" (F4). */
 
 const KEYS = ['group', 'exclusive', 'minBudget', 'sort', 'page'];
 const GROUPS = [
@@ -23,12 +24,16 @@ const GROUPS = [
 export default function CampaignsPage() {
   useDocumentTitle('Open campaigns');
   const { values, set, clear } = useUrlFilters(KEYS);
+  const { user } = useAuth();
+  const isCreator = user?.role === 'creator';
+  const defaultSort = isCreator ? 'match' : 'newest';
+  const sort = values.sort || defaultSort;
   const page = Number(values.page) || 1;
   const groups = values.group ? values.group.split(',') : [];
 
   const query = useQuery({
-    queryKey: ['pub', 'campaigns', values],
-    queryFn: () => endpoints.campaigns.list({ ...values, sort: values.sort || 'newest', page, limit: 12 }),
+    queryKey: ['pub', 'campaigns', values, user?._id ?? 'guest'],
+    queryFn: () => endpoints.campaigns.list({ ...values, sort, page, limit: 12 }),
     placeholderData: keepPreviousData,
   });
   const data = query.data;
@@ -46,9 +51,10 @@ export default function CampaignsPage() {
         </div>
         <Segmented
           label="Sort campaigns"
-          value={values.sort || 'newest'}
-          onChange={(v) => set({ sort: v === 'newest' ? '' : v })}
+          value={sort}
+          onChange={(v) => set({ sort: v === defaultSort ? '' : v })}
           options={[
+            ...(isCreator ? [{ value: 'match', label: 'Best match' }] : []),
             { value: 'newest', label: 'Newest' },
             { value: 'deadline', label: 'Deadline' },
             { value: 'budget_desc', label: 'Budget' },
@@ -96,7 +102,7 @@ export default function CampaignsPage() {
         <>
           <div className={`grid gap-4 md:grid-cols-2 ${query.isFetching ? 'opacity-70' : ''}`}>
             {data.items.map((c) => (
-              <BriefCard key={c._id} campaign={c} />
+              <BriefCard key={c._id} campaign={c} match={c.match?.score} />
             ))}
           </div>
           <div className="mt-8">

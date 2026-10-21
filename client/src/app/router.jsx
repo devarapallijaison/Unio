@@ -110,6 +110,7 @@ export const router = createBrowserRouter([
         { path: 'campaigns/:id/edit', lazy: page(() => import('../pages/brand/CampaignFormPage.jsx')) },
         { path: 'campaigns/:id/applicants', lazy: page(() => import('../pages/brand/CampaignApplicants.jsx')) },
         { path: 'applications', lazy: page(() => import('../pages/brand/BrandApplications.jsx')) },
+        { path: 'recommended', lazy: page(() => import('../pages/brand/RecommendedCreators.jsx')) },
         { path: 'invitations', lazy: page(() => import('../pages/brand/BrandInvitations.jsx')) },
         { path: 'projects', lazy: page(() => import('../pages/shared/ProjectsList.jsx'), { role: 'brand' }) },
         { path: 'profile', lazy: page(() => import('../pages/brand/BrandProfile.jsx')) },

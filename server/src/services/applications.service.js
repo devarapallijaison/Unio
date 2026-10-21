@@ -4,6 +4,7 @@ import { mapBy, withTransaction } from '../utils/db.js';
 import { pageResult, paginate } from '../utils/http.js';
 import { requireOwnCampaign } from './campaigns.service.js';
 import { requireCreatorProfile } from './profile.service.js';
+import { matchesForCampaign } from './matching.service.js';
 import { createProjectFromSource } from './projects.service.js';
 import { campaignSummary, creatorSummary, publicBrand } from './serializers.js';
 
@@ -82,7 +83,18 @@ export async function listCampaignApplications(user, campaignId, q) {
     Application.find(filter).sort({ submittedAt: -1 }).skip(pg.skip).limit(pg.limit).lean(),
     Application.countDocuments(filter),
   ]);
-  return { campaign, ...pageResult(await withCreators(docs), total, pg) };
+  // F4: every applicant carries the same explainable match the brand sees on B4.
+  const profiles = await CreatorProfile.find({ _id: { $in: docs.map((d) => d.creatorId) } }).lean();
+  const matches = await matchesForCampaign(campaign, profiles);
+  const byCreator = new Map(profiles.map((p, i) => [String(p._id), matches[i]]));
+  const sampleIds = docs.flatMap((d) => d.samplePieceIds ?? []);
+  const samples = await mapBy(PortfolioItem, sampleIds, { projection: 'title mediaUrl thumbnailUrl mediaType' });
+  const items = (await withCreators(docs)).map((a) => ({
+    ...a,
+    match: byCreator.get(String(a.creatorId)) ?? null,
+    samplePieces: (a.samplePieceIds ?? []).map((id) => samples.get(String(id))).filter(Boolean),
+  }));
+  return { campaign, ...pageResult(items, total, pg) };
 }
 
 /** Every application across the brand's own campaigns (dashboard inbox). */

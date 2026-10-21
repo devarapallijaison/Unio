@@ -343,19 +343,28 @@ describe('projects & deliverables', () => {
 });
 
 describe('matching', () => {
-  test('scores skill/tool/category/budget/availability with reasons', () => {
+  test('scores every F4 signal with reasons (full weights in round2.matching.test.js)', () => {
     const campaign = campaignPayload();
-    const strong = scoreMatch(campaign, {
-      skills: ['edit', 'prompt'],
-      tools: ['Kling', 'Runway'],
-      specializations: ['beauty'],
-      startingPrice: 6000,
-      availability: 'available',
-    });
+    const strong = scoreMatch(
+      campaign,
+      {
+        contentTypes: ['ad'],
+        skills: ['edit', 'prompt'],
+        tools: ['Kling', 'Runway'],
+        verifiedTools: ['Kling', 'Runway'],
+        specializations: ['beauty'],
+        formats: ['9:16'],
+        startingPrice: 6000,
+        trustLevel: 5,
+        availability: 'available',
+      },
+      { skillCounts: { edit: 1, prompt: 1 } },
+    );
     assert.equal(strong.score, 100);
     assert.ok(strong.reasons.some((r) => r.includes('Kling')));
     const weak = scoreMatch(campaign, { skills: [], tools: [], specialties: [], startingPrice: 90000, availability: 'unavailable' });
-    assert.equal(weak.score, 0);
+    assert.equal(weak.score, 5, 'only the "no language asked" points');
+    assert.equal(weak.excluded, true, 'unavailable creators are left out of recommendations');
   });
 
   test('recommendations endpoint is owner-only', async () => {

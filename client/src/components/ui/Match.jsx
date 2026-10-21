@@ -26,9 +26,9 @@ export function MatchRing({ score, size = 'md', dark = false, className = '' }) 
 
 /**
  * Label · bar · value rows (v9 .bars). rows: [{ label, points, max, half? }].
- * `half` = counted at half weight (e.g. self-reported tools) and drawn in mist.
+ * `half` = counted at half weight (e.g. self-reported tools) and drawn in mist. `percent` shows 0–100% instead of points/max.
  */
-export function ScoreBars({ rows = [], className = '' }) {
+export function ScoreBars({ rows = [], percent = false, className = '' }) {
   return (
     <div className={`flex flex-col gap-[7px] ${className}`}>
       {rows.map(({ label, points, max, half }) => {
@@ -40,8 +40,14 @@ export function ScoreBars({ rows = [], className = '' }) {
               <i className={`absolute inset-y-0 left-0 rounded ${half ? 'bg-mist' : 'bg-navy'}`} style={{ width: `${pct}%` }} />
             </b>
             <span className="text-right tabular-nums">
-              {points}
-              <span className="text-steel">/{max}</span>
+              {percent ? (
+                `${Math.round(pct)}%`
+              ) : (
+                <>
+                  {points}
+                  <span className="text-steel">/{max}</span>
+                </>
+              )}
             </span>
           </div>
         );

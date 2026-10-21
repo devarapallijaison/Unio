@@ -96,7 +96,7 @@ function useNavCounts(role) {
   return { applicants: applicants.data, projects: projects.data };
 }
 
-/** Only pages that exist today; later phases add Recommended, Messages, Trust rules, Clients… */
+/** Only pages that exist today; later phases add Trust rules, Clients… */
 function navFor(role, counts) {
   if (role === 'brand') {
     return {
@@ -104,6 +104,7 @@ function navFor(role, counts) {
         { to: '/brand/dashboard', label: 'Overview', icon: Home },
         { to: '/brand/campaigns', label: 'Campaigns', icon: Briefcase, match: ['/brand/campaigns'] },
         { to: '/brand/applications', label: 'Applicants', icon: UserRound, count: counts.applicants },
+        { to: '/brand/recommended', label: 'Recommended', icon: Sparkles },
         { to: '/brand/projects', label: 'Projects', icon: FolderKanban, count: counts.projects, match: ['/projects/'] },
         { to: '/brand/invitations', label: 'Invitations', icon: Mail },
       ],
@@ -251,6 +252,7 @@ const SUB_CRUMBS = [
   [/\/campaigns\/new$/, 'New brief'],
   [/\/campaigns\/[^/]+\/edit$/, 'Edit brief'],
   [/^\/projects\/[^/]+$/, 'Project'],
+  [/\/campaigns\/[^/]+\/applicants$/, 'Applicants'],
 ];
 
 /**

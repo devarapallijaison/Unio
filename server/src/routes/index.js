@@ -40,7 +40,7 @@ router.get('/auth/me', requireAuth, authCtrl.me);
 router.get('/creators', validate({ query: v.creatorListQuery }), pub.listCreators);
 router.get('/creators/:id', optionalAuth, validate({ params: idParams }), pub.getCreator);
 router.get('/portfolio/:id', validate({ params: idParams }), pub.getPortfolioPiece);
-router.get('/campaigns', validate({ query: v.campaignListQuery }), pub.listCampaigns);
+router.get('/campaigns', optionalAuth, validate({ query: v.campaignListQuery }), pub.listCampaigns);
 router.get('/campaigns/categories', pub.listCategories);
 router.get('/campaigns/:id', optionalAuth, validate({ params: idParams }), pub.getCampaign);
 router.post(

@@ -157,7 +157,8 @@ export const campaignListQuery = z.object({
   // P4 chips: content-type groups (video, ugc, images, 3d, motion) and "Exclusive only".
   group: csv(['video', 'ugc', 'images', '3d', 'motion'], 'content group'),
   exclusive: flag,
-  sort: z.enum(['newest', 'deadline', 'budget_desc']).default('newest'),
+  // 'match' ranks by the signed-in creator's match score (F4); otherwise it falls back to newest.
+  sort: z.enum(['newest', 'deadline', 'budget_desc', 'match']).default('newest'),
   ...pageQuery,
 });
 

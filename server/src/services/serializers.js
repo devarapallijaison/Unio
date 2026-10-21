@@ -72,8 +72,8 @@ export function creatorSummary(p) {
     startingPrice: p.startingPrice,
     availability: p.availability,
     isDemo: p.isDemo,
-    verifiedTools: p.verifiedTools ?? [],
-    trustLevel: p.trustLevel ?? 1,
+    specializations: p.specializations ?? [],
+    ...trustFields(p),
   };
 }
 

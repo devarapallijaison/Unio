@@ -25,7 +25,8 @@ export async function attachBrands(campaigns) {
   return campaigns.map((c) => ({ ...withRights(c), brand: publicBrand(brands.get(String(c.brandId))) }));
 }
 
-export async function listPublicCampaigns(q) {
+/** Public directory. `all` returns every match (capped) for in-memory ranking by creator match (P4 Best match). */
+export async function listPublicCampaigns(q, { all = false } = {}) {
   const filter = { status: 'open' };
   if (q.search) {
     const rx = new RegExp(escapeRegex(q.search), 'i');
@@ -40,6 +41,7 @@ export async function listPublicCampaigns(q) {
   if (q.minBudget != null) filter.budgetMax = { $gte: q.minBudget };
   if (q.maxBudget != null) filter.budgetMin = { $lte: q.maxBudget };
 
+  if (all) return attachBrands(await Campaign.find(filter).sort(PUBLIC_SORTS.newest).limit(500).lean());
   const pg = paginate(q);
   const [docs, total] = await Promise.all([
     Campaign.find(filter).sort(PUBLIC_SORTS[q.sort] ?? PUBLIC_SORTS.newest).skip(pg.skip).limit(pg.limit).lean(),

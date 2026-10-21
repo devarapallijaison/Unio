@@ -12,7 +12,7 @@ before(async () => {
 after(stopDb);
 beforeEach(resetDb);
 
-const PROPOSAL = { proposal: 'I can produce two polished vertical ads using AI-assisted product visuals.', proposedPrice: 8000 };
+const PROPOSAL = { proposal: 'I can produce two polished vertical ads using AI-assisted product visuals.', proposedPrice: 8000, acceptedRights: true };
 
 describe('health & errors', () => {
   test('GET /api/health reports ok', async () => {
@@ -346,9 +346,9 @@ describe('matching', () => {
   test('scores skill/tool/category/budget/availability with reasons', () => {
     const campaign = campaignPayload();
     const strong = scoreMatch(campaign, {
-      skills: ['ai video', 'Product Advertising'],
+      skills: ['edit', 'prompt'],
       tools: ['Kling', 'Runway'],
-      specialties: ['Beauty'],
+      specializations: ['beauty'],
       startingPrice: 6000,
       availability: 'available',
     });

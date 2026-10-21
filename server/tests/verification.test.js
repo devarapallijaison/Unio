@@ -193,7 +193,7 @@ describe('project feedback', () => {
       .body.data;
     const appRes = await creator.agent
       .post(`/api/campaigns/${campaign._id}/applications`)
-      .send({ proposal: 'A considered proposal for this summer brief.' });
+      .send({ proposal: 'A considered proposal for this summer brief.', acceptedRights: true });
     const { project } = (await brand.agent.patch(`/api/brand/applications/${appRes.body.data._id}/status`).send({ status: 'accepted' })).body.data;
     const base = `/api/projects/${project._id}`;
 

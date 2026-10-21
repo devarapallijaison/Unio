@@ -10,7 +10,8 @@
     "seed": "node --env-file-if-exists=.env scripts/seed.js",
     "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
     "dev:memory": "node --env-file-if-exists=.env scripts/dev-memory.js",
-    "create-reviewer": "node --env-file-if-exists=.env scripts/create-reviewer.js"
+    "create-reviewer": "node --env-file-if-exists=.env scripts/create-reviewer.js",
+    "migrate:categories": "node --env-file-if-exists=.env scripts/migrate-campaign-categories.js"
   },
   "engines": {
     "node": ">=20.6"

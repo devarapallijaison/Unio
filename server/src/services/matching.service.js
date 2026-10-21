@@ -32,7 +32,8 @@ export function scoreMatch(campaign, creator) {
   if (toolHits.length) reasons.push(`Uses ${toolHits.join(', ')}`);
 
   const category = (campaign.category ?? '').toLowerCase();
-  const specialties = norm(creator.specialties);
+  // Round 2 campaigns use specialization ids; Round 1 data uses free-text specialties. (Phase 7 replaces this scorer.)
+  const specialties = norm([...(creator.specializations ?? []), ...(creator.specialties ?? [])]);
   if (category && specialties.some((s) => s === category || s.includes(category) || category.includes(s))) {
     score += WEIGHTS.category;
     reasons.push(`Specialises in ${campaign.category}`);

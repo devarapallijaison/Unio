@@ -12,9 +12,14 @@ import {
 import {
   CATEGORY_IDS,
   CONTENT_TYPE_IDS,
+  DURATION_MONTHS,
   FORMAT_IDS,
   LANGUAGE_NAMES,
+  LIKENESS_IDS,
+  PORTFOLIO_ALLOWED_IDS,
+  REGION_IDS,
   SKILL_IDS,
+  USAGE_IDS,
   SPECIALIZATION_IDS,
   STYLE_IDS,
   TEAM_SIZE_IDS,
@@ -149,6 +154,9 @@ export const campaignListQuery = z.object({
   tool: qText,
   minBudget: qNumber,
   maxBudget: qNumber,
+  // P4 chips: content-type groups (video, ugc, images, 3d, motion) and "Exclusive only".
+  group: csv(['video', 'ugc', 'images', '3d', 'motion'], 'content group'),
+  exclusive: flag,
   sort: z.enum(['newest', 'deadline', 'budget_desc']).default('newest'),
   ...pageQuery,
 });
@@ -248,12 +256,25 @@ export const portfolioBody = z.object({
 });
 
 /* ---------- Brand profile & campaigns ---------- */
+const HEX = /^#[0-9a-f]{6}$/i;
+
 export const brandProfileBody = z.object({
   companyName: text(160, 2),
+  accountType: z.enum(['brand', 'agency']).optional(),
   logoUrl: optionalUrl,
   websiteUrl: optionalUrl,
-  industry: text(80).optional(),
+  industry: z.enum(SPECIALIZATION_IDS, 'Choose your industry').optional(),
   description: text(2000).optional(),
+  brandKit: z
+    .object({
+      colors: z.array(z.object({ name: text(40).optional(), hex: z.string().trim().regex(HEX, 'Use a hex colour like #8a3b2e') })).max(8, 'Up to 8 colours').optional(),
+      headingFont: text(60).optional(),
+      bodyFont: text(60).optional(),
+      tone: z.array(text(30, 1)).max(6, 'Up to 6 tone words').optional(),
+      neverDo: text(500).optional(),
+      assetUrls: z.array(httpUrl).max(12, 'Up to 12 assets').optional(),
+    })
+    .optional(),
 });
 
 const deliverableSpec = z.object({
@@ -262,18 +283,43 @@ const deliverableSpec = z.object({
   quantity: z.coerce.number().int().min(1).max(100).default(1),
 });
 
+/** F7 rights. Every part optional here (drafts may be incomplete); opening a campaign requires usage/region/duration/exclusive (service). */
+const rightsBody = z.object({
+  usage: idList(USAGE_IDS, USAGE_IDS.length, 'usage').optional(),
+  region: z.enum(REGION_IDS, 'Pick a region').optional().nullable(),
+  regionNote: text(120).optional(),
+  durationMonths: z.union(DURATION_MONTHS.map((m) => z.literal(m)), 'Pick a duration').optional().nullable(),
+  exclusive: z.boolean().optional().nullable(),
+  portfolioAllowed: z.enum(PORTFOLIO_ALLOWED_IDS).optional(),
+  commerciallySafeTools: z.boolean().optional(),
+  aiLabel: z.boolean().optional(),
+  likeness: z.enum(LIKENESS_IDS).optional(),
+});
+
+/** aiFilledFields lists which fields the AI filled and the brand hasn't edited (UI tint only). */
+const AI_FIELD_NAMES = ['title', 'category', 'brief', 'contentType', 'formats', 'lengthNote', 'style', 'languages', 'budget', 'deliverables', 'deadline', 'requiredTools', 'requiredSkills', 'rights'];
+
 export const campaignBody = z
   .object({
     title: text(160, 4),
     brief: text(5000, 20),
-    category: text(80, 2),
+    category: z.enum(SPECIALIZATION_IDS, 'Choose an industry'),
     budgetMin: money.optional().nullable(),
     budgetMax: money.optional().nullable(),
     deadline: z.coerce.date().optional().nullable(),
-    requiredSkills: tagList.optional(),
-    requiredTools: tagList.optional(),
+    requiredSkills: idList(SKILL_IDS, SKILL_IDS.length, 'skills').optional(),
+    requiredTools: idList(TOOL_NAMES, 20, 'tools').optional(),
     deliverables: z.array(deliverableSpec).max(20).optional(),
     status: z.enum(CAMPAIGN_STATUS).default('draft'),
+    contentType: z.enum(CONTENT_TYPE_IDS, 'Pick a content type').optional().nullable(),
+    formats: idList(FORMAT_IDS, FORMAT_IDS.length, 'formats').optional(),
+    style: text(300).optional(),
+    languages: idList(LANGUAGE_NAMES, LANGUAGE_NAMES.length, 'languages').optional(),
+    lengthNote: text(80).optional(),
+    revisionsIncluded: z.number().int().min(0).max(5).optional(),
+    sourcePortfolioItemId: objectId.optional().nullable(),
+    aiFilledFields: z.array(z.enum(AI_FIELD_NAMES)).max(AI_FIELD_NAMES.length).optional(),
+    rights: rightsBody.optional(),
   })
   .refine((c) => c.budgetMin == null || c.budgetMax == null || c.budgetMax >= c.budgetMin, {
     path: ['budgetMax'],
@@ -300,6 +346,9 @@ export const statusListQuery = (statuses) =>
 export const applicationBody = z.object({
   proposal: text(3000, 20),
   proposedPrice: money.optional().nullable(),
+  // F7: the creator must confirm they read the brief's rights & usage terms.
+  acceptedRights: z.literal(true, 'Confirm you’ve read the rights & usage terms'),
+  samplePieceIds: z.array(objectId).max(3, 'Pick up to 3 pieces').optional(),
 });
 
 export const applicationReviewBody = z.object({ status: z.enum(['accepted', 'rejected']) });
@@ -382,4 +431,8 @@ export const feedbackBody = z.object({
 export const briefDraftBody = z.object({
   idea: text(2000, 15).refine((v) => v.split(/\s+/).length >= 3, 'Describe the idea in a few more words'),
   mode: z.enum(['auto', 'template']).default('auto'),
+  // Answers to the clarifying questions from a previous draft (sent back with "Rewrite brief").
+  answers: z.array(z.object({ id: text(40, 1), question: text(200).optional(), answer: text(120, 1) })).max(3).optional(),
+  // "I want something like this": start from a public portfolio piece.
+  fromPieceId: objectId.optional(),
 });

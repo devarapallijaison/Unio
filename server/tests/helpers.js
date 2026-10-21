@@ -53,13 +53,17 @@ export async function signUp(app, role, overrides = {}) {
 export const campaignPayload = (overrides = {}) => ({
   title: 'AI Summer Skincare Campaign',
   brief: 'Create a short vertical product advertisement for a summer skincare launch.',
-  category: 'Beauty',
+  category: 'beauty',
   budgetMin: 5000,
   budgetMax: 15000,
   deadline: '2026-12-01T00:00:00.000Z',
-  requiredSkills: ['AI Video', 'Product Advertising'],
+  requiredSkills: ['edit', 'prompt'],
   requiredTools: ['Kling', 'Runway'],
   deliverables: [{ title: 'Vertical video', description: '15–30 seconds, 9:16', quantity: 2 }],
+  contentType: 'ad',
+  formats: ['9:16'],
+  // F7: open campaigns must answer the rights questions.
+  rights: { usage: ['paid_ads', 'organic_social'], region: 'india', durationMonths: 6, exclusive: false },
   status: 'open',
   ...overrides,
 });

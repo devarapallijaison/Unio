@@ -32,6 +32,23 @@ const brandProfileSchema = new mongoose.Schema(
     industry: { type: String, trim: true, maxlength: 80, default: '', index: true },
     description: { type: String, trim: true, maxlength: 2000, default: '' },
     clients: { type: [clientSchema], default: [] },
+    /** Brand kit (B8): passed to the AI brief builder as context and shown on briefs. */
+    brandKit: {
+      colors: {
+        type: [
+          new mongoose.Schema(
+            { name: { type: String, trim: true, maxlength: 40 }, hex: { type: String, trim: true, match: /^#[0-9a-f]{6}$/i } },
+            { _id: false },
+          ),
+        ],
+        default: [],
+      },
+      headingFont: { type: String, trim: true, maxlength: 60 },
+      bodyFont: { type: String, trim: true, maxlength: 60 },
+      tone: { type: [{ type: String, trim: true, maxlength: 30 }], default: [] },
+      neverDo: { type: String, trim: true, maxlength: 500, default: '' },
+      assetUrls: { type: [urlField()], default: [] },
+    },
     isDemo: { type: Boolean, default: false },
   },
   schemaOptions,

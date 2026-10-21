@@ -1,4 +1,4 @@
-import { Application, BrandProfile, Campaign, CreatorProfile } from '../models/index.js';
+import { Application, BrandProfile, Campaign, CreatorProfile, PortfolioItem } from '../models/index.js';
 import { ApiError } from '../utils/ApiError.js';
 import { mapBy, withTransaction } from '../utils/db.js';
 import { pageResult, paginate } from '../utils/http.js';
@@ -7,7 +7,7 @@ import { requireCreatorProfile } from './profile.service.js';
 import { createProjectFromSource } from './projects.service.js';
 import { campaignSummary, creatorSummary, publicBrand } from './serializers.js';
 
-export async function applyToCampaign(user, campaignId, { proposal, proposedPrice }) {
+export async function applyToCampaign(user, campaignId, { proposal, proposedPrice, samplePieceIds = [] }) {
   const profile = await requireCreatorProfile(user);
   const campaign = await Campaign.findById(campaignId).lean();
   if (!campaign || campaign.status === 'draft') throw ApiError.notFound('Campaign not found');
@@ -16,12 +16,20 @@ export async function applyToCampaign(user, campaignId, { proposal, proposedPric
   if (await Application.exists({ campaignId, creatorId: profile._id })) {
     throw ApiError.conflict('You have already applied to this campaign', 'ALREADY_APPLIED');
   }
+  // Relevant work must be the applicant's own pieces.
+  const samples = [...new Set(samplePieceIds.map(String))];
+  if (samples.length && (await PortfolioItem.countDocuments({ _id: { $in: samples }, creatorId: profile._id })) !== samples.length) {
+    throw ApiError.badRequest('Pick pieces from your own portfolio', [{ location: 'body', field: 'samplePieceIds', message: 'Only your own portfolio pieces can be attached' }]);
+  }
   try {
     const application = await Application.create({
       campaignId,
       creatorId: profile._id,
       proposal,
       proposedPrice: proposedPrice ?? undefined,
+      samplePieceIds: samples,
+      rightsAcceptedAt: new Date(), // validator requires acceptedRights: true
+
       status: 'pending',
       submittedAt: new Date(),
     });

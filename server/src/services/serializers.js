@@ -1,3 +1,5 @@
+import { RIGHTS_DURATIONS, RIGHTS_REGIONS, RIGHTS_USAGE } from '../models/taxonomy.js';
+
 /** Public-safe shapes. Never include emails, password hashes or internal user ids. */
 
 export function publicUser(user) {
@@ -80,12 +82,43 @@ export function publicBrand(b) {
   return {
     _id: b._id,
     companyName: b.companyName,
+    accountType: b.accountType ?? 'brand',
     logoUrl: b.logoUrl,
     websiteUrl: b.websiteUrl,
     industry: b.industry,
     description: b.description,
+    // Colours only: shown as swatches on briefs. The rest of the kit stays with the brand and the brief builder.
+    kitColors: (b.brandKit?.colors ?? []).map(({ name, hex }) => ({ name, hex })),
     isDemo: b.isDemo,
   };
+}
+
+/* ---------- Rights & usage (F7) ---------- */
+
+const label = (list, id) => list.find((o) => o.id === id)?.label;
+
+/** Fields a brief must answer before it can be opened. */
+export function missingRights(rights = {}) {
+  const missing = [];
+  if (!rights.usage?.length) missing.push('usage');
+  if (!rights.region) missing.push('region');
+  if (rights.durationMonths == null) missing.push('durationMonths');
+  if (rights.exclusive == null) missing.push('exclusive');
+  return missing;
+}
+
+/** One-line summary used everywhere a brief appears: "Paid ads + Organic social · India · 6 months · Non-exclusive". */
+export function rightsSummary(rights = {}) {
+  if (missingRights(rights).length) return null;
+  const usage = rights.usage.map((u) => label(RIGHTS_USAGE, u)).join(' + ');
+  const region = rights.region === 'custom' ? rights.regionNote || 'Custom region' : label(RIGHTS_REGIONS, rights.region);
+  const duration = label(RIGHTS_DURATIONS, rights.durationMonths);
+  return [usage, region, duration, rights.exclusive ? 'Exclusive' : 'Non-exclusive'].join(' · ');
+}
+
+/** Adds rightsSummary + rightsComplete to any campaign object. */
+export function withRights(c) {
+  return c ? { ...c, rightsSummary: rightsSummary(c.rights), rightsComplete: missingRights(c.rights).length === 0 } : c;
 }
 
 export function campaignSummary(c) {
@@ -98,5 +131,7 @@ export function campaignSummary(c) {
     deadline: c.deadline,
     budgetMin: c.budgetMin,
     budgetMax: c.budgetMax,
+    contentType: c.contentType,
+    rightsSummary: rightsSummary(c.rights),
   };
 }

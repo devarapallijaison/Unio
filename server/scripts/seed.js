@@ -45,72 +45,107 @@ const inDays = (n) => new Date(Date.now() + n * 86_400_000);
 /* ------------------------------------------------------------------ */
 /* Fictional demo brands and campaigns                                 */
 /* ------------------------------------------------------------------ */
+const rights = (usage, region, durationMonths, exclusive, extra = {}) => ({ usage, region, durationMonths, exclusive, portfolioAllowed: 'after_launch', commerciallySafeTools: true, aiLabel: true, likeness: 'none', ...extra });
+
 const brands = [
   {
-    name: 'Verdant Skin Co.', email: 'team@verdant.unio.example', industry: 'Beauty',
+    name: 'Verdant Skin Co.', email: 'team@verdant.unio.example', industry: 'beauty',
     websiteUrl: 'https://verdant.unio.example',
     description: 'Demo brand. Plant-based skincare made in small batches, sold online across India.',
+    brandKit: {
+      colors: [{ name: 'Leaf', hex: '#2f5d46' }, { name: 'Sand', hex: '#e8b896' }, { name: 'Cream', hex: '#f4dcc8' }, { name: 'Clay', hex: '#c88a66' }],
+      headingFont: 'Fraunces', bodyFont: 'Manrope', tone: ['Fresh', 'Honest', 'Calm'], neverDo: 'No exaggerated skin claims · No before/after shots',
+      assetUrls: [],
+    },
     campaigns: [
       {
-        title: 'Summer SPF launch — vertical ads', category: 'Beauty', status: 'open', budgetMin: 8000, budgetMax: 20000, deadline: inDays(30),
+        title: 'Summer SPF launch — vertical ads', category: 'beauty', status: 'open', budgetMin: 8000, budgetMax: 20000, deadline: inDays(30),
         brief: 'We are launching a lightweight SPF 50 gel for humid summers. We need short vertical ads that feel fresh and honest, not glossy. Show texture, absorption and a quick morning routine. No exaggerated skin claims.',
-        requiredSkills: ['AI Video', 'Product Advertising'], requiredTools: ['Kling', 'Runway'],
-        deliverables: [{ title: 'Vertical video', description: '15–30 seconds, 9:16, with captions', quantity: 2 }, { title: 'Still frames', description: 'Three 4:5 stills pulled from the edit', quantity: 3 }],
+        requiredSkills: ['prompt', 'edit'], requiredTools: ['Kling', 'Runway', 'CapCut'],
+        contentType: 'ad', formats: ['9:16', '4:5'], lengthNote: '15–20 s', style: 'Warm, sunny, natural skin texture, no heavy filters.', languages: ['Hindi', 'English'],
+        rights: rights(['paid_ads', 'organic_social'], 'india', 6, false),
+        deliverables: [{ title: 'Vertical video', description: '9:16 · 15–20 s · Hindi VO', quantity: 2 }, { title: 'Still frames', description: '4:5 + 1:1 crops pulled from the edit', quantity: 3 }],
       },
       {
-        title: 'Ingredient explainer series', category: 'Beauty', status: 'open', budgetMin: 5000, budgetMax: 12000, deadline: inDays(45),
+        title: 'Ingredient explainer series', category: 'beauty', status: 'open', budgetMin: 5000, budgetMax: 12000, deadline: inDays(45),
         brief: 'A short series explaining our five hero ingredients. Calm, educational tone with simple motion graphics. Each episode under 40 seconds.',
-        requiredSkills: ['Motion Design', 'Explainer Video'], requiredTools: ['After Effects'],
+        requiredSkills: ['kinetic', 'story'], requiredTools: ['After Effects'],
+        contentType: 'motion', formats: ['1:1', '9:16'], lengthNote: 'Under 40 s each', style: 'Calm, flat illustration, botanical greens.', languages: ['English'],
+        rights: rights(['organic_social', 'website'], 'india', 12, false),
         deliverables: [{ title: 'Explainer episode', description: 'Under 40 seconds, 1:1 and 9:16 exports', quantity: 5 }],
       },
       {
-        title: 'Monsoon gift set stills', category: 'Beauty', status: 'closed', budgetMin: 4000, budgetMax: 9000, deadline: inDays(-10),
+        title: 'Monsoon gift set stills', category: 'beauty', status: 'closed', budgetMin: 4000, budgetMax: 9000, deadline: inDays(-10),
         brief: 'Product stills for our monsoon gift box: rain-on-glass mood, deep greens, soft reflections.',
-        requiredSkills: ['AI Image Generation', 'Product Photography'], requiredTools: ['Midjourney'],
+        requiredSkills: ['prompt', 'upscale'], requiredTools: ['Midjourney'],
+        contentType: 'photo', formats: ['4:5', '16:9'], style: 'Rain-on-glass mood, deep greens, soft reflections.', languages: [],
+        rights: rights(['organic_social', 'website'], 'india', 6, false),
         deliverables: [{ title: 'Hero still', description: '4:5 and 16:9', quantity: 4 }],
       },
     ],
   },
   {
-    name: 'Northwind Audio', email: 'studio@northwind.unio.example', industry: 'Electronics',
+    name: 'Northwind Audio', email: 'studio@northwind.unio.example', industry: 'tech',
     websiteUrl: 'https://northwind.unio.example',
     description: 'Demo brand. Independent audio hardware company designing earbuds and studio headphones.',
+    brandKit: {
+      colors: [{ name: 'Graphite', hex: '#22272b' }, { name: 'Steel', hex: '#8d9399' }, { name: 'Signal', hex: '#e4572e' }],
+      headingFont: 'Space Grotesk', bodyFont: 'Inter', tone: ['Precise', 'Minimal'], neverDo: 'No exaggerated sound claims · No cluttered layouts',
+      assetUrls: [],
+    },
     campaigns: [
       {
-        title: 'Wireless earbuds product film', category: 'Electronics', status: 'open', budgetMin: 15000, budgetMax: 35000, deadline: inDays(40),
+        title: 'Wireless earbuds product film', category: 'tech', status: 'open', budgetMin: 15000, budgetMax: 35000, deadline: inDays(40),
         brief: 'A 30-second product film for our new noise-cancelling earbuds. Precise, architectural visuals: the case opening, the fit, sound visualised as space. Must work without voiceover.',
-        requiredSkills: ['3D Visualization', 'Product Advertising', 'AI Video'], requiredTools: ['Blender', 'Runway'],
+        requiredSkills: ['model3d', 'comp', 'edit'], requiredTools: ['Blender', 'Runway'],
+        contentType: 'render3d', formats: ['16:9', '9:16'], lengthNote: '30 s + cut-downs', style: 'Precise, architectural, dark studio light.', languages: [],
+        rights: rights(['website', 'paid_ads'], 'worldwide', 12, true),
         deliverables: [{ title: 'Product film', description: '30 seconds, 16:9 and 9:16 cut-downs', quantity: 1 }, { title: 'Exploded-view still', description: 'High-res, transparent background', quantity: 1 }],
       },
       {
-        title: 'Studio headphones lookbook', category: 'Electronics', status: 'open', budgetMin: 8000, budgetMax: 16000, deadline: inDays(25),
+        title: 'Studio headphones lookbook', category: 'tech', status: 'open', budgetMin: 8000, budgetMax: 16000, deadline: inDays(25),
         brief: 'Lifestyle imagery of musicians and producers using our studio headphones at home studios. Warm practical lighting, real-feeling spaces.',
-        requiredSkills: ['AI Image Generation', 'Art Direction'], requiredTools: ['Midjourney', 'Photoshop'],
+        requiredSkills: ['prompt', 'comp'], requiredTools: ['Midjourney', 'Photoshop'],
+        contentType: 'photo', formats: ['4:5'], style: 'Warm practical lighting, real-feeling home studios.', languages: [],
+        rights: rights(['print', 'website'], 'worldwide', 12, true, { likeness: 'ai_only' }),
         deliverables: [{ title: 'Lifestyle image', description: '4:5, campaign-ready', quantity: 8 }],
       },
       {
-        title: 'Festival sale social pack', category: 'Electronics', status: 'draft', budgetMin: 5000, budgetMax: 10000, deadline: inDays(60),
+        // Draft without rights: shows "Rights missing" on B2 until the brand answers them.
+        title: 'Festival sale social pack', category: 'tech', status: 'draft', budgetMin: 5000, budgetMax: 10000, deadline: inDays(60),
         brief: 'Draft: social graphics for the festive sale period. Brief to be finalised.',
-        requiredSkills: ['Social Media Design'], requiredTools: ['Figma'],
+        requiredSkills: ['comp'], requiredTools: ['Figma'],
+        contentType: 'static', formats: ['1:1', '9:16'], languages: [],
+        rights: { usage: [], portfolioAllowed: 'after_launch', commerciallySafeTools: true, aiLabel: true, likeness: 'none' },
+        aiFilledFields: ['title', 'contentType', 'formats', 'deliverables'],
         deliverables: [{ title: 'Social post', description: '1:1 and 9:16', quantity: 10 }],
       },
     ],
   },
   {
-    name: 'Masala Trail Foods', email: 'hello@masalatrail.unio.example', industry: 'Food & Beverage',
+    name: 'Masala Trail Foods', email: 'hello@masalatrail.unio.example', industry: 'food',
     websiteUrl: 'https://masalatrail.unio.example',
     description: 'Demo brand. Regional spice blends and ready-to-cook kits from across India.',
+    brandKit: {
+      colors: [{ name: 'Chilli', hex: '#8a3b2e' }, { name: 'Haldi', hex: '#e9b44c' }, { name: 'Rice', hex: '#f6efe3' }, { name: 'Tava', hex: '#2b2420' }],
+      headingFont: 'Playfair', bodyFont: 'Manrope', tone: ['Warm', 'Homely', 'Regional'], neverDo: 'No health claims · No alcohol · No real-person likeness without consent',
+      assetUrls: [],
+    },
     campaigns: [
       {
-        title: 'Regional recipe reels', category: 'Food & Beverage', status: 'open', budgetMin: 6000, budgetMax: 14000, deadline: inDays(35),
+        title: 'Regional recipe reels', category: 'food', status: 'open', budgetMin: 6000, budgetMax: 14000, deadline: inDays(35),
         brief: 'Short recipe reels for four regional blends. Close-up cooking moments, steam, sizzling tadka. Should feel like a home kitchen, not a studio.',
-        requiredSkills: ['AI Video', 'Food Styling'], requiredTools: ['Kling', 'CapCut'],
+        requiredSkills: ['prompt', 'edit', 'regional'], requiredTools: ['Kling', 'CapCut'],
+        contentType: 'short', formats: ['9:16'], lengthNote: '20–40 s', style: 'Home kitchen, steam, warm close-ups.', languages: ['Hindi', 'Tamil', 'Bengali'],
+        rights: rights(['organic_social'], 'india', 3, false),
         deliverables: [{ title: 'Recipe reel', description: '20–40 seconds, 9:16', quantity: 4 }],
       },
       {
-        title: 'Packaging hero imagery', category: 'Food & Beverage', status: 'open', budgetMin: 4000, budgetMax: 9000, deadline: inDays(20),
+        title: 'Packaging hero imagery', category: 'food', status: 'open', budgetMin: 4000, budgetMax: 9000, deadline: inDays(20),
         brief: 'Hero images of our new kraft-paper packaging surrounded by whole spices. Overhead and three-quarter angles.',
-        requiredSkills: ['AI Image Generation', 'Packaging Mockups'], requiredTools: ['Midjourney', 'Firefly'],
+        requiredSkills: ['prompt', 'upscale'], requiredTools: ['Midjourney', 'Firefly'],
+        contentType: 'photo', formats: ['1:1', '4:5'], style: 'Overhead and three-quarter angles, whole spices, natural light.', languages: [],
+        rights: rights(['website', 'paid_ads', 'print'], 'india', 12, false),
         deliverables: [{ title: 'Packaging hero', description: '1:1 and 4:5', quantity: 6 }],
       },
     ],
@@ -170,7 +205,7 @@ async function seedBrand(b, passwordHash) {
   const user = await upsertUser({ name: b.name, email: b.email, role: 'brand' }, passwordHash);
   await BrandProfile.findOneAndUpdate(
     { userId: user._id },
-    { $set: { companyName: b.name, industry: b.industry, websiteUrl: b.websiteUrl, description: b.description, isDemo: true } },
+    { $set: { companyName: b.name, industry: b.industry, websiteUrl: b.websiteUrl, description: b.description, brandKit: b.brandKit, isDemo: true } },
     { upsert: true, returnDocument: 'after', runValidators: true },
   );
   const campaigns = {};

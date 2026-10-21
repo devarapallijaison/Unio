@@ -1,4 +1,6 @@
+import { BrandProfile, PortfolioItem } from '../models/index.js';
 import * as applications from '../services/applications.service.js';
+import { withRights } from '../services/serializers.js';
 import * as campaigns from '../services/campaigns.service.js';
 import * as invitations from '../services/invitations.service.js';
 import { recommendCreators } from '../services/matching.service.js';
@@ -24,7 +26,7 @@ export async function createCampaign(req, res) {
 }
 
 export async function getCampaign(req, res) {
-  ok(res, await campaigns.requireOwnCampaign(req.user, req.valid.params.id));
+  ok(res, withRights(await campaigns.requireOwnCampaign(req.user, req.valid.params.id)));
 }
 
 export async function updateCampaign(req, res) {
@@ -67,6 +69,12 @@ export async function listProjects(req, res) {
   ok(res, await projects.listProjects({ brandId: req.user._id }, req.valid.query));
 }
 
+/** Brief builder context comes from the server: the brand's own kit and (optionally) a public portfolio piece. */
 export async function draftBrief(req, res) {
-  ok(res, await generateDraft(req.valid.body));
+  const { fromPieceId, ...body } = req.valid.body;
+  const [brand, piece] = await Promise.all([
+    BrandProfile.findOne({ userId: req.user._id }, 'companyName industry brandKit').lean(),
+    fromPieceId ? PortfolioItem.findById(fromPieceId, 'title contentType format styles tools industry workflow').lean() : null,
+  ]);
+  ok(res, await generateDraft({ ...body, brand, piece }));
 }

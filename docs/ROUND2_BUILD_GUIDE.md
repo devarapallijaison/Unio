@@ -793,4 +793,6 @@ Payments/escrow · email sending (approval links are copied by the agency) · re
 ## 15. Before freeze (Friday 23 Oct, 8 pm IST)
 
 - [ ] If Phase 9 (agency workspace) is not built, remove the Join page copy that promises it: the agency "Send approval links · No login for clients" next step and the "You can switch between Brand and Agency later in settings" line (`client/src/pages/public/AuthPages.jsx`, `ROLES`).
+- [ ] Test Discover facet counts against the Azure (Cosmos DB for MongoDB vCore) database — the counts come from one `$facet` aggregation; if any facet is wrong or errors there, switch to the in-Node fallback described in F1-b (same response shape).
+- [ ] Run `npm --prefix server run migrate:categories` (dry run), review the list, then `-- --apply` on the Azure DB so Round 1 campaigns use specialization ids.
 - [ ] Placeholder art never appears where a real thumbnail exists — check every `MediaFrame` use (cards, proof wall, profile, piece page, projects) with real media URLs; the Steel fallback is only for missing or failed media.

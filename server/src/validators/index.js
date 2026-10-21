@@ -401,6 +401,12 @@ const evidenceList = z.array(httpUrl).max(5, 'Add at most 5 evidence links');
 
 // Note: there is deliberately no `status` field. Creators can only save (SELF_REPORTED)
 // or submit for review (PENDING); VERIFIED/REJECTED come exclusively from reviewers.
+// Recording, screenshot and certificate links must be https (guide F5 pre-checks).
+const httpsUrl = z.url({ protocol: /^https$/, message: 'Must be a valid https link' }).max(2048);
+const certificateFields = z
+  .object({ issuer: text(120, 2), title: text(160).optional(), verifyUrl: httpsUrl, fileUrl: httpsUrl.optional() })
+  .strict();
+
 export const verificationCreateBody = z
   .object({
     type: z.enum(VERIFICATION_TYPES),
@@ -408,10 +414,12 @@ export const verificationCreateBody = z
     portfolioItemId: objectId.optional(),
     description: text(2000).optional(),
     evidenceUrls: evidenceList.default([]),
+    certificate: certificateFields.optional(),
     submit: z.boolean().default(false),
   })
   .strict()
   .superRefine((v, ctx) => {
+    if (v.type === 'certificate' && !v.certificate) ctx.addIssue({ code: 'custom', path: ['certificate'], message: 'Add the issuer and the verify link' });
     if (v.type !== 'portfolio' && !v.subject) ctx.addIssue({ code: 'custom', path: ['subject'], message: 'Name the tool or workflow' });
     if (v.type === 'portfolio' && !v.portfolioItemId) ctx.addIssue({ code: 'custom', path: ['portfolioItemId'], message: 'Choose a portfolio piece' });
     if (v.type === 'workflow' && (v.description ?? '').length < 30) {
@@ -428,21 +436,33 @@ export const verificationUpdateBody = z
   })
   .strict();
 
+export const challengeBody = z.object({ tool: text(120, 2) }).strict();
+
+// Submit a claim for review. Tools send the recording; certificates may send updated certificate fields.
+export const verificationSubmitBody = z
+  .object({
+    recordingUrl: httpsUrl.optional(),
+    screenshotUrls: z.array(httpsUrl).max(5, 'Add at most 5 screenshots').default([]),
+    certificate: certificateFields.partial().optional(),
+  })
+  .strict();
+
 export const reviewListQuery = z.object({
   status: z.enum(VERIFICATION_STATUS).default('PENDING'),
   type: z.enum(VERIFICATION_TYPES).optional(),
+  tab: z.enum(['tools', 'certificates', 'flagged']).optional(),
   ...pageQuery,
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
 export const reviewDecisionBody = z
   .object({
-    decision: z.enum(['VERIFIED', 'REJECTED']),
+    decision: z.enum(['VERIFIED', 'REJECTED', 'ASK_MORE']),
     note: text(1000).optional(),
   })
-  .refine((b) => b.decision !== 'REJECTED' || (b.note ?? '').length >= 10, {
+  .refine((b) => b.decision === 'VERIFIED' || (b.note ?? '').length >= 10, {
     path: ['note'],
-    message: 'Explain the rejection (at least 10 characters) so the creator can fix it',
+    message: 'Explain what is missing or wrong (at least 10 characters) so the creator can fix it',
   });
 
 /* ---------- Project feedback ---------- */

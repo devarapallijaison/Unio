@@ -4,6 +4,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { mapBy } from '../utils/db.js';
 import { ciExact, escapeRegex, pageResult, paginate } from '../utils/http.js';
 import { creatorSummary, publicCreator, trustFields } from './serializers.js';
+import { refreshExpiredTrust } from './trust.service.js';
 import { publicSignals, signalCounts } from './verification.service.js';
 
 const SORTS = {
@@ -203,6 +204,7 @@ export async function listCreators(q) {
 }
 
 export async function getCreator(id, viewer) {
+  await refreshExpiredTrust(id).catch(() => {});
   const profile = await CreatorProfile.findById(id).lean();
   if (!profile) throw ApiError.notFound('Creator not found');
 

@@ -8,7 +8,7 @@ import * as pub from '../controllers/public.controller.js';
 import * as verify from '../controllers/verification.controller.js';
 import { dbState } from '../config/db.js';
 import { optionalAuth, requireAuth, requireRole } from '../middleware/auth.js';
-import { authLimiter, briefDraftLimiter, messageLimiter } from '../middleware/rateLimit.js';
+import { authLimiter, briefDraftLimiter, messageLimiter, verifySubmitLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 import {
   APPLICATION_STATUS,
@@ -112,6 +112,14 @@ router.get('/brand/projects', asBrand, validate({ query: v.statusListQuery(PROJE
 /* ---------- Verification ---------- */
 router.get('/creator/verifications', asCreator, verify.listOwn);
 router.post('/creator/verifications', asCreator, validate({ body: v.verificationCreateBody }), verify.create);
+router.post('/creator/verifications/challenge', asCreator, verifySubmitLimiter, validate({ body: v.challengeBody }), verify.challenge);
+router.post(
+  '/creator/verifications/:id/submit',
+  asCreator,
+  verifySubmitLimiter,
+  validate({ params: idParams, body: v.verificationSubmitBody }),
+  verify.submit,
+);
 router.put('/creator/verifications/:id', asCreator, validate({ params: idParams, body: v.verificationUpdateBody }), verify.update);
 router.delete('/creator/verifications/:id', asCreator, validate({ params: idParams }), verify.remove);
 

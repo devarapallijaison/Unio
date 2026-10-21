@@ -9,7 +9,9 @@ export const INVITATION_STATUS = ['pending', 'accepted', 'declined', 'cancelled'
 export const PROJECT_STATUS = ['not_started', 'in_progress', 'submitted', 'revision_requested', 'completed', 'cancelled'];
 export const DELIVERABLE_STATUS = ['pending', 'submitted', 'approved', 'revision_requested'];
 export const SOURCE_TYPES = ['application', 'invitation'];
-export const VERIFICATION_TYPES = ['tool', 'workflow', 'portfolio'];
+export const VERIFICATION_TYPES = ['tool', 'workflow', 'portfolio', 'certificate'];
+export const VERIFICATION_METHODS = ['challenge', 'certificate', 'evidence'];
+export const CHECK_RESULTS = ['pass', 'fail', 'unknown'];
 export const VERIFICATION_STATUS = ['SELF_REPORTED', 'PENDING', 'VERIFIED', 'REJECTED'];
 
 export const schemaOptions = { timestamps: true, versionKey: false };

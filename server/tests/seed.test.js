@@ -82,6 +82,13 @@ test('seed is idempotent and references are valid', async () => {
     assert.ok(p.verifiedTools.includes(v.subject), 'trust fields come from the recompute');
   }
   assert.ok(await db.collection('verificationSubmissions').countDocuments({ status: 'PENDING' }) > 0);
+  // F5 demo: a pending tool claim that went through the challenge flow, with honest "unknown" link checks.
+  const challenged = await db.collection('verificationSubmissions').findOne({ method: 'challenge', status: 'PENDING' });
+  assert.ok(challenged, 'a pending challenge claim');
+  assert.match(challenged.challengeCode, /^UNIO-[A-HJ-NP-Z2-9]{4}$/);
+  assert.equal(challenged.screenshotUrls.length, 2);
+  assert.equal(challenged.checks.find((c) => c.id === 'reachable').result, 'unknown', 'placeholder links are never reported as reachable');
+  assert.equal(await db.collection('verificationSubmissions').countDocuments({ method: 'challenge' }), 1);
   // No invented ratings; ★ Made on UNIO counts equal the creator's completed projects exactly.
   assert.equal(await db.collection('creatorProfiles').countDocuments({ ratingCount: { $gt: 0 } }), 0);
   for (const p of await db.collection('creatorProfiles').find({}).toArray()) {

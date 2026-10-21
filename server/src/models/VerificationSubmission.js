@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { VERIFICATION_STATUS, VERIFICATION_TYPES, schemaOptions, urlField } from './enums.js';
+import { CHECK_RESULTS, VERIFICATION_METHODS, VERIFICATION_STATUS, VERIFICATION_TYPES, schemaOptions, urlField } from './enums.js';
 
 /**
  * A creator's claim about a tool, an AI workflow or a portfolio piece, plus the evidence for it.
@@ -20,12 +20,30 @@ const verificationSubmissionSchema = new mongoose.Schema(
     reviewerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     reviewNote: { type: String, trim: true, maxlength: 1000, default: '' },
     reviewedAt: { type: Date },
+    // F5 (guide §5.9). Challenge: one-time code the creator types on screen while recording (48 h, one use).
+    method: { type: String, enum: VERIFICATION_METHODS },
+    challengeCode: { type: String },
+    challengeIssuedAt: { type: Date },
+    challengeExpiresAt: { type: Date },
+    challengeUsedAt: { type: Date },
+    recordingUrl: urlField(),
+    screenshotUrls: { type: [urlField()], default: [] },
+    certificate: { issuer: { type: String, trim: true, maxlength: 120 }, title: { type: String, trim: true, maxlength: 160 }, verifyUrl: urlField(), fileUrl: urlField() },
+    // "Automatic pre-checks": hints for the reviewer, never a decision.
+    checks: {
+      type: [{ id: String, label: String, result: { type: String, enum: CHECK_RESULTS }, detail: String, _id: false }],
+      default: [],
+    },
+    flagged: { type: Boolean, default: false },
+    expiresAt: { type: Date },
   },
   schemaOptions,
 );
 
 verificationSubmissionSchema.index({ creatorId: 1, key: 1 }, { unique: true });
 verificationSubmissionSchema.index({ status: 1, submittedAt: 1 });
+verificationSubmissionSchema.index({ recordingUrl: 1 }, { sparse: true });
+verificationSubmissionSchema.index({ 'certificate.verifyUrl': 1 }, { sparse: true });
 
 export const VerificationSubmission = mongoose.model(
   'VerificationSubmission',

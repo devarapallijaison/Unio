@@ -102,9 +102,14 @@ function FeaturedWork({ creator, portfolio }) {
   );
 }
 
-/** Proof line for a tool (Phase 8 adds challenge codes and expiry). */
+/** Proof line for a tool, from real review records: challenge code, date and expiry. */
 function proofLine(t) {
-  if (t.status === 'VERIFIED') return `Verified by a UNIO reviewer${t.reviewedAt ? ` · ${formatDate(t.reviewedAt)}` : ''}`;
+  const until = t.expiresAt ? ` · expires ${formatDate(t.expiresAt, { month: 'short', year: 'numeric' })}` : '';
+  if (t.status === 'VERIFIED') {
+    const when = t.reviewedAt ? ` · ${formatDate(t.reviewedAt)}` : '';
+    return t.code ? `Challenge ${t.code}${when}${until}` : `Verified by a UNIO reviewer${when}${until}`;
+  }
+  if (t.status === 'CERTIFIED') return `Certificate checked${t.issuer ? ` · ${t.issuer}` : ''}${until}`;
   if (t.status === 'PENDING') return 'Evidence sent · review pending';
   return 'Self-reported';
 }

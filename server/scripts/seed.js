@@ -28,7 +28,8 @@ import {
 import { hashPassword } from '../src/services/auth.service.js';
 import { createProjectFromSource, decideVersion, postMessage, submitVersion } from '../src/services/projects.service.js';
 import { recomputeCreatorTrust } from '../src/services/trust.service.js';
-import { decide } from '../src/services/verification.service.js';
+import { runChallengeChecks } from '../src/services/precheck.service.js';
+import { decide, newChallengeCode } from '../src/services/verification.service.js';
 import { demoCreators, team } from './seed-creators.js';
 
 const PASSWORD = process.env.SEED_DEMO_PASSWORD;
@@ -323,7 +324,8 @@ async function main() {
   ];
   for (const c of demoCreators) {
     for (const [tool, state] of Object.entries(c.toolStates ?? {})) {
-      if (state === 'v' || state === 'p') claims.push([c.name, { type: 'tool', subject: tool, submit: true, approve: state === 'v' }]);
+      // One pending claim goes through the real challenge flow (code, recording, screenshots, pre-checks) for the reviewer demo.
+      if (state === 'v' || state === 'p') claims.push([c.name, { type: 'tool', subject: tool, submit: true, approve: state === 'v', challenge: state === 'p' && tool === 'Veo' }]);
     }
   }
   const toApprove = [];
@@ -338,6 +340,21 @@ async function main() {
       portfolioItemId = item._id;
     }
     const key = c.type === 'portfolio' ? `portfolio:${portfolioItemId}` : `${c.type}:${subject.toLowerCase()}`;
+    let challenge = {};
+    if (c.challenge) {
+      const issuedAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      const base = `${slugify(name)}-${slugify(subject)}`;
+      const recordingUrl = media(`${base}-recording`, 'mp4');
+      const screenshotUrls = [1, 2].map((n) => media(`${base}-screenshot-${n}`, 'png'));
+      const challengeCode = newChallengeCode();
+      // Placeholder links on the reserved .example domain: nothing is fetched, so those checks read "unknown".
+      const checks = await runChallengeChecks({ creatorId: creator._id, tool: subject, code: challengeCode, issuedAt, recordingUrl, screenshotUrls, skipNetwork: true });
+      challenge = {
+        method: 'challenge', challengeCode, challengeIssuedAt: issuedAt, challengeExpiresAt: new Date(issuedAt.getTime() + 48 * 60 * 60 * 1000),
+        challengeUsedAt: new Date(issuedAt.getTime() + 60 * 60 * 1000), recordingUrl, screenshotUrls, evidenceUrls: [recordingUrl, ...screenshotUrls], checks,
+        submittedAt: new Date(issuedAt.getTime() + 60 * 60 * 1000),
+      };
+    }
     await VerificationSubmission.updateOne(
       { creatorId: creator._id, key },
       {
@@ -346,6 +363,7 @@ async function main() {
           evidenceUrls: c.submit ? [media(`${slugify(name)}-${slugify(subject)}-evidence`, 'html')] : [],
           status: c.submit ? 'PENDING' : 'SELF_REPORTED',
           submittedAt: c.submit ? new Date() : undefined,
+          ...challenge,
         },
       },
       { upsert: true },

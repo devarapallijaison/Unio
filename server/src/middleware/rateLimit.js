@@ -41,3 +41,17 @@ export const messageLimiter = rateLimit({
       error: { code: 'RATE_LIMITED', message: 'You’re sending messages very quickly. Wait a moment and try again.', details: [] },
     }),
 });
+
+/** Trust submissions make the server fetch the creator's links (pre-checks): 30 per hour per creator. */
+export const verifySubmitLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: env.isTest ? 1000 : 30,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  keyGenerator: (req) => (req.user ? `verify:${req.user._id}` : ipKeyGenerator(req.ip)),
+  handler: (_req, res) =>
+    res.status(429).json({
+      success: false,
+      error: { code: 'RATE_LIMITED', message: 'You have submitted several times in a short while. Try again later.', details: [] },
+    }),
+});

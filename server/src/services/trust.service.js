@@ -18,14 +18,19 @@ export function trustLevelFor({ verifiedTools, certifiedTools, madeOnUnioCount, 
 
 const unique = (list) => [...new Set(list)];
 
+/** A reviewer approval lasts 12 months (guide F5). Claims approved before expiry existed have no expiresAt and never lapse. */
+export const isExpired = (claim, now = new Date()) => claim.status === 'VERIFIED' && !!claim.expiresAt && new Date(claim.expiresAt) < now;
+export const EXPIRY_WARNING_DAYS = 30;
+
 export async function computeCreatorTrust(creatorId) {
   const [claims, completed] = await Promise.all([
-    VerificationSubmission.find({ creatorId }, 'type subject status').lean(),
+    VerificationSubmission.find({ creatorId }, 'type subject status expiresAt').lean(),
     Project.find({ creatorId, status: 'completed' }, 'feedback.rating').lean(),
   ]);
-  const tools = (status) => unique(claims.filter((c) => c.type === 'tool' && c.status === status).map((c) => c.subject));
-  // Certificates arrive with Phase 8 (type 'certificate'); until then nothing is certified.
-  const certifiedTools = unique(claims.filter((c) => c.type === 'certificate' && c.status === 'VERIFIED').map((c) => c.subject));
+  const now = new Date();
+  // An expired approval counts as self-reported everywhere (profile, Discover, matching).
+  const tools = (status) => unique(claims.filter((c) => c.type === 'tool' && c.status === status && !isExpired(c, now)).map((c) => c.subject));
+  const certifiedTools = unique(claims.filter((c) => c.type === 'certificate' && c.status === 'VERIFIED' && !isExpired(c, now)).map((c) => c.subject));
   const ratings = completed.map((p) => p.feedback?.rating).filter((r) => typeof r === 'number');
 
   const trust = {
@@ -46,4 +51,23 @@ export async function recomputeCreatorTrust(creatorId) {
   const trust = await computeCreatorTrust(creatorId);
   await CreatorProfile.updateOne({ _id: creatorId }, { $set: trust });
   return trust;
+}
+
+/** Cheap read-time check: if a creator has an approval that lapsed since the last recompute, recompute now. */
+export async function refreshExpiredTrust(creatorId) {
+  const lapsed = await VerificationSubmission.exists({ creatorId, status: 'VERIFIED', expiresAt: { $lt: new Date() } });
+  if (!lapsed) return false;
+  const profile = await CreatorProfile.findById(creatorId, 'verifiedTools certifiedTools').lean();
+  const lapsedClaims = await VerificationSubmission.find({ creatorId, status: 'VERIFIED', expiresAt: { $lt: new Date() } }, 'type subject').lean();
+  const stale = lapsedClaims.some((c) => (c.type === 'tool' ? profile?.verifiedTools : profile?.certifiedTools)?.includes(c.subject));
+  if (stale) await recomputeCreatorTrust(creatorId);
+  return stale;
+}
+
+/** Recompute every creator whose approval has lapsed. Run at start-up and hourly (server.js). */
+export async function sweepExpiredTrust() {
+  const ids = await VerificationSubmission.distinct('creatorId', { status: 'VERIFIED', expiresAt: { $lt: new Date() } });
+  let changed = 0;
+  for (const id of ids) if (await refreshExpiredTrust(id)) changed += 1;
+  return changed;
 }

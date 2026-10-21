@@ -5,7 +5,7 @@ import { PageHeader, Panel } from '../../components/layout/Layouts.jsx';
 import { StatTile } from '../../components/dashboard/Kit.jsx';
 import { StatusPill } from '../../components/ui/Badge.jsx';
 import { ButtonLink } from '../../components/ui/Button.jsx';
-import { ErrorState, Skeleton } from '../../components/ui/Feedback.jsx';
+import { Alert, ErrorState, Skeleton } from '../../components/ui/Feedback.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle.js';
 import { formatDate } from '../../lib/format.js';
@@ -35,6 +35,9 @@ export default function CreatorDashboard() {
   const pendingApps = useQuery({ queryKey: ['mine', 'applications', { status: 'pending', limit: 1 }], queryFn: () => endpoints.creator.applications({ status: 'pending', limit: 1 }) });
   const invites = useQuery({ queryKey: ['mine', 'invitations', { status: 'pending' }], queryFn: () => endpoints.creator.invitations({ status: 'pending', limit: 5 }) });
   const projects = useQuery({ queryKey: ['mine', 'projects', { limit: 5 }], queryFn: () => endpoints.creator.projects({ limit: 5 }) });
+  const trust = useQuery({ queryKey: ['mine', 'verifications'], queryFn: endpoints.creator.verifications });
+  // Approvals last 12 months: warn 30 days ahead, and say so once one has lapsed.
+  const lapsing = (trust.data ?? []).filter((e) => e.type !== 'portfolio' && e.type !== 'workflow' && (e.expiringSoon || e.expired));
 
   const comp = profile.data && portfolio.data ? completeness(profile.data, portfolio.data.length) : null;
   const activeProjects = projects.data?.items.filter((p) => !['completed', 'cancelled'].includes(p.status)) ?? [];
@@ -56,6 +59,17 @@ export default function CreatorDashboard() {
           </>
         }
       />
+
+      {lapsing.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {lapsing.map((e) => (
+            <Alert key={e._id} tone="warning">
+              {e.expired ? `Your ${e.subject} badge has expired and now shows as self-reported. ` : `Your ${e.subject} badge expires in ${e.expiresInDays} ${e.expiresInDays === 1 ? 'day' : 'days'}. `}
+              <Link to="/creator/verification" className="font-semibold underline">Re-verify</Link>
+            </Alert>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <StatTile label="Pending applications" value={pendingApps.data?.total} to="/creator/applications" />

@@ -21,12 +21,13 @@ const LABELS = {
   SELF_REPORTED: 'Self-reported',
   PENDING: 'Pending review',
   VERIFIED: 'Verified',
+  CERTIFIED: 'Certified',
   REJECTED: 'Not verified',
 };
 
 /** Pill tones (components/ui/Badge.jsx): ok · info · wait · att · neutral. */
 const TONES = {
-  ok: ['open', 'accepted', 'approved', 'completed', 'available', 'VERIFIED'],
+  ok: ['open', 'accepted', 'approved', 'completed', 'available', 'VERIFIED', 'CERTIFIED'],
   info: ['in_progress'],
   wait: ['pending', 'submitted', 'busy', 'PENDING'],
   att: ['revision_requested', 'rejected', 'REJECTED'],

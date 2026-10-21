@@ -94,6 +94,8 @@ export const endpoints = {
     projects: (params) => api.get('/creator/projects', params),
     verifications: () => api.get('/creator/verifications'),
     createVerification: (body) => api.post('/creator/verifications', body),
+    verificationChallenge: (tool) => api.post('/creator/verifications/challenge', { tool }),
+    submitVerification: (id, body) => api.post(`/creator/verifications/${id}/submit`, body),
     updateVerification: (id, body) => api.put(`/creator/verifications/${id}`, body),
     deleteVerification: (id) => api.delete(`/creator/verifications/${id}`),
   },

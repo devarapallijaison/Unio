@@ -9,6 +9,14 @@ export async function create(req, res) {
   ok(res, await verification.create(req.user, req.valid.body), 201);
 }
 
+export async function challenge(req, res) {
+  ok(res, await verification.issueChallenge(req.user, req.valid.body), 201);
+}
+
+export async function submit(req, res) {
+  ok(res, await verification.submit(req.user, req.valid.params.id, req.valid.body));
+}
+
 export async function update(req, res) {
   ok(res, await verification.update(req.user, req.valid.params.id, req.valid.body));
 }

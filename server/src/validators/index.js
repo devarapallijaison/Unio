@@ -372,6 +372,29 @@ export const deliverableBody = z
   })
   .refine((b) => b.mediaUrl !== undefined || b.status !== undefined, { message: 'Nothing to update' });
 
+/* F6: versions, decisions, messages */
+export const versionParams = z.object({ id: objectId, deliverableId: objectId, n: z.coerce.number().int().min(1).max(999) });
+
+export const versionBody = z.object({
+  mediaUrl: httpUrl,
+  thumbnailUrl: optionalUrl,
+  // Required from v2 on (service); v1 defaults to "First version".
+  changeNote: text(1000).optional(),
+  toolsUsed: idList(TOOL_NAMES, 20, 'tools').optional(),
+});
+
+export const decisionBody = z.object({
+  decision: z.enum(['approve', 'changes']),
+  note: text(2000).optional(),
+});
+
+export const messagesQuery = z.object({ after: z.coerce.date().optional() });
+
+export const messageBody = z.object({
+  body: text(2000, 1),
+  about: z.object({ deliverableId: objectId, versionNumber: z.coerce.number().int().min(1) }).optional(),
+});
+
 /* ---------- Verification ---------- */
 const evidenceList = z.array(httpUrl).max(5, 'Add at most 5 evidence links');
 

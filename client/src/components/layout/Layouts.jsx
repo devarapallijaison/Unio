@@ -219,10 +219,38 @@ function SidebarContent({ role, nav, pathname, onNavigate, onLogout }) {
   );
 }
 
+/** Bell = unread project messages (/me/unread, polled every 30 s while visible). Opens Projects. */
+function UnreadBell({ role }) {
+  const unread = useQuery({
+    queryKey: ['me', 'unread'],
+    queryFn: endpoints.me.unread,
+    enabled: role === 'brand' || role === 'creator',
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+  });
+  const total = unread.data?.total ?? 0;
+  const to = role === 'brand' ? '/brand/projects' : role === 'creator' ? '/creator/projects' : '/';
+  return (
+    <Link
+      to={to}
+      aria-label={total ? `${total} unread message${total > 1 ? 's' : ''}` : 'No unread messages'}
+      className="relative grid size-[38px] shrink-0 place-items-center rounded-full border border-line bg-white text-ink hover:border-navy"
+    >
+      <Bell className="size-4" strokeWidth={1.8} aria-hidden />
+      {total > 0 && (
+        <span className="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-att px-1 text-[10.5px] font-bold text-white">
+          {total > 99 ? '99+' : total}
+        </span>
+      )}
+    </Link>
+  );
+}
+
 /** Sub-pages below a nav item get their own breadcrumb leaf. */
 const SUB_CRUMBS = [
   [/\/campaigns\/new$/, 'New brief'],
   [/\/campaigns\/[^/]+\/edit$/, 'Edit brief'],
+  [/^\/projects\/[^/]+$/, 'Project'],
 ];
 
 /**
@@ -275,10 +303,7 @@ export function DashboardLayout({ role: roleProp }) {
             )}
           </p>
           <span className="flex-1 sm:hidden" />
-          {/* Notifications arrive with /me/unread (Phase 6); until then the bell has no dot or number. */}
-          <IconButton label="Notifications">
-            <Bell className="size-4" strokeWidth={1.8} />
-          </IconButton>
+          <UnreadBell role={role} />
           {nav.cta && (
             <ButtonLink to={nav.cta.to} size="sm">
               <nav.cta.icon className="size-4" strokeWidth={1.8} aria-hidden /> {nav.cta.label}

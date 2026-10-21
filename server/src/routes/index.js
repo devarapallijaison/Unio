@@ -8,7 +8,7 @@ import * as pub from '../controllers/public.controller.js';
 import * as verify from '../controllers/verification.controller.js';
 import { dbState } from '../config/db.js';
 import { optionalAuth, requireAuth, requireRole } from '../middleware/auth.js';
-import { authLimiter, briefDraftLimiter } from '../middleware/rateLimit.js';
+import { authLimiter, briefDraftLimiter, messageLimiter } from '../middleware/rateLimit.js';
 import { validate } from '../middleware/validate.js';
 import {
   APPLICATION_STATUS,
@@ -128,6 +128,23 @@ router.patch(
   validate({ params: v.deliverableParams, body: v.deliverableBody }),
   project.updateDeliverable,
 );
+router.post(
+  '/projects/:id/deliverables/:deliverableId/versions',
+  requireAuth,
+  validate({ params: v.deliverableParams, body: v.versionBody }),
+  project.submitVersion,
+);
+router.post(
+  '/projects/:id/deliverables/:deliverableId/versions/:n/decision',
+  requireAuth,
+  validate({ params: v.versionParams, body: v.decisionBody }),
+  project.decideVersion,
+);
+router.get('/projects/:id/messages', requireAuth, validate({ params: idParams, query: v.messagesQuery }), project.listMessages);
+router.post('/projects/:id/messages', requireAuth, messageLimiter, validate({ params: idParams, body: v.messageBody }), project.postMessage);
+router.post('/projects/:id/read', requireAuth, validate({ params: idParams }), project.markRead);
+router.get('/projects/:id/rights-card', requireAuth, validate({ params: idParams }), project.rightsCard);
+router.get('/me/unread', requireAuth, project.unread);
 router.post('/projects/:id/feedback', requireAuth, requireRole('brand'), validate({ params: idParams, body: v.feedbackBody }), project.addFeedback);
 
 export default router;

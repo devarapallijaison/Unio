@@ -19,13 +19,14 @@ import {
   Campaign,
   CreatorProfile,
   Invitation,
+  Message,
   PortfolioItem,
   Project,
   User,
   VerificationSubmission,
 } from '../src/models/index.js';
 import { hashPassword } from '../src/services/auth.service.js';
-import { createProjectFromSource } from '../src/services/projects.service.js';
+import { createProjectFromSource, decideVersion, postMessage, submitVersion } from '../src/services/projects.service.js';
 import { recomputeCreatorTrust } from '../src/services/trust.service.js';
 import { decide } from '../src/services/verification.service.js';
 import { demoCreators, team } from './seed-creators.js';
@@ -237,7 +238,7 @@ async function upsertInvitation(campaign, creator, message, status) {
 
 async function main() {
   await connectDB();
-  await Promise.all([User, CreatorProfile, BrandProfile, PortfolioItem, Campaign, Application, Invitation, Project, VerificationSubmission].map((m) => m.syncIndexes()));
+  await Promise.all([User, CreatorProfile, BrandProfile, PortfolioItem, Campaign, Application, Invitation, Project, Message, VerificationSubmission].map((m) => m.syncIndexes()));
   console.log(`Seeding database "${mongoose.connection.name}"...`);
 
   const passwordHash = await hashPassword(PASSWORD);
@@ -273,15 +274,37 @@ async function main() {
 
   // Projects (exactly one per accepted pair)
   const p1 = await createProjectFromSource({ campaign: spf, creatorId: creators['Meera Kulkarni']._id, sourceType: 'application', sourceId: acceptedApp._id });
-  await createProjectFromSource({
+  const p2 = await createProjectFromSource({
     campaign: n['Studio headphones lookbook'], creatorId: creators['Sana Qureshi']._id, sourceType: 'invitation', sourceId: acceptedInv._id,
   });
-  // Show some progress on the first project (only if untouched, so reseeding keeps manual changes).
-  if (p1.status === 'not_started') {
-    await Project.updateOne(
-      { _id: p1._id },
-      { $set: { status: 'in_progress', 'deliverables.0.status': 'submitted', 'deliverables.0.mediaUrl': media('verdant-spf-vertical-v1', 'mp4') } },
-    );
+
+  // F6 demo history, written through the same service calls the app uses, and only on untouched
+  // projects so reseeding keeps manual changes. Media links are placeholders on the reserved .example domain.
+  const asUser = async (email) => User.findOne({ email }).lean();
+  const verdant = await asUser('team@verdant.unio.example');
+  const northwind = await asUser('studio@northwind.unio.example');
+  const meera = await User.findById(creators['Meera Kulkarni'].userId).lean();
+  const sana = await User.findById(creators['Sana Qureshi'].userId).lean();
+
+  if (p1.status === 'not_started' && !p1.deliverables[0].currentVersion) {
+    const [video, stills] = p1.deliverables;
+    const id = p1._id;
+    await submitVersion(meera, id, video._id, { mediaUrl: media('verdant-spf-vertical-v1', 'mp4'), changeNote: 'First version', toolsUsed: ['Kling', 'CapCut'] });
+    await postMessage(verdant, id, { body: 'Great start! The texture shots are lovely. Can the hook land faster?', about: { deliverableId: String(video._id), versionNumber: 1 } });
+    await decideVersion(verdant, id, video._id, 1, { decision: 'changes', note: 'Hook should land in the first 2 seconds — open on the gel, not the bottle.' });
+    await submitVersion(meera, id, video._id, { mediaUrl: media('verdant-spf-vertical-v2', 'mp4'), changeNote: 'Opens on the gel texture; hook now lands at 1.5 s', toolsUsed: ['Kling', 'Runway', 'CapCut'] });
+    await postMessage(meera, id, { body: 'Moved the gel shot to the open. Also warmed the grade a little — tell me if it’s too much.', about: { deliverableId: String(video._id), versionNumber: 2 } });
+    await decideVersion(verdant, id, video._id, 2, { decision: 'changes', note: 'Grade is right. Please add Hindi captions on screen for the voice-over.' });
+    await submitVersion(meera, id, video._id, { mediaUrl: media('verdant-spf-vertical-v3', 'mp4'), changeNote: 'Hindi captions added, safe-area checked for Reels', toolsUsed: ['Kling', 'Runway', 'CapCut'] });
+    await submitVersion(meera, id, stills._id, { mediaUrl: media('verdant-spf-stills-v1', 'jpg'), changeNote: 'First version', toolsUsed: ['Midjourney', 'Photoshop'] });
+    await postMessage(meera, id, { body: 'v3 is up with captions, and the three stills are ready too.' });
+  }
+
+  if (p2.status === 'not_started' && !p2.deliverables[0].currentVersion) {
+    const [images] = p2.deliverables;
+    await submitVersion(sana, p2._id, images._id, { mediaUrl: media('northwind-lookbook-v1', 'jpg'), changeNote: 'First version', toolsUsed: ['Midjourney', 'Photoshop'] });
+    await postMessage(northwind, p2._id, { body: 'These feel exactly like real home studios. Approving now — thank you!' });
+    await decideVersion(northwind, p2._id, images._id, 1, { decision: 'approve' });
   }
 
   // Reviewer account (operator-provisioned role; cannot be chosen at sign-up).
@@ -342,7 +365,7 @@ async function main() {
   for (const creator of Object.values(creators)) await recomputeCreatorTrust(creator._id);
 
   const counts = {};
-  for (const [name, model] of Object.entries({ users: User, creatorProfiles: CreatorProfile, brandProfiles: BrandProfile, portfolioItems: PortfolioItem, campaigns: Campaign, applications: Application, invitations: Invitation, projects: Project, verificationSubmissions: VerificationSubmission })) {
+  for (const [name, model] of Object.entries({ users: User, creatorProfiles: CreatorProfile, brandProfiles: BrandProfile, portfolioItems: PortfolioItem, campaigns: Campaign, applications: Application, invitations: Invitation, projects: Project, messages: Message, verificationSubmissions: VerificationSubmission })) {
     counts[name] = await model.countDocuments();
   }
   console.table(counts);

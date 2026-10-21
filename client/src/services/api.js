@@ -124,5 +124,14 @@ export const endpoints = {
     setStatus: (id, status) => api.patch(`/projects/${id}/status`, { status }),
     updateDeliverable: (id, deliverableId, body) => api.patch(`/projects/${id}/deliverables/${deliverableId}`, body),
     feedback: (id, body) => api.post(`/projects/${id}/feedback`, body),
+    submitVersion: (id, deliverableId, body) => api.post(`/projects/${id}/deliverables/${deliverableId}/versions`, body),
+    decide: (id, deliverableId, n, body) => api.post(`/projects/${id}/deliverables/${deliverableId}/versions/${n}/decision`, body),
+    messages: (id, params) => api.get(`/projects/${id}/messages`, params),
+    sendMessage: (id, body) => api.post(`/projects/${id}/messages`, body),
+    markRead: (id) => api.post(`/projects/${id}/read`),
+    rightsCard: (id) => api.get(`/projects/${id}/rights-card`),
+  },
+  me: {
+    unread: () => api.get('/me/unread'),
   },
 };

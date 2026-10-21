@@ -203,3 +203,14 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- Print: "Download PDF" on S3 prints only the rights card ---------- */
+.print-only { display: none; }
+@media print {
+  @page { margin: 16mm; }
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; inset: 0 auto auto 0; width: 100%; }
+  .print-area .print-only { display: block; color: #000; }
+  .print-area * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

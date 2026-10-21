@@ -46,5 +46,5 @@ export async function respondInvitation(req, res) {
 
 export async function listProjects(req, res) {
   const profile = await profiles.requireCreatorProfile(req.user);
-  ok(res, await projects.listProjects({ creatorId: profile._id }, req.valid.query));
+  ok(res, await projects.listProjects({ creatorId: profile._id }, req.valid.query, req.user));
 }

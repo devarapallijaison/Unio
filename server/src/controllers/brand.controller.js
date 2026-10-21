@@ -66,7 +66,7 @@ export async function cancelInvitation(req, res) {
 }
 
 export async function listProjects(req, res) {
-  ok(res, await projects.listProjects({ brandId: req.user._id }, req.valid.query));
+  ok(res, await projects.listProjects({ brandId: req.user._id }, req.valid.query, req.user));
 }
 
 /** Brief builder context comes from the server: the brand's own kit and (optionally) a public portfolio piece. */

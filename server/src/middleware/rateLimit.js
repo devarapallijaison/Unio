@@ -27,3 +27,17 @@ export const authLimiter = rateLimit({
       error: { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a few minutes and try again.', details: [] },
     }),
 });
+
+/** Project messages: 30 per minute per user (F6). */
+export const messageLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: env.isTest ? 1000 : 30,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  keyGenerator: (req) => (req.user ? `msg:${req.user._id}` : ipKeyGenerator(req.ip)),
+  handler: (_req, res) =>
+    res.status(429).json({
+      success: false,
+      error: { code: 'RATE_LIMITED', message: 'You’re sending messages very quickly. Wait a moment and try again.', details: [] },
+    }),
+});

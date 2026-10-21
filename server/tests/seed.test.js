@@ -82,8 +82,18 @@ test('seed is idempotent and references are valid', async () => {
     assert.ok(p.verifiedTools.includes(v.subject), 'trust fields come from the recompute');
   }
   assert.ok(await db.collection('verificationSubmissions').countDocuments({ status: 'PENDING' }) > 0);
-  // No invented ratings or ★ Made on UNIO counts without completed projects.
-  assert.equal(await db.collection('creatorProfiles').countDocuments({ $or: [{ ratingCount: { $gt: 0 } }, { madeOnUnioCount: { $gt: 0 } }] }), 0);
+  // No invented ratings; ★ Made on UNIO counts equal the creator's completed projects exactly.
+  assert.equal(await db.collection('creatorProfiles').countDocuments({ ratingCount: { $gt: 0 } }), 0);
+  for (const p of await db.collection('creatorProfiles').find({}).toArray()) {
+    const completed = await db.collection('projects').countDocuments({ creatorId: p._id, status: 'completed' });
+    assert.equal(p.madeOnUnioCount ?? 0, completed, `${p.displayName} ★ count`);
+  }
+  // F6 demo: one project with v1–v3 + messages, one completed with a rights card.
+  const withHistory = await db.collection('projects').findOne({ 'deliverables.currentVersion': 3 });
+  assert.ok(withHistory, 'a project with v1–v3');
+  assert.ok((await db.collection('messages').countDocuments({ projectId: withHistory._id, kind: 'user' })) >= 2);
+  const done = await db.collection('projects').findOne({ status: 'completed' });
+  assert.match(done.rightsCard.number, /^UN-\d{4}-\d{4}$/);
   // Re-seeding must not overwrite media a creator replaced.
   await db.collection('portfolioItems').updateOne({}, { $set: { mediaUrl: 'https://real.cdn.test/x.jpg' } });
   await seed();

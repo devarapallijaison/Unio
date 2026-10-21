@@ -7,3 +7,6 @@ coverage/
 *.log
 .DS_Store
 .vscode/
+
+# React build copied in by the deploy workflow (guide §12.1)
+server/public/

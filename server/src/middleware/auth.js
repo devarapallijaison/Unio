@@ -9,8 +9,8 @@ export function cookieOptions() {
   return {
     httpOnly: true,
     secure: env.isProd,
-    // Frontend and API live on different domains in production, which requires SameSite=None.
-    sameSite: env.isProd ? 'none' : 'lax',
+    // The React build and the API share one origin on Azure (guide §12.3), so Lax works everywhere.
+    sameSite: 'lax',
     path: '/',
   };
 }

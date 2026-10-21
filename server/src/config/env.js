@@ -13,7 +13,7 @@ export const env = {
   isProd: process.env.NODE_ENV === 'production',
   isTest,
   port: Number(process.env.PORT) || 5000,
-  // Number of proxies in front of the API (Render = 1; Vercel rewrite + Render = 2).
+  // Number of proxies in front of the API (Azure App Service = 1).
   trustProxy: Number(process.env.TRUST_PROXY) || 1,
   mongoUri: process.env.MONGODB_URI,
   clientOrigins: (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
@@ -28,6 +28,13 @@ export const env = {
   // Alternative provider: used only when ANTHROPIC_API_KEY is not set.
   openRouterApiKey: process.env.OPENROUTER_API_KEY || '',
   openRouterModel: process.env.OPENROUTER_MODEL || 'anthropic/claude-opus-5.5',
+  // Azure Blob Storage for uploads (Phase 10). Optional until uploads are enabled.
+  azureStorageAccount: process.env.AZURE_STORAGE_ACCOUNT || '',
+  azureStorageKey: process.env.AZURE_STORAGE_KEY || '',
+  azureStorageContainer: process.env.AZURE_STORAGE_CONTAINER || 'media',
+  azureStoragePublicBase: process.env.AZURE_STORAGE_PUBLIC_BASE || '',
+  // Public URL of the site, used to build links (e.g. agency approval links, Phase 9).
+  publicSiteUrl: (process.env.PUBLIC_SITE_URL || process.env.CLIENT_ORIGIN?.split(',')[0] || 'http://localhost:5173').trim().replace(/\/$/, ''),
   // Comma-separated DNS servers used when the OS resolver cannot answer SRV lookups (common on Windows).
   dnsServers: (process.env.DNS_SERVERS || '').split(',').map((s) => s.trim()).filter(Boolean),
 };

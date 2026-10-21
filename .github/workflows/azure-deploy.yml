@@ -1,0 +1,54 @@
+# Builds the React client, copies it into server/public and deploys the server folder
+# to one Azure App Service (Express serves /api and the SPA). Guide §12.5.
+# The Azure teammate adds the AZURE_WEBAPP_PUBLISH_PROFILE secret and sets the startup
+# command to `node src/server.js`. Switch the branch to main once the demo script passes.
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches: [round-2]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: azure-deploy
+  cancel-in-progress: true
+
+env:
+  AZURE_WEBAPP_NAME: unio-app # placeholder: replace with the real App Service name
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
+
+      - name: Build client
+        run: |
+          npm --prefix client ci
+          npm --prefix client run build
+
+      - name: Copy build into server/public
+        run: |
+          rm -rf server/public
+          cp -r client/dist server/public
+
+      - name: Install server (production only)
+        run: npm --prefix server ci --omit=dev
+
+      - name: Deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: server

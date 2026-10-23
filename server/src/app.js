@@ -14,8 +14,9 @@ const DEFAULT_PUBLIC_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)
 export function createApp({ publicDir = DEFAULT_PUBLIC_DIR } = {}) {
   const app = express();
 
-  // Azure App Service sits behind one front end; needed for secure cookies and per-visitor rate limits.
-  if (env.isProd) app.set('trust proxy', env.trustProxy);
+  // Azure App Service sits behind one front end. Trust the configured proxy in every deployment
+  // environment so express-rate-limit can safely interpret Azure's forwarded client IP header.
+  app.set('trust proxy', env.trustProxy);
   app.disable('x-powered-by');
 
   // CSP for the React build served below (guide §12.2). frame-src allows YouTube/Vimeo embeds on

@@ -639,6 +639,7 @@ async function callChatCompletions(provider, userMessage) {
     if (status === 401 || status === 403) throw new ApiError(502, 'AI_MISCONFIGURED', 'The AI service is not configured correctly. Use the template instead.');
     if (status === 402) throw new ApiError(502, 'AI_NO_CREDITS', 'The AI account is out of credits. Use the template instead.');
     if (status === 408) throw new ApiError(504, 'AI_TIMEOUT', 'The AI service took too long to respond. Try again, or use the template.');
+    if (status === 503) throw new ApiError(503, 'AI_PROVIDER_BUSY', 'Gemini is temporarily overloaded. Try again shortly, or use the template.');
     throw new ApiError(502, 'AI_UNAVAILABLE', 'The AI service returned an error. Try again, or use the template.');
   }
 

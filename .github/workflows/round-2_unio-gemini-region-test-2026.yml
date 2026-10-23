@@ -1,53 +1,69 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy Node.js app to Azure Web App - unio-gemini-region-test-2026
+# Build and deploy UNIO to Azure App Service
+
+name: Build and deploy UNIO - Gemini Region Test
 
 on:
   push:
     branches:
-      - 'round-2'
+      - round-2
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js version
-        uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22.x'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
 
-      - name: npm install, build, and test
+      - name: Install client dependencies
+        run: npm --prefix client ci
+
+      - name: Build client
+        run: npm --prefix client run build
+
+      - name: Copy client build into server
         run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+          rm -rf server/public
+          mkdir -p server/public
+          cp -r client/dist/. server/public/
 
-      - name: Upload artifact for deployment job
+      - name: Install server production dependencies
+        run: npm --prefix server ci --omit=dev
+
+      - name: Upload server artifact
         uses: actions/upload-artifact@v4
         with:
-          name: node-app
-          path: .
+          name: unio-server
+          path: server/
+          include-hidden-files: true
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
+
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download server artifact
         uses: actions/download-artifact@v4
         with:
-          name: node-app
-      
+          name: unio-server
+          path: server
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -55,11 +71,9 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_FD76341408B1412CBD5CBAB6730AF5C1 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_20AE47CAA6B846F6B9BB101C031AE152 }}
 
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
+      - name: Deploy to test Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'unio-gemini-region-test-2026'
-          slot-name: 'Production'
-          package: .
-          
+          app-name: unio-gemini-region-test-2026
+          slot-name: Production
+          package: server
